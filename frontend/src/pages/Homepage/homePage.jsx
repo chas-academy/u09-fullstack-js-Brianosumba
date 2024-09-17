@@ -8,8 +8,9 @@ const HomePage = () => {
   return (
     <div>
       <NavBar />
-      <HeroSection />
       <HeroBannerCarousel />
+      <HeroSection />
+
       <Footer />
     </div>
   );
