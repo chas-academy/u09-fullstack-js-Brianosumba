@@ -1,6 +1,5 @@
 import HomePage from "./pages/Homepage/HomePage";
 import Footer from "./components/Footer";
-import UserPage from "./pages/Userpage/UserPage";
 
 const App = () => {
   return (
