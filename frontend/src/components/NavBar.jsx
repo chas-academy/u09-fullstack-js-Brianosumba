@@ -16,7 +16,7 @@ const NavBar = () => {
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           className="flex items-center bg-transparent text-white p-2 rounded"
         >
-          <FaUserCircle className="h-8 w-8 text-gray-100 transition-transform" />
+          <FaUserCircle className="h-8 w-8 text-gray-300 hover:shadow-lg hover:scale-110 transition duration-300" />
         </button>
         {isDropdownOpen && (
           <div className="absolute right-0 mt-2 w-32 bg-white text-gray-800 rounded-lg shadow-lg z-50">

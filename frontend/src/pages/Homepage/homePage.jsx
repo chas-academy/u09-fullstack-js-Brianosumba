@@ -1,17 +1,13 @@
-import React from "react";
-import NavBar from "../../components/NavBar"; // Adjusted import path
-import HeroSection from "./HeroSection";
-import HeroBannerCarousel from "./HeroBannerCarousel";
-import Footer from "../../components/Footer"; // Ensure Footer import path is also correct
+import NavBar from "../../components/NavBar";
+import HeroBannerCarousel from "../../components/HeroBannerCarousel";
+import HeroSection from "../../components/HeroSection";
 
 const HomePage = () => {
   return (
-    <div>
+    <div className="flex flex-col flex-grow">
       <NavBar />
       <HeroBannerCarousel />
       <HeroSection />
-
-      <Footer />
     </div>
   );
 };

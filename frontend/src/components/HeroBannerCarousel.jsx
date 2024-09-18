@@ -1,9 +1,8 @@
-import React from "react";
-import { Carousel } from "react-responsive-carousel"; // Make sure this is installed
+import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css"; // Import carousel styles
-import slide1 from "../../images/slide1.jpg";
-import slide3 from "../../images/slide3.jpg";
-import slide5 from "../../images/slide5.jpg"; // Ensure these paths are correct
+import slide1 from "../images/slide1.jpg";
+import slide4 from "../images/slide4.jpg";
+import slide5 from "../images/slide5.jpg";
 
 const HeroBannerCarousel = () => {
   return (
@@ -21,7 +20,7 @@ const HeroBannerCarousel = () => {
         </p>
       </div>
       <div className="relative">
-        <img src={slide3} alt="Slide 2" className="w-full h-80 object-cover" />
+        <img src={slide4} alt="Slide 2" className="w-full h-80 object-cover" />
         <p className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded">
           Achieve your fitness goals faster
         </p>
