@@ -1,6 +1,5 @@
-import React from "react";
 import HomePage from "./pages/Homepage/HomePage";
-import Footer from "./components/Footer"; // Import Footer component
+import Footer from "./components/Footer";
 
 const App = () => {
   return (
