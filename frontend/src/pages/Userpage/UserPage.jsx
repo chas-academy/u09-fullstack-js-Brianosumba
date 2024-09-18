@@ -7,7 +7,7 @@ import Footer from "../../components/Footer";
 const UserPage = () => {
   return (
     <>
-      <div className="bg-white min-h-screen">
+      <div className="bg-gray-300 min-h-screen">
         <NavBar />
         <HeroBannerCarousel />
         <SearchField />
