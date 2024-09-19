@@ -13,7 +13,7 @@ const Footer = () => {
             href="https://www.apple.com/se/app-store/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center bg-white text-gray-800 px-6 py-3 rounded-lg shadow-md hover:bg-gray-100 transition"
+            className="flex items-center bg-white text-gray-800 px-6 py-3 rounded-lg shadow-md hover:bg-gray-300 transition"
           >
             <FaApple className="h-6 w-6 text-gray-800 mr-2" />
             <span className="text-sm sm:text-base">
@@ -24,7 +24,7 @@ const Footer = () => {
             href="https://play.google.com/store/games"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center bg-white text-gray-800 px-6 py-3 rounded-lg shadow-md hover:bg-gray-100 transition"
+            className="flex items-center bg-white text-gray-800 px-6 py-3 rounded-lg shadow-md hover:bg-gray-300 transition"
           >
             <FaGooglePlay className="h-6 w-6 text-gray-800 mr-2" />
             <span className="text-sm sm:text-base">
