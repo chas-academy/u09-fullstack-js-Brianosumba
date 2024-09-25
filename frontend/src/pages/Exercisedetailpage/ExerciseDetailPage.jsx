@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import ExerciseDetail from "../../components/ExerciseDetail";
 
 import NavBar from "../../components/NavBar";
 
@@ -98,6 +99,8 @@ const ExerciseDetailPage = () => {
           ))}
         </div>
       </div>
+
+      <ExerciseDetail />
     </>
   );
 };

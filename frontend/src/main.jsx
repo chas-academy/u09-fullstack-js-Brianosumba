@@ -21,7 +21,7 @@ const router = createBrowserRouter([
     element: <Exercise />,
   },
   {
-    path: "/exercise-detail/:level",
+    path: "/exercisedetail/:level",
     element: <ExerciseDetailPage />,
   },
 ]);
