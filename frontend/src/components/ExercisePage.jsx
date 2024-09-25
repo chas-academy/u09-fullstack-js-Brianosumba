@@ -1,74 +1,53 @@
 import { Link } from "react-router-dom";
 
 const Exercisepage = () => {
-  // Placeholder data with GIF URLs for each exercise
   const exercises = {
     beginner: [
       {
         name: "Pushups",
-        gifUrl: "https://gymvisual.com/img/p/2/0/9/4/8/20948.gif", // Placeholder GIF
-        link: "/exercise-detail/beginner1",
+        gifUrl: "https://gymvisual.com/img/p/2/0/9/4/8/20948.gif",
       },
       {
         name: "Band Bench Press",
-        gifUrl: "https://gymvisual.com/img/p/6/5/2/1/6521.gif", // Placeholder GIF
-        link: "/exercise-detail/beginner2",
+        gifUrl: "https://gymvisual.com/img/p/6/5/2/1/6521.gif",
       },
       {
         name: "Dumbbell Flyes",
-        gifUrl: "https://gymvisual.com/img/p/2/1/7/5/5/21755.gif", // Placeholder GIF
-        link: "/exercise-detail/beginner3",
+        gifUrl: "https://gymvisual.com/img/p/2/1/7/5/5/21755.gif",
       },
     ],
     intermediate: [
       {
         name: "Incline Dumbbell Press",
         gifUrl: "https://gymvisual.com/img/p/1/4/1/1/4/14114.gif",
-        link: "/exercise-detail/intermediate1",
       },
       {
         name: "Cable Chest Flyes",
         gifUrl: "https://gymvisual.com/img/p/2/8/9/5/9/28959.gif",
-        link: "/exercise-detail/intermediate2",
       },
       {
         name: "Dips",
         gifUrl: "https://gymvisual.com/img/p/4/7/4/0/4740.gif",
-        link: "/exercise-detail/intermediate3",
       },
     ],
     advanced: [
       {
         name: "Barbell Bench Press",
         gifUrl: "https://gymvisual.com/img/p/1/8/5/6/4/18564.gif",
-        link: "/exercise-detail/advanced1",
       },
       {
         name: "Incline Dumbbell Press (slow)",
         gifUrl: "https://gymvisual.com/img/p/1/8/3/6/7/18367.gif",
-        link: "/exercise-detail/advanced2",
       },
       {
         name: "Weighted Dips",
         gifUrl: "https://gymvisual.com/img/p/7/5/5/9/7559.gif",
-        link: "/exercise-detail/advanced3",
       },
     ],
     recomendedworkouts: [
       {
         name: "Elbow Dips",
         gifUrl: "https://gymvisual.com/img/p/1/3/1/3/6/13136.gif",
-        link: "/exercise-detail/recomendedworkouts1",
-      },
-      {
-        name: "Elbow Dips",
-        gifUrl: "https://gymvisual.com/img/p/1/3/1/3/6/13136.gif",
-        link: "/exercise-detail/recomendedworkouts1",
-      },
-      {
-        name: "Elbow Dips",
-        gifUrl: "https://gymvisual.com/img/p/1/3/1/3/6/13136.gif",
-        link: "/exercise-detail/recomendedworkouts1",
       },
     ],
   };
@@ -95,19 +74,20 @@ const Exercisepage = () => {
           Pick your fitness level below and get started.
         </p>
 
-        {/* Fitness Level Titles with Exercise Cards */}
+        {/* Fitness Level Titles */}
         <div className="space-y-12">
           {/* Beginner Level */}
           <div>
-            <h3 className="font-bold text-xl sm:text-2xl mb-4 text-gray-800">
-              Beginner
-            </h3>
+            <Link to="/exercise-detail/beginner">
+              <h3 className="font-bold text-xl sm:text-2xl mb-4 text-gray-800 hover:text-blue-600">
+                Beginner
+              </h3>
+            </Link>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {exercises.beginner.map((exercise, index) => (
-                <Link
-                  to={exercise.link}
+                <div
                   key={index}
-                  className="bg-white p-6 rounded-lg hover:shadow-lg border border-gray-300"
+                  className="bg-white p-6 rounded-lg border border-gray-300 hover:shadow-lg transform hover:scale-105 transition-transform duration-200"
                 >
                   <img
                     src={exercise.gifUrl}
@@ -117,22 +97,23 @@ const Exercisepage = () => {
                   <p className="text-center font-semibold text-gray-800">
                     {exercise.name}
                   </p>
-                </Link>
+                </div>
               ))}
             </div>
           </div>
 
           {/* Intermediate Level */}
           <div>
-            <h3 className="font-bold text-xl sm:text-2xl mb-4 text-gray-800">
-              Intermediate
-            </h3>
+            <Link to="/exercise-detail/intermediate">
+              <h3 className="font-bold text-xl sm:text-2xl mb-4 text-gray-800 hover:text-blue-600">
+                Intermediate
+              </h3>
+            </Link>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {exercises.intermediate.map((exercise, index) => (
-                <Link
-                  to={exercise.link}
+                <div
                   key={index}
-                  className="bg-white p-6 rounded-lg hover:shadow-lg border border-gray-300"
+                  className="bg-white p-6 rounded-lg border border-gray-300 hover:shadow-lg transform hover:scale-105 transition-transform duration-200"
                 >
                   <img
                     src={exercise.gifUrl}
@@ -142,22 +123,23 @@ const Exercisepage = () => {
                   <p className="text-center font-semibold text-gray-800">
                     {exercise.name}
                   </p>
-                </Link>
+                </div>
               ))}
             </div>
           </div>
 
           {/* Advanced Level */}
           <div>
-            <h3 className="font-bold text-xl sm:text-2xl mb-4 text-gray-800">
-              Advanced
-            </h3>
+            <Link to="/exercise-detail/advanced">
+              <h3 className="font-bold text-xl sm:text-2xl mb-4 text-gray-800 hover:text-blue-600">
+                Advanced
+              </h3>
+            </Link>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {exercises.advanced.map((exercise, index) => (
-                <Link
-                  to={exercise.link}
+                <div
                   key={index}
-                  className="bg-white p-6 rounded-lg hover:shadow-lg border border-gray-300"
+                  className="bg-white p-6 rounded-lg border border-gray-300 hover:shadow-lg transform hover:scale-105 transition-transform duration-200"
                 >
                   <img
                     src={exercise.gifUrl}
@@ -167,22 +149,23 @@ const Exercisepage = () => {
                   <p className="text-center font-semibold text-gray-800">
                     {exercise.name}
                   </p>
-                </Link>
+                </div>
               ))}
             </div>
           </div>
 
           {/* Recommended Workouts */}
           <div>
-            <h3 className="font-bold text-xl sm:text-2xl mb-4 text-gray-800">
-              Recommended Workouts
-            </h3>
+            <Link to="/exercise-detail/recommended">
+              <h3 className="font-bold text-xl sm:text-2xl mb-4 text-gray-800 hover:text-blue-600">
+                Recommended Workouts
+              </h3>
+            </Link>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {exercises.recomendedworkouts.map((exercise, index) => (
-                <Link
-                  to={exercise.link}
+                <div
                   key={index}
-                  className="bg-white p-6 rounded-lg hover:shadow-lg border border-gray-300"
+                  className="bg-white p-6 rounded-lg border border-gray-300 hover:shadow-lg transform hover:scale-105 transition-transform duration-200"
                 >
                   <img
                     src={exercise.gifUrl}
@@ -192,7 +175,7 @@ const Exercisepage = () => {
                   <p className="text-center font-semibold text-gray-800">
                     {exercise.name}
                   </p>
-                </Link>
+                </div>
               ))}
             </div>
           </div>

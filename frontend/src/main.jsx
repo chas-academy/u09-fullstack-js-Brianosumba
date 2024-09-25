@@ -4,6 +4,7 @@ import App from "./App";
 import "./index.css";
 import UserPage from "./pages/Userpage/UserPage";
 import Exercise from "./pages/Exercisepage/Exercise";
+import ExerciseDetailPage from "./pages/ExerciseDetailPage/ExerciseDetailPage";
 
 // Define the router with your routes
 const router = createBrowserRouter([
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
   {
     path: "/exercise",
     element: <Exercise />,
+  },
+  {
+    path: "/exercisedetailpage",
+    element: <ExerciseDetailPage />,
   },
 ]);
 
