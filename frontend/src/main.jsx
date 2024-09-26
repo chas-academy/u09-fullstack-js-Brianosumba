@@ -10,23 +10,22 @@ import ExerciseDetailPage from "./pages/ExerciseDetailPage/ExerciseDetailPage";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />, // This will render your App component
+    element: <App />,
   },
   {
     path: "/userpage",
     element: <UserPage />,
   },
   {
-    path: "/exercise",
-    element: <Exercise />,
+    path: "/exercise/:exerciseName",
+    element: <Exercise />, // This renders the Exercisepage
   },
   {
-    path: "/exercisedetail/:level",
-    element: <ExerciseDetailPage />,
+    path: "/exercise-detail/:exerciseName/:level", // Fixed path
+    element: <ExerciseDetailPage />, // The detail page for the exercise level
   },
 ]);
 
-// Ensure you call .render() correctly on the root element
 ReactDOM.createRoot(document.getElementById("root")).render(
   <RouterProvider router={router} />
 );

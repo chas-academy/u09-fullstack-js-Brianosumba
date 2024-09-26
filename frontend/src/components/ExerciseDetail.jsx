@@ -1,104 +1,67 @@
-import { useState } from "react";
+import { useParams } from "react-router-dom";
+import NavBar from "../components/NavBar";
+import Footer from "../components/Footer";
 
 const ExerciseDetail = () => {
-  //Example data - will be dynamic in future
-  const exerciseData = {
-    name: "Pushups",
-    gifUrl: "https://gymvisual.com/img/p/2/0/9/4/8/20948.gif",
-    reps: 15,
-    sets: 3,
-    instructions:
-      "Start in a high plank position with your hands flat on the floor...",
-    targetMuscles: " chest, Shoulders, Triceps",
+  const { exerciseName, level } = useParams();
+  const userName = "Mike"; // This will be dynamic later
+
+  // Define exercises with their details
+  const exercisesDetails = {
+    pushups: {
+      beginner: [
+        {
+          name: "Pushups",
+          gifUrl: "https://gymvisual.com/img/p/2/0/9/4/8/20948.gif",
+          sets: 2,
+          reps: 10,
+          instructions: "Do pushups on your knees.",
+        },
+        {
+          name: "Band Bench Press",
+          gifUrl: "https://gymvisual.com/img/p/6/5/2/1/6521.gif",
+        },
+        {
+          name: "Dumbbell Flyes",
+          gifUrl: "https://gymvisual.com/img/p/2/1/7/5/5/21755.gif",
+        },
+      ],
+      // ... intermediate and advanced details ...
+    },
   };
 
-  const [workoutsCompletedToday, setWorkoutsCompletedToday] = useState(0);
-  const [workoutsCompletedThisWeek, setWorkoutsCompletedThisWeek] = useState(0);
-  const [workoutsCompletedThisMonth, setWorkoutsCompletedThisMonth] =
-    useState(0);
-
-  const handleDoneClick = () => {
-    setWorkoutsCompletedToday(1); //  1 exercise marks it as 100% for today
-    setWorkoutsCompletedThisWeek(workoutsCompletedThisWeek + 1);
-    setWorkoutsCompletedThisMonth(workoutsCompletedThisMonth + 1);
-  };
+  const exerciseDetail = exercisesDetails[exerciseName]?.[level] || [];
 
   return (
-    <>
-      <div className="container mx-auto p-4">
-        {/* Exercise Info */}
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">{exerciseData.name}</h2>
-          <img
-            src={exerciseData.gifUrl}
-            alt={exerciseData.name}
-            className="w-full h-64 object-cover mb-4"
-          />
-          <p className="text-lg font-semibold">
-            Reps: {exerciseData.reps} Sets: {exerciseData.sets}
-          </p>
-          <p className="text-lg text-gray-700 mt-2">
-            {exerciseData.instructions}
-          </p>
-          <p className="text-md text-gray-600 mt-2">
-            Target Muscles: {exerciseData.targetMuscles}{" "}
-          </p>
-        </div>
-
-        {/* 'Done' Button */}
-        <div className="text-center my-8">
-          <button
-            onClick={handleDoneClick}
-            className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition"
-          >
-            Done
-          </button>
-        </div>
-
-        {/* Progress Bars */}
-        <div className="mt-8 space-y-4">{/* Today's Progress */}</div>
-        <p>Workouts Completed Today</p>
-        <div className="w-full bg-gray-200 rounded-full h-4">
-          <div
-            className="bg-blue-500 h-4 rounded-full"
-            style={{ width: `${workoutsCompletedToday * 100}%` }}
-          ></div>
-        </div>
+    <div className="bg-gray-50 min-h-screen">
+      <NavBar />
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold text-center mb-4 capitalize">
+          {exerciseName} - {level} Level
+        </h1>
+        <p className="text-center">User: {userName}</p>
+        {exerciseDetail.length > 0 ? (
+          exerciseDetail.map((exercise, index) => (
+            <div key={index} className="mb-4 text-center">
+              <h2 className="text-xl font-semibold">{exercise.name}</h2>
+              <img
+                src={exercise.gifUrl}
+                alt={exercise.name}
+                className="mx-auto my-2"
+              />
+              {exercise.sets && <p>Sets: {exercise.sets}</p>}
+              {exercise.reps && <p>Reps: {exercise.reps}</p>}
+              {exercise.instructions && (
+                <p>Instructions: {exercise.instructions}</p>
+              )}
+            </div>
+          ))
+        ) : (
+          <p className="text-center">No exercises found for this level.</p>
+        )}
       </div>
-
-      {/* Progress Bars */}
-      <div>
-        <p>Workouts Completed This Week</p>
-        <div className="w-full bg-gray-200 rounded-full h-4">
-          <div
-            className="bg-blue-500 h-4 rounded-full"
-            style={{ width: `${(workoutsCompletedThisWeek / 3) * 100}%` }} // Assumes 3 workouts/week
-          ></div>
-        </div>
-      </div>
-
-      {/* Monthly Progress */}
-      <div>
-        <p>Workouts Completed This Month</p>
-        <div className="w-full bg-gray-200 rounded-full h-4">
-          <div
-            className="bg-blue-500 h-4 rounded-full"
-            style={{ width: `${(workoutsCompletedThisMonth / 9) * 100}%` }} // Assumes 9 workouts/month
-          ></div>
-        </div>
-      </div>
-
-      {/* Strength Growth Progress */}
-      <div>
-        <p>Strength Growth</p>
-        <div className="w-full bg-gray-200 rounded-full h-4">
-          <div
-            className="bg-red-500 h-4 rounded-full"
-            style={{ width: `${(workoutsCompletedThisMonth / 9) * 100}%` }} // Example logic
-          ></div>
-        </div>
-      </div>
-    </>
+      <Footer />
+    </div>
   );
 };
 
