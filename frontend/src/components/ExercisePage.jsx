@@ -1,6 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const Exercisepage = () => {
+  const { exerciseName } = useParams();
   const navigate = useNavigate();
 
   const exercises = {
@@ -51,7 +52,7 @@ const Exercisepage = () => {
     ],
   };
 
-  const handleClick = (exerciseName, level) => {
+  const handleClick = (level) => {
     navigate(`/exercise-detail/${exerciseName}/${level}`);
   };
 
@@ -79,11 +80,12 @@ const Exercisepage = () => {
           {["beginner", "intermediate", "advanced", "recommendedWorkouts"].map(
             (level) => (
               <div key={level}>
-                <Link to="#" onClick={() => handleClick("Chest", level)}>
-                  <h3 className="font-bold text-xl sm:text-2xl mb-4 text-gray-800 hover:text-blue-600 cursor-pointer">
-                    {level.charAt(0).toUpperCase() + level.slice(1)}
-                  </h3>
-                </Link>
+                <h3
+                  className="font-bold text-xl sm:text-2xl mb-4 text-gray-800 hover:text-blue-600 cursor-pointer"
+                  onClick={() => handleClick(level)}
+                >
+                  {level.charAt(0).toUpperCase() + level.slice(1)}
+                </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {exercises[level].map((exercise, index) => (
