@@ -8,7 +8,7 @@ const ExerciseDetail = () => {
 
   // Define exercises with their details
   const exercisesDetails = {
-    pushups: {
+    Chest: {
       beginner: [
         {
           name: "Pushups",
