@@ -60,11 +60,11 @@ const Exercisepage = () => {
     <>
       <div className="text-center my-8">
         <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl text-gray-800">
-          Let’s Go, Brian! Time to Rumble!
+          Let&#39;s Go, Brian! Time to Rumble!
         </h1>
         <p className="text-lg sm:text-xl mt-4 text-gray-700">
-          Every rep counts. You’ve already shown up. Now, let’s crush it and
-          unleash your potential!
+          Every rep counts. You&#39;ve already shown up. Now, let&#39;s crush it
+          and unleash your potential!
         </p>
       </div>
 

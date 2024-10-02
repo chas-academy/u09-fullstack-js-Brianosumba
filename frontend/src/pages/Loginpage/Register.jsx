@@ -45,17 +45,14 @@ const Register = () => {
     }, 1500);
   };
 
+  // Rendering the Sign-Up form
   return (
-    // Rendering the Sign-Up form
-    <div
-      className="flex items-center justify-center h-screen"
-      style={{ backgroundColor: "#1a2734" }}
-    >
+    <div className="flex items-center justify-center h-screen bg-gray-900">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="bg-white p-6 rounded-lg shadow-lg w-96"
+        className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4"
       >
-        <h2 className="text-2xl font-bold mb-5" style={{ color: "#1b2a4e" }}>
+        <h2 className="text-2xl font-bold mb-5 text-center text-navy">
           Sign Up
         </h2>
 
@@ -63,8 +60,7 @@ const Register = () => {
         <div className="mb-4">
           <label
             htmlFor="username"
-            className="block font-bold mb-2"
-            style={{ color: "#1b2a4e" }}
+            className="block text-gray-700 font-bold mb-2"
           >
             Username
           </label>
@@ -85,11 +81,7 @@ const Register = () => {
 
         {/* Email Field */}
         <div className="mb-4">
-          <label
-            htmlFor="email"
-            className="block font-bold mb-2"
-            style={{ color: "#1b2a4e" }}
-          >
+          <label htmlFor="email" className="block text-gray-700 font-bold mb-2">
             Email
           </label>
           <input
@@ -109,8 +101,7 @@ const Register = () => {
         <div className="mb-4">
           <label
             htmlFor="password"
-            className="block font-bold mb-2"
-            style={{ color: "#1b2a4e" }}
+            className="block text-gray-700 font-bold mb-2"
           >
             Password
           </label>
@@ -142,21 +133,18 @@ const Register = () => {
         <div className="mb-4">
           <label
             htmlFor="confirmPassword"
-            className="block font-bold mb-2"
-            style={{ color: "#1b2a4e" }}
+            className="block text-gray-700 font-bold mb-2"
           >
             Confirm Password
           </label>
-          <div className="relative">
-            <input
-              type="password"
-              id="confirmPassword"
-              {...register("confirmPassword")}
-              className={`w-full p-2 border ${
-                errors.confirmPassword ? "border-red-500" : "border-gray-300"
-              } rounded`}
-            />
-          </div>
+          <input
+            type="password"
+            id="confirmPassword"
+            {...register("confirmPassword")}
+            className={`w-full p-2 border ${
+              errors.confirmPassword ? "border-red-500" : "border-gray-300"
+            } rounded`}
+          />
           {errors.confirmPassword && (
             <p className="text-red-500 text-sm mt-1">
               {errors.confirmPassword.message}
