@@ -46,19 +46,25 @@ const Register = () => {
   };
 
   return (
-    //rendering the Sign up form
-    <div className="flex items-center justify-center h-screen bg-gray-100">
+    // Rendering the Sign-Up form
+    <div
+      className="flex items-center justify-center h-screen"
+      style={{ backgroundColor: "#1a2734" }}
+    >
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white p-6 rounded-lg shadow-lg w-96"
       >
-        <h2 className="text-2xl font-bold mb-5">Sign Up</h2>
+        <h2 className="text-2xl font-bold mb-5" style={{ color: "#1b2a4e" }}>
+          Sign Up
+        </h2>
 
-        {/*Username Field */}
+        {/* Username Field */}
         <div className="mb-4">
           <label
             htmlFor="username"
-            className="block text-gray-700 font-bold mb-2"
+            className="block font-bold mb-2"
+            style={{ color: "#1b2a4e" }}
           >
             Username
           </label>
@@ -68,7 +74,7 @@ const Register = () => {
             {...register("username")}
             className={`w-full p-2 border ${
               errors.username ? "border-red-500" : "border-gray-300"
-            }rounded`}
+            } rounded`}
           />
           {errors.username && (
             <p className="text-red-500 text-sm mt-1">
@@ -77,9 +83,13 @@ const Register = () => {
           )}
         </div>
 
-        {/*Email Field */}
+        {/* Email Field */}
         <div className="mb-4">
-          <label htmlFor="email" className="block text-gray-700 font-bold mb-2">
+          <label
+            htmlFor="email"
+            className="block font-bold mb-2"
+            style={{ color: "#1b2a4e" }}
+          >
             Email
           </label>
           <input
@@ -88,18 +98,19 @@ const Register = () => {
             {...register("email")}
             className={`w-full p-2 border ${
               errors.email ? "border-red-500" : "border-gray-300"
-            }rounded`}
+            } rounded`}
           />
           {errors.email && (
             <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
           )}
         </div>
 
-        {/*password field*/}
+        {/* Password Field */}
         <div className="mb-4">
           <label
             htmlFor="password"
-            className="block text-gray-700 font-bold mb-2"
+            className="block font-bold mb-2"
+            style={{ color: "#1b2a4e" }}
           >
             Password
           </label>
@@ -127,11 +138,12 @@ const Register = () => {
           )}
         </div>
 
-        {/* Confirm password field*/}
+        {/* Confirm Password Field */}
         <div className="mb-4">
           <label
             htmlFor="confirmPassword"
-            className="block text-gray-700 font-bold mb-2"
+            className="block font-bold mb-2"
+            style={{ color: "#1b2a4e" }}
           >
             Confirm Password
           </label>
@@ -152,7 +164,7 @@ const Register = () => {
           )}
         </div>
 
-        {/* Submit Button*/}
+        {/* Submit Button */}
         <button
           type="submit"
           className={`w-full py-2 rounded ${

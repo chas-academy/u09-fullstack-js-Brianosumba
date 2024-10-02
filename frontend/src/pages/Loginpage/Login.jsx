@@ -43,17 +43,27 @@ const Login = () => {
     }, 1500);
   };
 
+  //Rendering the login form
   return (
-    //rendering the form
-    <div className="flex items-center justify-center h-screen bg-gray-100">
+    <div
+      className="flex items-center justify-center h-screen"
+      style={{ backgroundColor: "#1a2734" }}
+    >
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white p-6 rounded-lg shadow-lg w-96"
+        style={{ backgroundColor: "#f5f7fa", borderColor: "#1b2a4e" }}
       >
-        <h2 className="text-2xl font-bold mb-5">Login</h2>
+        <h2 className="text-2xl font-bold mb-5" style={{ color: "#1b2a4e" }}>
+          Login
+        </h2>
 
         <div className="mb-4">
-          <label htmlFor="email" className="block text-gray-700 font-bold mb-2">
+          <label
+            htmlFor="email"
+            className="block mb-2 font-bold"
+            style={{ color: "#1b2a4e" }}
+          >
             Email
           </label>
           <input
@@ -69,11 +79,12 @@ const Login = () => {
           )}
         </div>
 
-        {/*password field*/}
+        {/* Password Field */}
         <div className="mb-4">
           <label
             htmlFor="password"
-            className="block text-gray-700 font-bold mb-2"
+            className="block mb-2 font-bold"
+            style={{ color: "#1b2a4e" }}
           >
             Password
           </label>
@@ -101,7 +112,7 @@ const Login = () => {
           )}
         </div>
 
-        {/*Remember Me checkbox*/}
+        {/* Remember Me checkbox */}
         <div className="mb-4">
           <label className="flex items-center">
             <input
@@ -110,33 +121,41 @@ const Login = () => {
               onChange={() => setRememberMe(!rememberMe)}
               className="mr-2"
             />
-            Remember me
+            <span style={{ color: "#1b2a4e" }}>Remember me</span>
           </label>
         </div>
 
-        {/*Forgot password link*/}
+        {/* Forgot Password link */}
         <div className="mb-4 text-right">
-          <a href="/forgot-password" className="text-blue-500 hover:underline">
+          <a
+            href="/forgot-password"
+            className="hover:underline"
+            style={{ color: "#3498db" }}
+          >
             Forgot Password
           </a>
         </div>
 
-        {/* submit button with loading state*/}
+        {/* Submit button */}
         <button
           type="submit"
-          className={`w-full py-2 rounded ${
-            loading ? "bg-gray-400" : "bg-blue-500"
-          } text-white hover:bg-blue-600`}
+          className={`w-full py-2 rounded text-white ${
+            loading ? "bg-gray-400" : "bg-blue-900"
+          } hover:bg-blue-700`}
           disabled={loading}
         >
-          {loading ? "logging in..." : "Login"}
+          {loading ? "Logging in..." : "Login"}
         </button>
 
-        {/*Sign-up link*/}
+        {/* Sign-up link */}
         <div className="mt-4 text-center">
-          <p className="text-gray-700">
-            Dont have an account yet?
-            <a href="/register" className="text-blue-500 hover:underline ml-1">
+          <p style={{ color: "#1b2a4e" }}>
+            Don’t have an account yet?
+            <a
+              href="/register"
+              className="ml-1 hover:underline"
+              style={{ color: "#3498db" }}
+            >
               Sign up
             </a>
           </p>
