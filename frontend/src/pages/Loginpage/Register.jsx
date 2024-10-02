@@ -15,7 +15,7 @@ const schema = yup.object().shape({
     .min(4, "Password must be at least 4 characters")
     .required("password is required"),
   confirmPassword: yup
-    .srring()
+    .string()
     .oneOf([yup.ref("password"), null], "Passwords must match")
     .required("Please confirm your password"),
 });

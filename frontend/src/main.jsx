@@ -5,12 +5,22 @@ import "./index.css";
 import UserPage from "./pages/Userpage/UserPage";
 import Exercise from "./pages/Exercisepage/Exercise";
 import ExerciseDetailPage from "./pages/ExerciseDetailPage/ExerciseDetailPage";
+import Login from "./pages/Loginpage/Login";
+import Register from "./pages/Loginpage/Register";
 
 // Define the router with your routes
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
   },
   {
     path: "/userpage",
