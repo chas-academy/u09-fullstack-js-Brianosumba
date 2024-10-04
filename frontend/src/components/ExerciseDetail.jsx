@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import Footer from "../components/Footer";
 import { useState, useEffect } from "react";
-import ProgressBar from "./ProgressBar";
+import CircularProgressBar from "./CircularProgressBar";
 
 const ExerciseDetail = () => {
   const { exerciseName, level } = useParams();
@@ -170,32 +170,32 @@ const ExerciseDetail = () => {
 
         {/* Progress Bars */}
         <div className="mt-8 space-y-4">
-          <ProgressBar
+          <CircularProgressBar
             label="Workouts Completed Today"
             value={workoutsToday}
             max={1}
-            color="bg-blue-400"
+            color="blue"
           />
 
-          <ProgressBar
+          <CircularProgressBar
             label="Workouts Completed This Week"
             value={workoutsThisWeek}
             max={3}
-            color="bg-orange-500"
+            color="orange"
           />
 
-          <ProgressBar
+          <CircularProgressBar
             label="Workouts Completed This Month"
             value={workoutsThisMonth}
             max={12}
-            color="bg-green-500"
+            color="green"
           />
 
-          <ProgressBar
+          <CircularProgressBar
             label="Strength Growth"
             value={strengthProgress}
             max={100}
-            color="bg-red-500"
+            color="red"
           />
         </div>
       </div>
