@@ -1,10 +1,99 @@
 import { useParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import Footer from "../components/Footer";
+import { useState, useEffect } from "react";
+import ProgressBar from "./ProgressBar";
 
 const ExerciseDetail = () => {
   const { exerciseName, level } = useParams();
-  const userName = "Mike"; // This will be dynamic later
+  const userName = "Taylor"; // This will be dynamic later
+
+  // track workouts and initialize progress
+  const [workoutsToday, setWorkoutsToday] = useState(0);
+  const [workoutsThisWeek, setWorkoutsThisWeek] = useState(0);
+  const [workoutsThisMonth, setWorkoutsThisMonth] = useState(0);
+  const [strengthProgress, setStrengthProgress] = useState(0);
+
+  // reset logic -  handles daily, weekly and monthly resets
+  useEffect(() => {
+    //resets daily workout at midnight
+    const resetDay = () => setWorkoutsToday(0);
+    const resetWeek = () => setWorkoutsThisWeek(0);
+    const resetMonth = () => {
+      setWorkoutsThisMonth(0);
+      setStrengthProgress(0);
+    };
+
+    //daily reset
+    const resetDaily = setInterval(() => {
+      const now = new Date(); //Get the current date and time
+      if (now.getHours() === 0 && now.getMiutes() === 0) {
+        resetDay(); //reset daily progress at midnight
+      }
+    }, 60000); // checks every minute (60000ms)
+
+    //weekly reset
+    const resetWeekly = setInterval(() => {
+      const now = new Date(); // Get the current date and time
+
+      //checks if its Monday and its exactly 00:00 (midnight)
+      if (
+        now.getDay() === 1 &&
+        now.getHours() === 0 &&
+        now.getMinutes() === 0
+      ) {
+        resetWeek(); // call the reser function when its monday midnight
+      }
+    }, 60000); // check every minute
+
+    // monthly reset
+    const resetMonthly = setInterval(() => {
+      const now = new Date();
+
+      //check if its the first day of the month and exactly 00:00(midnight)
+      if (
+        now.getDate() === 1 &&
+        now.getHours() === 0 &&
+        now.getMinutes() === 0
+      ) {
+        resetMonth(); // call the reset function when its the first day of the month at midnight
+      }
+    }, 60000);
+
+    //clean up intervals
+    return () => {
+      clearInterval(resetDaily);
+      clearInterval(resetWeekly);
+      clearInterval(resetMonthly);
+    };
+  }, []);
+
+  // handle Workout completion
+  const handleDoneClick = () => {
+    setWorkoutsToday(workoutsToday + 1);
+    setWorkoutsThisWeek(workoutsThisWeek + 1);
+    setWorkoutsThisMonth(workoutsThisMonth + 1);
+
+    // TODO: Backend implementation
+    // Save the updated progress to the backend (MongoDB):
+    // You would likely send a request to your Node.js/Express API here
+    // Example:
+    // fetch('/api/saveProgress', { method: 'POST', body: JSON.stringify({ workoutsToday, workoutsThisWeek, workoutsThisMonth }) })
+    // This will store the current progress in MongoDB for this user
+
+    //increase strength progress slowly and reset after a month
+    if (strengthProgress < 100) {
+      const newStrength = (workoutsThisMonth / 12) * 100;
+      setStrengthProgress(newStrength);
+    }
+
+    // TODO: Backend implementation
+    // Save the updated strength progress to the backend
+    // Example:
+    // fetch('/api/saveStrengthProgress', { method: 'POST', body: JSON.stringify({ strengthProgress: newStrength }) })
+
+    console.log("Done clicked!");
+  };
 
   // Define exercises with their details
   const exercisesDetails = {
@@ -31,16 +120,6 @@ const ExerciseDetail = () => {
   };
 
   const exerciseDetail = exercisesDetails[exerciseName]?.[level] || [];
-
-  //Example state variables for workouts completed(replace later with dynamic data)
-  const workoutsCompletedToday = 1; //Replace with actual data
-  const workoutsCompletedThisWeek = 3; //Replace with actual data
-  const workoutsCompletedThisMonth = 12; //Replace with actual data
-
-  const handleDoneClick = () => {
-    //handle the Done click logic here
-    console.log("Done clicked!");
-  };
 
   return (
     <div className="bg-gray-200 min-h-screen">
@@ -91,49 +170,33 @@ const ExerciseDetail = () => {
 
         {/* Progress Bars */}
         <div className="mt-8 space-y-4">
-          {/* Today's Progress */}
-          <div>
-            <p className="text-center">Workouts Completed Today</p>
-            <div className="w-full bg-gray-200 rounded-full h-4">
-              <div
-                className="bg-blue-500 h-4 rounded-full"
-                style={{ width: `${workoutsCompletedToday * 100}%` }}
-              ></div>
-            </div>
-          </div>
+          <ProgressBar
+            label="Workouts Completed Today"
+            value={workoutsToday}
+            max={1}
+            color="bg-blue-400"
+          />
 
-          {/* Weekly Progress */}
-          <div>
-            <p className="text-center">Workouts Completed This Week</p>
-            <div className="w-full bg-gray-200 rounded-full h-4">
-              <div
-                className="bg-blue-500 h-4 rounded-full"
-                style={{ width: `${(workoutsCompletedThisWeek / 3) * 100}%` }} // Assumes 3 workouts/week
-              ></div>
-            </div>
-          </div>
+          <ProgressBar
+            label="Workouts Completed This Week"
+            value={workoutsThisWeek}
+            max={3}
+            color="bg-orange-500"
+          />
 
-          {/* Monthly Progress */}
-          <div>
-            <p className="text-center">Workouts Completed This Month</p>
-            <div className="w-full bg-gray-200 rounded-full h-4">
-              <div
-                className="bg-blue-500 h-4 rounded-full"
-                style={{ width: `${(workoutsCompletedThisMonth / 9) * 100}%` }} // Assumes 9 workouts/month
-              ></div>
-            </div>
-          </div>
+          <ProgressBar
+            label="Workouts Completed This Month"
+            value={workoutsThisMonth}
+            max={12}
+            color="bg-green-500"
+          />
 
-          {/* Strength Growth Progress */}
-          <div>
-            <p className="text-center">Strength Growth</p>
-            <div className="w-full bg-gray-200 rounded-full h-4">
-              <div
-                className="bg-red-500 h-4 rounded-full"
-                style={{ width: `${(workoutsCompletedThisMonth / 9) * 100}%` }} // Example logic
-              ></div>
-            </div>
-          </div>
+          <ProgressBar
+            label="Strength Growth"
+            value={strengthProgress}
+            max={100}
+            color="bg-red-500"
+          />
         </div>
       </div>
       <Footer />
