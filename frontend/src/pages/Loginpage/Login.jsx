@@ -1,28 +1,28 @@
-import { yupResolver } from "@hookform/resolvers/yup";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+import ForgotPasswordModal from "../../components/ForgotPaswordModal"; // corrected typo
 
 // Validation schema - defining rules for the form
 const schema = yup.object().shape({
   email: yup
     .string()
-    .email("invalid email format")
+    .email("Invalid email format")
     .required("Email is required"),
-
   password: yup
     .string()
     .min(4, "Password must be at least 4 characters")
     .required("Password is required"),
 });
 
-//state setup - remembering whats happening
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showModal, setShowModal] = useState(false); // corrected state
 
-  //form management - handling input data
+  // Form management
   const {
     register,
     handleSubmit,
@@ -31,19 +31,19 @@ const Login = () => {
     resolver: yupResolver(schema),
   });
 
-  //form submission handler - when submit has been clicked upon
+  // Form submission handler
   const onSubmit = (data) => {
     setLoading(true);
     console.log("Login Data:", data);
 
-    //simulating an API call with a timeout
+    // Simulating an API call with a timeout
     setTimeout(() => {
       setLoading(false);
       alert("Login successful!");
     }, 1500);
   };
 
-  //Rendering the login form
+  // Rendering the login form
   return (
     <div className="flex items-center justify-center h-screen bg-gray-900">
       <form
@@ -117,9 +117,13 @@ const Login = () => {
 
         {/* Forgot Password Link */}
         <div className="mb-4 text-right">
-          <a href="/forgot-password" className="text-blue-500 hover:underline">
-            Forgot Password
-          </a>
+          <button
+            type="button"
+            onClick={() => setShowModal(true)} // Show modal on click
+            className="text-blue-500 hover:underline"
+          >
+            Forgot Password?
+          </button>
         </div>
 
         {/* Submit Button */}
@@ -143,6 +147,12 @@ const Login = () => {
           </p>
         </div>
       </form>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)} // Hide modal on close
+      />
     </div>
   );
 };
