@@ -174,7 +174,7 @@ const ExerciseDetail = () => {
             label="Workouts Completed Today"
             value={workoutsToday}
             max={1}
-            color="blue"
+            color="green"
           />
 
           <CircularProgressBar
@@ -188,14 +188,14 @@ const ExerciseDetail = () => {
             label="Workouts Completed This Month"
             value={workoutsThisMonth}
             max={12}
-            color="green"
+            color="red"
           />
 
           <CircularProgressBar
             label="Strength Growth"
             value={strengthProgress}
             max={100}
-            color="red"
+            color="blue"
           />
         </div>
       </div>
