@@ -8,59 +8,51 @@ const ExerciseDetail = () => {
   const { exerciseName, level } = useParams();
   const userName = "Taylor"; // This will be dynamic later
 
-  // track workouts and initialize progress
+  // Track workouts and initialize progress
   const [workoutsToday, setWorkoutsToday] = useState(0);
   const [workoutsThisWeek, setWorkoutsThisWeek] = useState(0);
   const [workoutsThisMonth, setWorkoutsThisMonth] = useState(0);
   const [strengthProgress, setStrengthProgress] = useState(0);
 
-  // reset logic -  handles daily, weekly and monthly resets
+  // Reset functions
+  const resetDay = () => setWorkoutsToday(0);
+  const resetWeek = () => setWorkoutsThisWeek(0);
+  const resetMonth = () => {
+    setWorkoutsThisMonth(0);
+    setStrengthProgress(0);
+  };
+
+  // Reset logic
   useEffect(() => {
-    //resets daily workout at midnight
-    const resetDay = () => setWorkoutsToday(0);
-    const resetWeek = () => setWorkoutsThisWeek(0);
-    const resetMonth = () => {
-      setWorkoutsThisMonth(0);
-      setStrengthProgress(0);
-    };
-
-    //daily reset
     const resetDaily = setInterval(() => {
-      const now = new Date(); //Get the current date and time
-      if (now.getHours() === 0 && now.getMiutes() === 0) {
-        resetDay(); //reset daily progress at midnight
+      const now = new Date();
+      if (now.getHours() === 0 && now.getMinutes() === 0) {
+        resetDay();
       }
-    }, 60000); // checks every minute (60000ms)
+    }, 60000);
 
-    //weekly reset
     const resetWeekly = setInterval(() => {
-      const now = new Date(); // Get the current date and time
-
-      //checks if its Monday and its exactly 00:00 (midnight)
+      const now = new Date();
       if (
         now.getDay() === 1 &&
         now.getHours() === 0 &&
         now.getMinutes() === 0
       ) {
-        resetWeek(); // call the reser function when its monday midnight
+        resetWeek();
       }
-    }, 60000); // check every minute
+    }, 60000);
 
-    // monthly reset
     const resetMonthly = setInterval(() => {
       const now = new Date();
-
-      //check if its the first day of the month and exactly 00:00(midnight)
       if (
         now.getDate() === 1 &&
         now.getHours() === 0 &&
         now.getMinutes() === 0
       ) {
-        resetMonth(); // call the reset function when its the first day of the month at midnight
+        resetMonth();
       }
     }, 60000);
 
-    //clean up intervals
     return () => {
       clearInterval(resetDaily);
       clearInterval(resetWeekly);
@@ -68,34 +60,21 @@ const ExerciseDetail = () => {
     };
   }, []);
 
-  // handle Workout completion
+  // Handle workout completion
   const handleDoneClick = () => {
-    setWorkoutsToday(workoutsToday + 1);
-    setWorkoutsThisWeek(workoutsThisWeek + 1);
-    setWorkoutsThisMonth(workoutsThisMonth + 1);
+    setWorkoutsToday((prev) => Math.min(prev + 1, 1));
+    setWorkoutsThisWeek((prev) => Math.min(prev + 1, 3));
+    setWorkoutsThisMonth((prev) => Math.min(prev + 1, 12));
 
-    // TODO: Backend implementation
-    // Save the updated progress to the backend (MongoDB):
-    // You would likely send a request to your Node.js/Express API here
-    // Example:
-    // fetch('/api/saveProgress', { method: 'POST', body: JSON.stringify({ workoutsToday, workoutsThisWeek, workoutsThisMonth }) })
-    // This will store the current progress in MongoDB for this user
-
-    //increase strength progress slowly and reset after a month
     if (strengthProgress < 100) {
-      const newStrength = (workoutsThisMonth / 12) * 100;
+      const newStrength = Math.min(strengthProgress + 100 / 12, 100);
       setStrengthProgress(newStrength);
     }
-
-    // TODO: Backend implementation
-    // Save the updated strength progress to the backend
-    // Example:
-    // fetch('/api/saveStrengthProgress', { method: 'POST', body: JSON.stringify({ strengthProgress: newStrength }) })
 
     console.log("Done clicked!");
   };
 
-  // Define exercises with their details
+  // Exercise details
   const exercisesDetails = {
     Chest: {
       beginner: [
@@ -115,7 +94,7 @@ const ExerciseDetail = () => {
           gifUrl: "https://gymvisual.com/img/p/2/1/7/5/5/21755.gif",
         },
       ],
-      // ... intermediate and advanced details ...
+      // Add intermediate and advanced details...
     },
   };
 
@@ -135,14 +114,11 @@ const ExerciseDetail = () => {
               key={index}
               className="flex flex-col md:flex-row items-center bg-white shadow-lg rounded-lg overflow-hidden mb-6"
             >
-              {/* Exercise GIF */}
               <img
                 src={exercise.gifUrl}
                 alt={exercise.name}
                 className="w-full md:w-1/3 h-auto"
               />
-
-              {/* Exercise Details */}
               <div className="p-4 flex-1">
                 <h2 className="text-xl font-semibold mb-2 text-center md:text-left">
                   {exercise.name}
@@ -158,7 +134,6 @@ const ExerciseDetail = () => {
         ) : (
           <p className="text-center">No exercises found for this level.</p>
         )}
-        {/* 'Done' Button */}
         <div className="text-center my-8">
           <button
             onClick={handleDoneClick}
@@ -167,8 +142,6 @@ const ExerciseDetail = () => {
             Done
           </button>
         </div>
-
-        {/* Progress Bars */}
         <div className="mt-8 space-y-4">
           <CircularProgressBar
             label="Workouts Completed Today"
@@ -176,21 +149,18 @@ const ExerciseDetail = () => {
             max={1}
             color="green"
           />
-
           <CircularProgressBar
             label="Workouts Completed This Week"
             value={workoutsThisWeek}
             max={3}
             color="orange"
           />
-
           <CircularProgressBar
             label="Workouts Completed This Month"
             value={workoutsThisMonth}
             max={12}
             color="red"
           />
-
           <CircularProgressBar
             label="Strength Growth"
             value={strengthProgress}
