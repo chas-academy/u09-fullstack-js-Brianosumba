@@ -7,6 +7,7 @@ import Exercise from "./pages/Exercisepage/Exercise";
 import ExerciseDetailPage from "./pages/ExerciseDetailPage/ExerciseDetailPage";
 import Login from "./pages/Loginpage/Login";
 import Register from "./pages/Loginpage/Register";
+import Admin from "./pages/AdminPage/Admin";
 
 // Define the router with your routes
 const router = createBrowserRouter([
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
   {
     path: "/exercise-detail/:exerciseName/:level", // Fixed path
     element: <ExerciseDetailPage />, // The detail page for the exercise level
+  },
+  {
+    path: "/admin",
+    element: <Admin />,
   },
 ]);
 
