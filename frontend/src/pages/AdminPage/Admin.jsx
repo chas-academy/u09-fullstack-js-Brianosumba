@@ -5,6 +5,7 @@ import SearchField from "../../components/SearchField";
 import { FaBell } from "react-icons/fa";
 import { useState } from "react";
 
+// Mock user data
 const usersData = [
   {
     id: 1,
@@ -13,6 +14,7 @@ const usersData = [
     target: "Chest",
     isActive: true,
     level: "Beginner",
+    isNew: false,
   },
   {
     id: 2,
@@ -21,26 +23,68 @@ const usersData = [
     target: "Legs",
     isActive: false,
     level: "Intermediate",
+    isNew: false,
   },
   {
     id: 3,
     name: "Bob Johnson",
     workoutType: "Deadlift",
-    target: "Backt",
+    target: "Back",
     isActive: true,
     level: "Advanced",
+    isNew: false,
   },
 ];
 
 const Admin = () => {
-  const [users, setUsers] = useState(usersData);
+  const [users, setUsers] = useState(usersData); // State for users
+  const [notifications, setNotifications] = useState([]); // State for notifications
+  const [notificationCount, setNotificationCount] = useState(0); // State for notification badge count
 
+  // Toggle user active status and generate notification
   const toggleStatus = (userId) => {
     setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === userId ? { ...user, isActive: !user.isActive } : user
-      )
+      prevUsers.map((user) => {
+        if (user.id === userId) {
+          const updatedUser = { ...user, isActive: !user.isActive };
+          // If user becomes active, add a notification
+          if (updatedUser.isActive) {
+            addNotification(`${updatedUser.name} is on fire!`, "active");
+          }
+          return updatedUser;
+        }
+        return user;
+      })
     );
+  };
+
+  /* Add a new user and trigger a notification
+  const addNewUser = (newUser) => {
+    setUsers((prevUsers) => [
+      ...prevUsers,
+      { ...newUser, isNew: true, isActive: false },
+    ]);
+    addNotification(`New member alert: ${newUser.name}`, "newUser");
+  };*/
+
+  // Add a notification message to the notifications array
+  const addNotification = (message, type) => {
+    setNotifications((prevNotifications) => [
+      ...prevNotifications,
+      { message, type },
+    ]);
+    setNotificationCount((prevCount) => prevCount + 1); // Increment the notification count
+  };
+
+  // Handle notification click to show all notifications in an alert
+  const handleNotificationClick = () => {
+    if (notifications.length > 0) {
+      alert(notifications.map((n) => n.message).join("\n")); // Display all notifications
+      setNotifications([]); // Clear notifications after showing
+      setNotificationCount(0); // Reset notification count
+    } else {
+      alert("No new notifications"); // If no notifications
+    }
   };
 
   const recommendWorkout = (name) => {
@@ -52,9 +96,8 @@ const Admin = () => {
   };
 
   const deleteWorkout = (userId) => {
-    //Remove user from the list and confirmation before deletion
     if (
-      window.confirm(`Are you sure you want to delete user width ID: ${userId}`)
+      window.confirm(`Are you sure you want to delete user with ID: ${userId}`)
     ) {
       setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
       console.log(`Deleted workout for user with ID: ${userId}`);
@@ -76,48 +119,40 @@ const Admin = () => {
           Welcome to Your Admin Dashboard
         </h1>
 
-        {/* Center the search field and notification icon */}
+        {/* Search and notification icon */}
         <div className="flex justify-center items-center mb-8 px-4">
           <div className="flex w-full md:w-3/4 lg:w-2/3 xl:w-1/2 items-center">
-            {/* SearchField Component */}
             <SearchField />
           </div>
           <button
             type="button"
             aria-label="Notifications"
             className="relative text-gray-600 hover:text-gray-800 transition duration-300 ml-4"
+            onClick={handleNotificationClick} // Handle notification icon click
           >
-            <FaBell className="h-8 w-8 text-blue-600" />
-            {/* Notification badge */}
-            <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
-              3
-            </span>
+            <FaBell className="h-8 w-8 text-blue-600 hover:text-goldenrod transition duration-300 ease-in-out transform hover:scale-110" />
+            {notificationCount > 0 && (
+              <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
+                {notificationCount} {/* Show notification count */}
+              </span>
+            )}
           </button>
         </div>
 
         {/* Admin Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <AdminCard
-            title="Total Users"
-            onClick={() => console.log("Show all users")}
-          >
-            <p className="text-2xl font-semibold text-blue-600">
+          <AdminCard title="Total Users">
+            <p className="text-2xl font-semibold text-red-600">
               {users.length} users
             </p>
           </AdminCard>
-          <AdminCard
-            title="Active Users"
-            onClick={() => console.log("Show active users")}
-          >
+          <AdminCard title="Active Users">
             <p className="text-2xl font-semibold text-green-600">
               {users.filter((user) => user.isActive).length} active
             </p>
           </AdminCard>
-          <AdminCard
-            title="Top Workouts"
-            onClick={() => console.log("Show top workouts")}
-          >
-            <p className="text-2xl font-semibold text-blue-400">
+          <AdminCard title="Top Workouts">
+            <p className="text-2xl font-semibold text-blue-600">
               {topWorkoutsData.length} workouts
             </p>
             <ul className="mt-2">
@@ -130,7 +165,7 @@ const Admin = () => {
           </AdminCard>
         </div>
 
-        {/* Placeholder for the user table */}
+        {/* User Table */}
         <div className="overflow-x-auto bg-white rounded-lg shadow-md">
           <table className="min-w-full border border-gray-300">
             <thead className="bg-blue-600 text-white">
@@ -155,7 +190,7 @@ const Admin = () => {
                   </td>
                   <td className="border-b border-gray-300 p-4">
                     <button
-                      onClick={() => toggleStatus(user.id)} // Add a function toggle status
+                      onClick={() => toggleStatus(user.id)} // Toggle status on button click
                       className={`py-1 px-2 rounded text-white ${
                         user.isActive ? "bg-green-500" : "bg-red-500"
                       }`}
@@ -167,19 +202,19 @@ const Admin = () => {
                   <td className="border-b border-gray-300 p-4 flex space-x-2">
                     <button
                       onClick={() => recommendWorkout(user.name)}
-                      className="text-green-500 transition-all duration-500 ease-in-out transform hover:scale-110 hover:opacity-80 hover:shadow-lg"
+                      className="text-green-500 transition-all duration-500 ease-in-out transform hover:scale-110"
                     >
                       Recommend
                     </button>
                     <button
                       onClick={() => editWorkout(user.name)}
-                      className="text-blue-500 transition-all duration-500 ease-in-out transform hover:scale-110 hover:opacity-80 hover:shadow-lg"
+                      className="text-blue-500 transition-all duration-500 ease-in-out transform hover:scale-110"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => deleteWorkout(user.id)}
-                      className="text-red-500 transition-all duration-500 ease-in-out transform hover:scale-110 hover:opacity-80 hover:shadow-lg"
+                      className="text-red-500 transition-all duration-500 ease-in-out transform hover:scale-110"
                     >
                       Delete
                     </button>
@@ -190,6 +225,7 @@ const Admin = () => {
           </table>
         </div>
       </div>
+
       <Footer />
     </div>
   );
