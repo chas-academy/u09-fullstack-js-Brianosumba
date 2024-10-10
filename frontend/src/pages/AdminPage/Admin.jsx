@@ -5,7 +5,6 @@ import SearchField from "../../components/SearchField";
 import { FaBell } from "react-icons/fa";
 import { useState } from "react";
 
-// Mock user data
 const usersData = [
   {
     id: 1,
