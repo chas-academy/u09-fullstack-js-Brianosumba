@@ -1,7 +1,7 @@
 import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import AdminCard from "../../components/Admincard";
-import SearchField from "../../components/SearchField";
+
 import { FaBell } from "react-icons/fa";
 import { useState } from "react";
 
