@@ -120,10 +120,6 @@ const Admin = () => {
 
         {/* Search and notification icon */}
         <div className="flex justify-center items-center mb-8 px-4">
-          <div className="flex w-full md:w-3/4 lg:w-2/3 xl:w-1/2 items-center">
-            <SearchField />
-          </div>
-
           <button
             type="button"
             aria-label="Notifications"
