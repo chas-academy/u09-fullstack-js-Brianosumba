@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { login } from "../../services/authService";
 import ForgotPasswordModal from "../../components/ForgotPaswordModal"; // corrected typo
 
 // Validation schema - defining rules for the form
@@ -32,15 +33,27 @@ const Login = () => {
   });
 
   // Form submission handler
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     setLoading(true);
     console.log("Login Data:", data);
 
-    // Simulating an API call with a timeout
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const response = await login(data); //call the login function from authService
+      console.log("Login successful:", response);
+
+      //save the token to localStorage (if returned)
+      localStorage.setItem("token", response.token); // Adjust the key according to your backend response
+
+      //Redirect user or perform additional action on success
       alert("Login successful!");
-    }, 1500);
+    } catch (error) {
+      console.error("Login failed:", error.response.data);
+      alert(
+        `Login failed: ${error.response.data.message || "Please try again."}`
+      ); // Display error message
+    } finally {
+      setLoading(false); //Reset loading state
+    }
   };
 
   // Rendering the login form

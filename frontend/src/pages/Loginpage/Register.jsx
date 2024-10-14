@@ -1,3 +1,4 @@
+import axios from "axios";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -35,14 +36,38 @@ const Register = () => {
   });
 
   //form submission handler - when submit has been clicked upon
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
+    //start the loading state when form submission starts
     setLoading(true);
-    console.log("Signup Data:", data);
+    try {
+      // Send a post request to the backend api with the from data (username, email and password)
+      const response = await axios.post(
+        "http://localhost:3000/api/auth/register", // The backend endpoint for user registration
+        {
+          username: data.username, // Passing the username from the form data
+          email: data.email, // Passing the email from the form data
+          password: data.password, //Passing the password from the form data
+        }
+      );
 
-    setTimeout(() => {
+      //if the request is successful, log the response and show a success alert
+      console.log("Registration successful:", response.data);
+      alert("registration successful!");
+
+      //Stop the loading state when the process is complete
       setLoading(false);
-      alert("Signup successful!");
-    }, 1500);
+    } catch (error) {
+      //if there is any error in registration, log it to the console
+      // Check if the error has a response from the backend and display the appropriate message
+      console.error(
+        "Registration error:",
+        error.response ? error.response.data : error.message
+      );
+      // Show an alert to the user with the error message from the backend, or a generic failure message
+      alert(error.response ? error.response.data.msg : "Registration failed");
+      //Stop the loading state even if there's an error
+      setLoading(false);
+    }
   };
 
   // Rendering the Sign-Up form
