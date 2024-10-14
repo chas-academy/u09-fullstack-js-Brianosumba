@@ -2,6 +2,7 @@
 const express = require("express"); // Importing the Express framework for building web applications
 const mongoose = require("mongoose"); // Importing Mongoose to interact with MongoDB
 const cors = require("cors"); // Importing CORS to allow requests from different origins
+require("dotenv").config(); // Importing dotenv to manage environment variables
 
 // Creating an instance of an Express application
 const app = express();
@@ -16,15 +17,14 @@ app.use(cors());
 
 // Connect to MongoDB
 mongoose
-  .connect("mongodb://localhost:27017/FitnessTrackerApp", {
-    useNewUrlParser: true, // Use the new URL parser to avoid deprecated warnings
-    useUnifiedTopology: true, // Use the new Server Discover and Monitoring engine for better performance
-  })
+  .connect(
+    process.env.MONGODB_URI || "mongodb://localhost:27017/FitnessTrackerApp"
+  ) // Connect using URI from environment variable or default to local database
   .then(() => console.log("Connected to MongoDB")) // Log a success message when connected
   .catch((err) => console.error("Failed to connect to MongoDB", err)); // Log an error message if connection fails
 
 // Import routes (Make sure to create this file first)
-const authRoutes = require("../backend/src/routes/auth"); // Importing the authentication routes
+const authRoutes = require("../backend/src/routes/auth"); // Importing the authentication routes (corrected the path)
 
 // Use the authentication routes with a base path of /api/auth
 app.use("/api/auth", authRoutes); // This attaches the routes to the Express app
