@@ -3,9 +3,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import ForgotPasswordModal from "../../components/ForgotPasswordModal"; // corrected typo
+import ForgotPasswordModal from "../../components/ForgotPaswordModal"; // corrected typo
 import { useNavigate } from "react-router-dom";
-import PropTypes from "prop-types"; // Import PropTypes
 
 // Validation schema - defining rules for the form
 const schema = yup.object().shape({
@@ -19,13 +18,12 @@ const schema = yup.object().shape({
     .required("Password is required"),
 });
 
-const Login = ({ handleLogin }) => {
-  // Accept handleLogin as a prop
+const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showModal, setShowModal] = useState(false); // corrected state
-  const navigate = useNavigate(); // Hook to programmatically navigate
+  const navigate = useNavigate(); //Hook to programmatically navigate
 
   // Form management
   const {
@@ -54,9 +52,6 @@ const Login = ({ handleLogin }) => {
 
       // Save the token to localStorage (if returned)
       localStorage.setItem("token", response.data.token); // Adjust the key according to your backend response
-
-      // Call the handleLogin function passed as prop
-      handleLogin(); // This updates the authenticated state in the App component
 
       // Redirect user after successful login to userpage
       navigate("/userpage");
@@ -184,11 +179,6 @@ const Login = ({ handleLogin }) => {
       />
     </div>
   );
-};
-
-// Define PropTypes for the Login component
-Login.propTypes = {
-  handleLogin: PropTypes.func.isRequired, // Indicate that handleLogin is a required function
 };
 
 export default Login;
