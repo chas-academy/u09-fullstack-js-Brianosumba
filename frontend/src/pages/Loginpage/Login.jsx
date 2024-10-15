@@ -1,9 +1,11 @@
+import axios from "axios";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { login } from "../../services/authService";
-import ForgotPasswordModal from "../../components/ForgotPaswordModal"; // corrected typo
+import ForgotPasswordModal from "../../components/ForgotPasswordModal"; // corrected typo
+import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types"; // Import PropTypes
 
 // Validation schema - defining rules for the form
 const schema = yup.object().shape({
@@ -17,11 +19,13 @@ const schema = yup.object().shape({
     .required("Password is required"),
 });
 
-const Login = () => {
+const Login = ({ handleLogin }) => {
+  // Accept handleLogin as a prop
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showModal, setShowModal] = useState(false); // corrected state
+  const navigate = useNavigate(); // Hook to programmatically navigate
 
   // Form management
   const {
@@ -34,17 +38,29 @@ const Login = () => {
 
   // Form submission handler
   const onSubmit = async (data) => {
-    setLoading(true);
-    console.log("Login Data:", data);
+    setLoading(true); // Start loading state when submission begins
 
     try {
-      const response = await login(data); //call the login function from authService
-      console.log("Login successful:", response);
+      // Call the login function from authService with the email and password from data
+      const response = await axios.post(
+        "http://localhost:3000/api/auth/login",
+        {
+          email: data.email,
+          password: data.password,
+        }
+      );
 
-      //save the token to localStorage (if returned)
-      localStorage.setItem("token", response.token); // Adjust the key according to your backend response
+      console.log("Login successful:", response.data); // Log successful response data
 
-      //Redirect user or perform additional action on success
+      // Save the token to localStorage (if returned)
+      localStorage.setItem("token", response.data.token); // Adjust the key according to your backend response
+
+      // Call the handleLogin function passed as prop
+      handleLogin(); // This updates the authenticated state in the App component
+
+      // Redirect user after successful login to userpage
+      navigate("/userpage");
+
       alert("Login successful!");
     } catch (error) {
       console.error("Login failed:", error.response.data);
@@ -52,7 +68,7 @@ const Login = () => {
         `Login failed: ${error.response.data.message || "Please try again."}`
       ); // Display error message
     } finally {
-      setLoading(false); //Reset loading state
+      setLoading(false); // Reset loading state
     }
   };
 
@@ -168,6 +184,11 @@ const Login = () => {
       />
     </div>
   );
+};
+
+// Define PropTypes for the Login component
+Login.propTypes = {
+  handleLogin: PropTypes.func.isRequired, // Indicate that handleLogin is a required function
 };
 
 export default Login;

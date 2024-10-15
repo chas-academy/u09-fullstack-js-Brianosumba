@@ -13,7 +13,11 @@ app.use(express.json()); // This allows the server to understand JSON data sent 
 // Enable CORS for all routes
 // This middleware allows your server to accept requests from different origins (e.g., your frontend application)
 // Without CORS, browsers would block requests to your server from different domains
-app.use(cors());
+const corsOptions = {
+  origin: "http://localhost:5173",
+  Credentials: true,
+};
+app.use(cors(corsOptions));
 
 // Connect to MongoDB
 mongoose
