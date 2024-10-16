@@ -18,7 +18,8 @@ const schema = yup.object().shape({
     .required("Password is required"),
 });
 
-const Login = () => {
+// eslint-disable-next-line react/prop-types
+const Login = ({ setIsAuthenticated }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -52,6 +53,7 @@ const Login = () => {
 
       // Save the token to localStorage (if returned)
       localStorage.setItem("token", response.data.token); // Adjust the key according to your backend response
+      setIsAuthenticated(true);
 
       // Redirect user after successful login to userpage
       navigate("/userpage");
@@ -59,6 +61,7 @@ const Login = () => {
       alert("Login successful!");
     } catch (error) {
       console.error("Login failed:", error.response.data);
+      setIsAuthenticated(false);
       alert(
         `Login failed: ${error.response.data.message || "Please try again."}`
       ); // Display error message

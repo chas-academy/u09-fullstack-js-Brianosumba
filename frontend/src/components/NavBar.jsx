@@ -3,10 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import PropTypes from "prop-types";
 
-const NavBar = ({ isAuthenticated, handleLogout }) => {
+const NavBar = ({ isAuthenticated, setIsAuthenticated }) => {
+  console.log("navbar", isAuthenticated);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  // Handle user logout
+  const handleLogout = () => {
+    setIsAuthenticated(false); // Set to false when the user logs out
+    localStorage.removeItem("token"); // Clear the token from local storage
+    navigate("/"); // Redirect to homepage after logout
+  };
 
   // Handle clicks outside the dropdown to close it
   useEffect(() => {
@@ -89,7 +97,7 @@ const NavBar = ({ isAuthenticated, handleLogout }) => {
 // Define prop types for the NavBar component
 NavBar.propTypes = {
   isAuthenticated: PropTypes.bool.isRequired, // isAuthenticated should be a required boolean
-  handleLogout: PropTypes.func.isRequired, // handleLogout should be a required function
+  setIsAuthenticated: PropTypes.func.isRequired, // handleLogout should be a required function
 };
 
 export default NavBar;

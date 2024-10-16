@@ -3,6 +3,7 @@ import Footer from "../../components/Footer";
 import AdminCard from "../../components/Admincard";
 import { FaBell } from "react-icons/fa";
 import { useState } from "react";
+import PropTypes from "prop-types";
 
 const usersData = [
   {
@@ -34,7 +35,7 @@ const usersData = [
   },
 ];
 
-const Admin = () => {
+const Admin = ({ isAuthenticated, setIsAuthenticated }) => {
   const [users, setUsers] = useState(usersData); // State for users
   const [notifications, setNotifications] = useState([]); // State for notifications
   const [notificationCount, setNotificationCount] = useState(0); // State for notification badge count
@@ -110,7 +111,10 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-gray-100">
-      <NavBar />
+      <NavBar
+        isAuthenticated={isAuthenticated}
+        setIsAuthenticated={setIsAuthenticated}
+      />
 
       <div className="container mx-auto py-8 flex-grow">
         <h1 className="text-4xl font-bold text-center text-blue-700 mb-8">
@@ -224,6 +228,11 @@ const Admin = () => {
       <Footer />
     </div>
   );
+};
+
+Admin.propTypes = {
+  isAuthenticated: PropTypes.bool.isRequired, // isAuthenticated should be a required boolean
+  setIsAuthenticated: PropTypes.func.isRequired, // handleLogout should be a required function
 };
 
 export default Admin;
