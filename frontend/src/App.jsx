@@ -67,7 +67,10 @@ const App = () => {
           path="/login"
           element={<Login setIsAuthenticated={setIsAuthenticated} />}
         />
-        <Route path="/register" element={<Register />} />
+        <Route
+          path="/register"
+          element={<Register setIsAuthenticated={setIsAuthenticated} />}
+        />
       </Routes>
     </BrowserRouter>
   );

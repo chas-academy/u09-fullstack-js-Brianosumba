@@ -5,6 +5,7 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import ForgotPasswordModal from "../../components/ForgotPaswordModal"; // corrected typo
 import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 
 // Validation schema - defining rules for the form
 const schema = yup.object().shape({
@@ -18,7 +19,6 @@ const schema = yup.object().shape({
     .required("Password is required"),
 });
 
-// eslint-disable-next-line react/prop-types
 const Login = ({ setIsAuthenticated }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -184,4 +184,7 @@ const Login = ({ setIsAuthenticated }) => {
   );
 };
 
+Login.propTypes = {
+  setIsAuthenticated: PropTypes.func.isRequired, // Mark setIsAuthenticated as a required function
+};
 export default Login;

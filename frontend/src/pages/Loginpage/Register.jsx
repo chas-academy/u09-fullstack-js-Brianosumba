@@ -3,6 +3,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
+import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 
 //validation schema- defining rules for Signup form
 const schema = yup.object().shape({
@@ -22,9 +24,10 @@ const schema = yup.object().shape({
 });
 
 //state setup - remembering whats happening
-const Register = () => {
+const Register = ({ setIsAuthenticated }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   //form management - handling input data
   const {
@@ -52,10 +55,16 @@ const Register = () => {
 
       //if the request is successful, log the response and show a success alert
       console.log("Registration successful:", response.data);
-      alert("registration successful!");
+
+      localStorage.setItem("token", response.data.token); // Adjust the key according to your backend response
+      setIsAuthenticated(true);
+
+      // Redirect the user to the user page after successful registration
+      navigate("/userpage");
 
       //Stop the loading state when the process is complete
       setLoading(false);
+      alert("registration successful!");
     } catch (error) {
       //if there is any error in registration, log it to the console
       // Check if the error has a response from the backend and display the appropriate message
@@ -63,6 +72,7 @@ const Register = () => {
         "Registration error:",
         error.response ? error.response.data : error.message
       );
+      setIsAuthenticated(false);
       // Show an alert to the user with the error message from the backend, or a generic failure message
       alert(error.response ? error.response.data.msg : "Registration failed");
       //Stop the loading state even if there's an error
@@ -190,6 +200,10 @@ const Register = () => {
       </form>
     </div>
   );
+};
+
+Register.propTypes = {
+  setIsAuthenticated: PropTypes.func.isRequired, // Mark setIsAuthenticated as a required function
 };
 
 export default Register;
