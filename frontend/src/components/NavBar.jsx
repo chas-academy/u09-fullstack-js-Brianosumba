@@ -1,17 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
-import PropTypes from "prop-types";
+import useAuthStore from "../pages/Store/store";
 
-const NavBar = ({ isAuthenticated, setIsAuthenticated }) => {
-  console.log("navbar", isAuthenticated);
+const NavBar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
+  //Zustand state
+  const { isAuthenticated, username, logout } = useAuthStore();
+
   // Handle user logout
   const handleLogout = () => {
-    setIsAuthenticated(false); // Set to false when the user logs out
+    logout(); //logout action from zustand
     localStorage.removeItem("token"); // Clear the token from local storage
     navigate("/"); // Redirect to homepage after logout
   };
@@ -87,17 +89,12 @@ const NavBar = ({ isAuthenticated, setIsAuthenticated }) => {
           className="flex items-center bg-transparent text-white p-2 rounded"
         >
           <FaUserCircle className="h-8 w-8 text-gray-300 hover:shadow-lg hover:scale-110 transition duration-300" />
+          {isAuthenticated && <span className="ml-2">{username}</span>}
         </button>
         {isDropdownOpen && renderDropdownMenu()}
       </div>
     </nav>
   );
-};
-
-// Define prop types for the NavBar component
-NavBar.propTypes = {
-  isAuthenticated: PropTypes.bool.isRequired, // isAuthenticated should be a required boolean
-  setIsAuthenticated: PropTypes.func.isRequired, // handleLogout should be a required function
 };
 
 export default NavBar;
