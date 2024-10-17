@@ -54,7 +54,7 @@ const Login = () => {
 
       // Save the token to localStorage (if returned)
       localStorage.setItem("token", response.data.token); // Adjust the key according to your backend response
-      login(response.data.username); // Use zustand login action
+      login(response.data.user.username); // Use zustand login action
 
       // Redirect user after successful login to userpage
       navigate("/userpage");
