@@ -10,67 +10,27 @@ import Register from "./pages/Loginpage/Register";
 import Admin from "./pages/AdminPage/Admin";
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkAuth] = useState(); // check if the user is already authenticated
 
   useEffect(() => {
-    if (localStorage.getItem("token")) {
-      setIsAuthenticated(true);
-    }
-  }, []);
+    checkAuth(); // check for token in local storage on mount
+  }, [checkAuth]);
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-          path="/"
-          element={
-            <AppComponent
-              isAuthenticated={isAuthenticated}
-              setIsAuthenticated={setIsAuthenticated}
-            />
-          }
-        />
+        <Route path="/" element={<AppComponent />} />
 
-        <Route
-          path="userpage"
-          element={
-            <UserPage
-              isAuthenticated={isAuthenticated}
-              setIsAuthenticated={setIsAuthenticated}
-            />
-          }
-        />
-        <Route
-          path="exercise/:exerciseName"
-          element={
-            <Exercise
-              isAuthenticated={isAuthenticated}
-              setIsAuthenticated={setIsAuthenticated}
-            />
-          }
-        />
+        <Route path="userpage" element={<UserPage />} />
+        <Route path="exercise/:exerciseName" element={<Exercise />} />
         <Route
           path="exercise-detail/:exerciseName/:level"
           element={<ExerciseDetailPage />}
         />
-        <Route
-          path="admin"
-          element={
-            <Admin
-              isAuthenticated={isAuthenticated}
-              setIsAuthenticated={setIsAuthenticated}
-            />
-          }
-        />
+        <Route path="admin" element={<Admin />} />
 
-        <Route
-          path="/login"
-          element={<Login setIsAuthenticated={setIsAuthenticated} />}
-        />
-        <Route
-          path="/register"
-          element={<Register setIsAuthenticated={setIsAuthenticated} />}
-        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
       </Routes>
     </BrowserRouter>
   );
