@@ -30,7 +30,7 @@ const Register = () => {
   const navigate = useNavigate();
 
   //Acess zustand store to get login function
-  const { login } = useAuthStore;
+  const { login } = useAuthStore();
 
   //form management - handling input data
   const {
