@@ -5,7 +5,7 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import ForgotPasswordModal from "../../components/ForgotPaswordModal"; // corrected typo
 import { useNavigate } from "react-router-dom";
-import PropTypes from "prop-types";
+import useAuthStore from "../Store/store";
 
 // Validation schema - defining rules for the form
 const schema = yup.object().shape({
@@ -19,7 +19,8 @@ const schema = yup.object().shape({
     .required("Password is required"),
 });
 
-const Login = ({ setIsAuthenticated }) => {
+const Login = () => {
+  const { login } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -53,7 +54,7 @@ const Login = ({ setIsAuthenticated }) => {
 
       // Save the token to localStorage (if returned)
       localStorage.setItem("token", response.data.token); // Adjust the key according to your backend response
-      setIsAuthenticated(true);
+      login(response.data.username); // Use zustand login action
 
       // Redirect user after successful login to userpage
       navigate("/userpage");
@@ -61,7 +62,6 @@ const Login = ({ setIsAuthenticated }) => {
       alert("Login successful!");
     } catch (error) {
       console.error("Login failed:", error.response.data);
-      setIsAuthenticated(false);
       alert(
         `Login failed: ${error.response.data.message || "Please try again."}`
       ); // Display error message
@@ -184,7 +184,4 @@ const Login = ({ setIsAuthenticated }) => {
   );
 };
 
-Login.propTypes = {
-  setIsAuthenticated: PropTypes.func.isRequired, // Mark setIsAuthenticated as a required function
-};
 export default Login;
