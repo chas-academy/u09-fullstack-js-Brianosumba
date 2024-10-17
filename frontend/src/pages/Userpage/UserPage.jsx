@@ -3,16 +3,15 @@ import SearchField from "../../components/SearchField";
 import HeroBannerCarousel from "../../components/HeroBannerCarousel";
 import ExerciseCardList from "../../components/ExerciseCardList";
 import Footer from "../../components/Footer";
-import PropTypes from "prop-types";
+import useAuthStore from "../Store/store";
 
-const UserPage = ({ isAuthenticated, setIsAuthenticated }) => {
+const UserPage = () => {
+  // Access Zustand store state
+  const { isAuthenticated, logout } = useAuthStore();
   return (
     <>
       <div className="bg-gray-300 min-h-screen">
-        <NavBar
-          isAuthenticated={isAuthenticated}
-          setIsAuthenticated={setIsAuthenticated}
-        />
+        <NavBar isAuthenticated={isAuthenticated} logout={logout} />
         <HeroBannerCarousel />
         <SearchField />
         <ExerciseCardList />
@@ -20,11 +19,6 @@ const UserPage = ({ isAuthenticated, setIsAuthenticated }) => {
       </div>
     </>
   );
-};
-
-UserPage.propTypes = {
-  isAuthenticated: PropTypes.bool.isRequired, // isAuthenticated should be a required boolean
-  setIsAuthenticated: PropTypes.func.isRequired, // handleLogout should be a required function
 };
 
 export default UserPage;

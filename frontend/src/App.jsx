@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import "./index.css";
 import AppComponent from "./components/AppComponent";
 import UserPage from "./pages/Userpage/UserPage";
@@ -8,9 +8,10 @@ import ExerciseDetailPage from "./pages/ExerciseDetailPage/ExerciseDetailPage";
 import Login from "./pages/Loginpage/Login";
 import Register from "./pages/Loginpage/Register";
 import Admin from "./pages/AdminPage/Admin";
+import useAuthStore from "./pages/Store/store";
 
 const App = () => {
-  const [checkAuth] = useState(); // check if the user is already authenticated
+  const { checkAuth } = useAuthStore(); // check if the user is already authenticated
 
   useEffect(() => {
     checkAuth(); // check for token in local storage on mount

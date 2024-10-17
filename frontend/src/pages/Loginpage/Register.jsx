@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
-import PropTypes from "prop-types";
+import useAuthStore from "../Store/store";
 
 //validation schema- defining rules for Signup form
 const schema = yup.object().shape({
@@ -24,10 +24,13 @@ const schema = yup.object().shape({
 });
 
 //state setup - remembering whats happening
-const Register = ({ setIsAuthenticated }) => {
+const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  //Acess zustand store to get login function
+  const { login } = useAuthStore;
 
   //form management - handling input data
   const {
@@ -57,7 +60,7 @@ const Register = ({ setIsAuthenticated }) => {
       console.log("Registration successful:", response.data);
 
       localStorage.setItem("token", response.data.token); // Adjust the key according to your backend response
-      setIsAuthenticated(true);
+      login(data.username); // set the authentication state in zustand store
 
       // Redirect the user to the user page after successful registration
       navigate("/userpage");
@@ -72,7 +75,7 @@ const Register = ({ setIsAuthenticated }) => {
         "Registration error:",
         error.response ? error.response.data : error.message
       );
-      setIsAuthenticated(false);
+
       // Show an alert to the user with the error message from the backend, or a generic failure message
       alert(error.response ? error.response.data.msg : "Registration failed");
       //Stop the loading state even if there's an error
@@ -200,10 +203,6 @@ const Register = ({ setIsAuthenticated }) => {
       </form>
     </div>
   );
-};
-
-Register.propTypes = {
-  setIsAuthenticated: PropTypes.func.isRequired, // Mark setIsAuthenticated as a required function
 };
 
 export default Register;
