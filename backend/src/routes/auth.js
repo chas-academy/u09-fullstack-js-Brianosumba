@@ -6,10 +6,10 @@ const User = require("../models/User"); // Import the User model for database in
 
 const router = express.Router(); // Create a new Express router
 
-// Register Route
+// Register Route (for both admins and users)
 router.post("/register", async (req, res) => {
   // Destructure username, email, and password from the request body
-  const { username, email, password } = req.body;
+  const { username, email, password, secretCode } = req.body; // Secret code for admin registration
 
   try {
     // Check if the user already exists in the database using their email
@@ -22,18 +22,26 @@ router.post("/register", async (req, res) => {
     // Hash the password before saving it in the database
     const hashedPassword = await bcrypt.hash(password, 10); // 10 is the salt rounds
 
-    // Create a new user instance
+    //Determine if the user is an admin based on the secret code
+    const isAdmin = secretCode === process.env.ADMIN_SECRET; //compare secret code to a stored value
+
+    // Create a new user (with admin flag if applicable)
     const newUser = new User({
       username,
       email,
       password: hashedPassword, // Save the hashed password
+      isAdmin, // true if secretCode is valid false otherwise
     });
 
     // Save the new user to the database
     await newUser.save();
 
     // Send a success response
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({
+      message: isAdmin
+        ? "Admin registered successfully"
+        : "User registered successfully",
+    });
   } catch (error) {
     // Handle any errors that occur during registration
     console.error("Registration error:", error);
@@ -41,7 +49,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// Login Route
+// Login Route (for both admins and users)
 router.post("/login", async (req, res) => {
   // Destructure email and password from the request body
   const { email, password } = req.body;
