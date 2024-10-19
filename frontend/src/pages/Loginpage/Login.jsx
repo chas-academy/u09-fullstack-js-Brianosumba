@@ -51,6 +51,7 @@ const Login = () => {
       );
 
       console.log("Login successful:", response.data);
+      console.log("Remember Me checked:", rememberMe);
 
       // Store token based on "Remember Me" state
       if (rememberMe) {
