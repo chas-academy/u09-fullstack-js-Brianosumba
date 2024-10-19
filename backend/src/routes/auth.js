@@ -90,5 +90,34 @@ router.post("/login", async (req, res) => {
   }
 });
 
+//Reset password Route
+router.post("/reset-password", async (req, res) => {
+  const { username, newPassword } = req.body; //Destructure username and new password from the request body
+
+  try {
+    //Find the user by their username
+    const user = await User.findOne({ username });
+    if (!user) {
+      //if user not found, send a 404 error response
+      return res.status(404).json({ messsage: "User not found" });
+    }
+
+    //Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    //Update the user´s password in the database
+    user.password = hashedPassword;
+    await user.save(); //Save the updated user
+
+    //Send a success response
+    res
+      .status(200)
+      .json({ success: true, message: "Password reset successfully" });
+  } catch (error) {
+    console.error("Error ressetting password:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 // Export the router to use it in your main application file
 module.exports = router;

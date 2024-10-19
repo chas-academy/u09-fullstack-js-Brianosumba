@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import PropTypes from "prop-types";
+import axios from "axios";
 
 const ForgotPasswordModal = ({ isOpen, onClose }) => {
   // Validation schema for the modal form
@@ -27,13 +28,36 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
   });
 
   // Form submission handler
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     console.log("Password Reset Data:", data);
-    onClose(); // Close the modal after submission
-    alert("Password reset successfully!"); // Temporary alert, until backend is implemented
+
+    try {
+      //Send a request to the backend to reset the password
+      const response = await axios.post(
+        "http://localhost:3000/api/auth/reset-password",
+        {
+          username: data.username,
+          newPassword: data.newPassword,
+        }
+      );
+
+      if (response.data.success) {
+        alert("Password reset successfully!");
+        onClose(); //close the modal after successful reset
+      } else {
+        alert(
+          `Password reset failed: ${
+            response.data.message || "Please try again"
+          }`
+        );
+      }
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      alert("An error occurred while resetting the password.");
+    }
   };
 
-  if (!isOpen) return null; // Don't render modal if not open
+  if (!isOpen) return null;
 
   return (
     <div
