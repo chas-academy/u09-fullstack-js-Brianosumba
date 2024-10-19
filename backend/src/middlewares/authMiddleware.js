@@ -31,7 +31,7 @@ const verifyAdmin = (req, res, next) => {
   // Check if the user object from the previous middleware has an "isAdmin" property set to true
   if (!req.user.isAdmin)
     // If the user is not an admin, return a 403 status (Forbidden) with an access denied message
-    return res.status(403).json({ message: "Access denied" });
+    return res.status(403).json({ message: "Access denied, admin only" });
 
   // If the user is an admin, call the next middleware or route handler in the stack
   next();

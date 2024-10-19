@@ -3,11 +3,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import ForgotPasswordModal from "../../components/ForgotPaswordModal"; // corrected typo
+import ForgotPasswordModal from "../../components/ForgotPaswordModal"; // Ensure this path is correct
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../Store/store";
 
-// Validation schema - defining rules for the form
+// Validation schema for form input
 const schema = yup.object().shape({
   email: yup
     .string()
@@ -20,14 +20,14 @@ const schema = yup.object().shape({
 });
 
 const Login = () => {
-  const { login } = useAuthStore();
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [showModal, setShowModal] = useState(false); // corrected state
-  const navigate = useNavigate(); //Hook to programmatically navigate
+  const { login } = useAuthStore(); // Zustand's login action
+  const [showPassword, setShowPassword] = useState(false); // Toggle for password visibility
+  const [loading, setLoading] = useState(false); // Loading state during form submission
+  const [rememberMe, setRememberMe] = useState(false); // Checkbox for "Remember Me"
+  const [showModal, setShowModal] = useState(false); // State for Forgot Password modal
+  const navigate = useNavigate(); // Navigation hook
 
-  // Form management
+  // Form management with react-hook-form
   const {
     register,
     handleSubmit,
@@ -41,45 +41,50 @@ const Login = () => {
     setLoading(true); // Start loading state when submission begins
 
     try {
-      // Call the login function from authService with the email and password from data
+      // Send login request to the backend
       const response = await axios.post(
-        "http://localhost:3000/api/auth/login",
+        "http://localhost:3000/api/auth/login", // Ensure correct backend endpoint
         {
           email: data.email,
           password: data.password,
         }
       );
 
-      console.log("Login successful:", response.data); // Log successful response data
+      console.log("Login successful:", response.data);
 
-      // Save the token to localStorage (if returned)
-      localStorage.setItem("token", response.data.token); // Adjust the key according to your backend response
-      login(response.data.user.username); // Use zustand login action
+      // Store token based on "Remember Me" state
+      if (rememberMe) {
+        localStorage.setItem("token", response.data.token); // Long-term storage
+      } else {
+        sessionStorage.setItem("token", response.data.token); // Short-term storage
+      }
 
-      // Redirect user after successful login to userpage
+      // Zustand's login action - store the username for global use
+      login(response.data.user.username);
+
+      // Redirect the user to the user page
       navigate("/userpage");
 
       alert("Login successful!");
     } catch (error) {
-      console.error("Login failed:", error.response.data);
+      console.error("Login failed:", error.response?.data || error.message);
       alert(
-        `Login failed: ${error.response.data.message || "Please try again."}`
-      ); // Display error message
+        `Login failed: ${error.response?.data?.message || "Please try again."}`
+      );
     } finally {
-      setLoading(false); // Reset loading state
+      setLoading(false); // Stop loading state once the request completes
     }
   };
 
-  // Rendering the login form
   return (
     <div className="flex items-center justify-center h-screen bg-gray-900">
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onSubmit)} // Use handleSubmit from react-hook-form
         className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4"
       >
         <h2 className="text-2xl font-bold mb-5 text-center text-navy">Login</h2>
 
-        {/* Email Field */}
+        {/* Email Input */}
         <div className="mb-4">
           <label htmlFor="email" className="block text-gray-700 font-bold mb-2">
             Email
@@ -87,7 +92,7 @@ const Login = () => {
           <input
             type="email"
             id="email"
-            {...register("email")}
+            {...register("email")} // Controlled by react-hook-form
             className={`w-full p-2 border ${
               errors.email ? "border-red-500" : "border-gray-300"
             } rounded`}
@@ -97,7 +102,7 @@ const Login = () => {
           )}
         </div>
 
-        {/* Password Field */}
+        {/* Password Input */}
         <div className="mb-4">
           <label
             htmlFor="password"
@@ -107,16 +112,16 @@ const Login = () => {
           </label>
           <div className="relative">
             <input
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? "text" : "password"} // Toggle password visibility
               id="password"
-              {...register("password")}
+              {...register("password")} // Controlled by react-hook-form
               className={`w-full p-2 border ${
                 errors.password ? "border-red-500" : "border-gray-300"
               } rounded`}
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowPassword(!showPassword)} // Toggle state
               className="absolute inset-y-0 right-0 px-3 py-2 text-gray-600 focus:outline-none"
             >
               {showPassword ? "Hide" : "Show"}
@@ -135,7 +140,7 @@ const Login = () => {
             <input
               type="checkbox"
               checked={rememberMe}
-              onChange={() => setRememberMe(!rememberMe)}
+              onChange={(e) => setRememberMe(e.target.checked)} // Track checkbox state
               className="mr-2"
             />
             Remember me
@@ -146,7 +151,7 @@ const Login = () => {
         <div className="mb-4 text-right">
           <button
             type="button"
-            onClick={() => setShowModal(true)} // Show modal on click
+            onClick={() => setShowModal(true)} // Show modal when clicked
             className="text-blue-500 hover:underline"
           >
             Forgot Password?
@@ -159,7 +164,7 @@ const Login = () => {
           className={`w-full py-2 rounded ${
             loading ? "bg-gray-400" : "bg-blue-500"
           } text-white hover:bg-blue-600`}
-          disabled={loading}
+          disabled={loading} // Disable button when loading
         >
           {loading ? "Logging in..." : "Login"}
         </button>
@@ -178,7 +183,7 @@ const Login = () => {
       {/* Forgot Password Modal */}
       <ForgotPasswordModal
         isOpen={showModal}
-        onClose={() => setShowModal(false)} // Hide modal on close
+        onClose={() => setShowModal(false)} // Close modal
       />
     </div>
   );
