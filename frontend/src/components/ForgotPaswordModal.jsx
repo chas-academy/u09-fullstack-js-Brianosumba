@@ -29,7 +29,8 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
 
   // Form submission handler
   const onSubmit = async (data) => {
-    console.log("Password Reset Data:", data);
+    //Only log the action, not the password
+    console.log("Initiating password reset for username:", data.username);
 
     try {
       //Send a request to the backend to reset the password
@@ -42,6 +43,8 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
       );
 
       if (response.data.success) {
+        //log the token recieved from the response, if applicable
+        console.log("Password reset token:", response.data.token); // Log token instead of the password
         alert("Password reset successfully!");
         onClose(); //close the modal after successful reset
       } else {

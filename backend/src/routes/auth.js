@@ -92,29 +92,30 @@ router.post("/login", async (req, res) => {
 
 //Reset password Route
 router.post("/reset-password", async (req, res) => {
-  const { username, newPassword } = req.body; //Destructure username and new password from the request body
+  const { username, newPassword } = req.body;
 
   try {
-    //Find the user by their username
+    // Find the user by username
     const user = await User.findOne({ username });
     if (!user) {
-      //if user not found, send a 404 error response
-      return res.status(404).json({ messsage: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
-    //Hash the new password
+    // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword; // Update the user's password
+    await user.save(); // Save the user
 
-    //Update the user´s password in the database
-    user.password = hashedPassword;
-    await user.save(); //Save the updated user
+    // Generate a new token after resetting the password
+    const token = jwt.sign(
+      { id: user._id, isAdmin: user.isAdmin }, // Adjust the payload as needed
+      "jwtSecret", // Ensure you use a secure secret key in production
+      { expiresIn: "1h" } // Token expiration time
+    );
 
-    //Send a success response
-    res
-      .status(200)
-      .json({ success: true, message: "Password reset successfully" });
+    res.json({ success: true, token }); // Send back the token in the response
   } catch (error) {
-    console.error("Error ressetting password:", error);
+    console.error("Password reset error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
