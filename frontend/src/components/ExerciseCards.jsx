@@ -2,7 +2,7 @@ import { GiWeightLiftingUp } from "react-icons/gi";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
-const ExerciseCards = ({ title }) => {
+const ExerciseCards = ({ title, gifUrl }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -20,6 +20,14 @@ const ExerciseCards = ({ title }) => {
       </div>
       <div className="text-center">
         <p className="text-lg font-semibold text-gray-800">{title}</p>
+        {gifUrl && (
+          <img
+            src={gifUrl}
+            alt={title}
+            className="mt-2 w-full h-auto rounded-md"
+          />
+        )}{" "}
+        {/* Display GIF */}
       </div>
     </div>
   );
@@ -27,6 +35,7 @@ const ExerciseCards = ({ title }) => {
 
 ExerciseCards.propTypes = {
   title: PropTypes.string.isRequired,
+  gifUrl: PropTypes.string.isRequired, // Add gifUrl prop validation
 };
 
 export default ExerciseCards;
