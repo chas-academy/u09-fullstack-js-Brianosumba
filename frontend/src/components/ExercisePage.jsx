@@ -1,116 +1,91 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { useState, useEffect, useMemo } from "react";
 
-const Exercisepage = () => {
-  const { exerciseName } = useParams();
-  const navigate = useNavigate();
+const ExercisePage = () => {
+  const { exerciseName } = useParams(); // exerciseName will be "biceps", "triceps", etc.
+  const [exercises, setExercises] = useState({
+    beginner: [],
+    intermediate: [],
+    advanced: [],
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const exercises = {
-    beginner: [
-      {
-        name: "Pushups",
-        gifUrl: "https://gymvisual.com/img/p/2/0/9/4/8/20948.gif",
-      },
-      {
-        name: "Band Bench Press",
-        gifUrl: "https://gymvisual.com/img/p/6/5/2/1/6521.gif",
-      },
-      {
-        name: "Dumbbell Flyes",
-        gifUrl: "https://gymvisual.com/img/p/2/1/7/5/5/21755.gif",
-      },
-    ],
-    intermediate: [
-      {
-        name: "Incline Dumbbell Press",
-        gifUrl: "https://gymvisual.com/img/p/1/4/1/1/4/14114.gif",
-      },
-      {
-        name: "Cable Chest Flyes",
-        gifUrl: "https://gymvisual.com/img/p/2/8/9/5/9/28959.gif",
-      },
-      { name: "Dips", gifUrl: "https://gymvisual.com/img/p/4/7/4/0/4740.gif" },
-    ],
-    advanced: [
-      {
-        name: "Barbell Bench Press",
-        gifUrl: "https://gymvisual.com/img/p/1/8/5/6/4/18564.gif",
-      },
-      {
-        name: "Incline Dumbbell Press (slow)",
-        gifUrl: "https://gymvisual.com/img/p/1/8/3/6/7/18367.gif",
-      },
-      {
-        name: "Weighted Dips",
-        gifUrl: "https://gymvisual.com/img/p/7/5/5/9/7559.gif",
-      },
-    ],
-    recommendedWorkouts: [
-      {
-        name: "Elbow Dips",
-        gifUrl: "https://gymvisual.com/img/p/1/3/1/3/6/13136.gif",
-      },
-    ],
-  };
+  // Fetch exercises based on the category (exerciseName) and assign them to levels
+  useEffect(() => {
+    const fetchExercises = async () => {
+      setLoading(true);
+      setError(null); // Reset error state before making a new request
+      try {
+        const response = await axios.get(
+          `https://exercisedb.p.rapidapi.com/exercises/bodyPart/${exerciseName}`,
+          {
+            headers: {
+              "X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY,
+              "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
+            },
+          }
+        );
 
-  const handleClick = (level) => {
-    navigate(`/exercise-detail/${exerciseName}/${level}`);
-  };
+        setExercises(response.data); // Store the raw data here for transformation later
+      } catch (error) {
+        console.error("Error fetching exercises:", error);
+        setError("Failed to load exercises. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExercises();
+  }, [exerciseName]);
+
+  // Memoized exercise levels to avoid recalculation on every render
+  const categorizedExercises = useMemo(() => {
+    const beginnerExercises = exercises.slice(0, 5); // First 5 as beginner
+    const intermediateExercises = exercises.slice(5, 10); // Next 5 as intermediate
+    const advancedExercises = exercises.slice(10, 15); // Next 5 as advanced
+
+    return {
+      beginner: beginnerExercises,
+      intermediate: intermediateExercises,
+      advanced: advancedExercises,
+    };
+  }, [exercises]);
 
   return (
-    <>
-      <div className="text-center my-8">
-        <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl text-gray-800">
-          Let&#39;s Go, Brian! Time to Rumble!
-        </h1>
-        <p className="text-lg sm:text-xl mt-4 text-gray-700">
-          Every rep counts. You&#39;ve already shown up. Now, let&#39;s crush it
-          and unleash your potential!
-        </p>
-      </div>
-
-      <div className="text-center my-8">
-        <h2 className="font-bold text-2xl sm:text-3xl mb-6 text-gray-800">
-          Chest Day Baby!
-        </h2>
-        <p className="text-lg sm:text-xl mb-8 text-gray-600">
-          Pick your fitness level below and get started.
-        </p>
-
-        <div className="space-y-12">
-          {["beginner", "intermediate", "advanced", "recommendedWorkouts"].map(
-            (level) => (
-              <div key={level}>
-                <h3
-                  className="font-bold text-xl sm:text-2xl mb-4 text-gray-800 hover:text-blue-600 cursor-pointer"
-                  onClick={() => handleClick(level)}
-                >
-                  {level.charAt(0).toUpperCase() + level.slice(1)}
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {exercises[level].map((exercise, index) => (
-                    <div
-                      key={index}
-                      className="bg-white p-6 rounded-lg border border-gray-300 hover:shadow-lg transform hover:scale-105 transition-transform duration-200"
-                    >
-                      <img
-                        src={exercise.gifUrl}
-                        alt={exercise.name}
-                        className="w-full h-40 object-cover mb-4"
-                      />
-                      <p className="text-center font-semibold text-gray-800">
-                        {exercise.name}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+    <div className="p-6">
+      {error && <p className="text-red-500">{error}</p>}
+      {loading ? (
+        <p>Loading exercises...</p>
+      ) : (
+        <div>
+          {["beginner", "intermediate", "advanced"].map((level) => (
+            <div key={level}>
+              <h3 className="font-bold text-xl my-4">
+                {level.charAt(0).toUpperCase() + level.slice(1)}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {categorizedExercises[level]?.map((exercise, index) => (
+                  <div
+                    key={index}
+                    className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition"
+                  >
+                    <img
+                      src={exercise.gifUrl}
+                      alt={exercise.name}
+                      className="h-40 w-full object-cover mb-4"
+                    />
+                    <p className="font-semibold text-center">{exercise.name}</p>
+                  </div>
+                ))}
               </div>
-            )
-          )}
+            </div>
+          ))}
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 };
 
-export default Exercisepage;
+export default ExercisePage;

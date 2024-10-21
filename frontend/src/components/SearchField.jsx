@@ -1,59 +1,68 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
 
 const SearchField = ({ onSearchResults }) => {
-  const [query, setQuery] = useState(""); // stores the user's input
-  const [loading, setLoading] = useState(false); // loading state
-  const [error, setError] = useState(null); // error state
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    setError(null); // Reset error state
+  const handleSearch = useCallback(
+    async (e) => {
+      e.preventDefault();
+      setError(null);
 
-    if (query.trim()) {
-      setLoading(true); // Start loading
-      try {
-        // Fetch Exercises from ExerciseDB API
-        const response = await axios.get(
-          `https://exercisedb.p.rapidapi.com/exercises/name/${query}`, // Search by exercise name
-          {
-            headers: {
-              "X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY, // Use your RapidAPI key
-              "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
-            },
+      if (query.trim()) {
+        setLoading(true);
+        try {
+          const response = await axios.get(
+            `https://exercisedb.p.rapidapi.com/exercises/name/${query}`,
+            {
+              headers: {
+                "X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY,
+                "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
+              },
+            }
+          );
+
+          if (response.data.length === 0) {
+            setError("No exercises found. Try a different search.");
+          } else {
+            onSearchResults(response.data);
           }
-        );
-        // Pass the data to the parent component
-        onSearchResults(response.data);
-      } catch (error) {
-        console.error("Error fetching exercises:", error);
-        setError("Failed to fetch exercises. Please try again.");
-      } finally {
-        setLoading(false); // End loading
+        } catch (error) {
+          console.error("Error fetching exercises:", error);
+          setError(
+            "Failed to fetch exercises. Please check your connection and try again."
+          );
+        } finally {
+          setLoading(false);
+        }
       }
-    }
+    },
+    [query, onSearchResults]
+  );
+
+  const handleInputChange = (e) => {
+    setQuery(e.target.value); // Simply update the query state
   };
 
   return (
     <div className="flex justify-center items-center mt-6">
-      {error && <p className="text-red-500">{error}</p>} {/* Error message */}
-      {loading && <p>Loading...</p>} {/* Loading indicator */}
+      {error && <p className="text-red-500">{error}</p>}
+      {loading && <p>Loading...</p>}
       <form onSubmit={handleSearch} className="flex w-full md:w-1/2">
-        <label htmlFor="exerciseSearch" className="sr-only">
-          Search Exercises
-        </label>
         <input
-          id="exerciseSearch"
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleInputChange}
           placeholder="Search exercises"
-          className="border border-gray-400 p-4 rounded-lg w-full"
+          className="border p-4 rounded-lg w-full"
         />
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-500 hover:shadow-lg transition duration-300 text-black font-semibold p-4 rounded-lg ml-2"
+          className="bg-blue-600 text-white p-4 rounded-lg ml-2"
+          disabled={loading}
         >
           Search
         </button>
@@ -62,9 +71,8 @@ const SearchField = ({ onSearchResults }) => {
   );
 };
 
-// Define PropTypes for SearchField
 SearchField.propTypes = {
-  onSearchResults: PropTypes.func.isRequired, // 'onSearchResults' is a required function
+  onSearchResults: PropTypes.func.isRequired,
 };
 
 export default SearchField;

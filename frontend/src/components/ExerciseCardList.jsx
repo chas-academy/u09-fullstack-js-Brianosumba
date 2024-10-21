@@ -1,12 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import ExerciseCards from "./ExerciseCards";
 
 const ExerciseCardList = ({ exercises }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [cardsPerView, setCardsPerView] = useState(4);
 
-  // Calculate how many cards to show per scroll
-  const cardsPerView = 8;
+  // Update cardsPerView based on the screen size
+  const updateCardsPerView = () => {
+    if (window.innerWidth < 640) {
+      setCardsPerView(1);
+    } else if (window.innerWidth < 1024) {
+      setCardsPerView(2);
+    } else {
+      setCardsPerView(4);
+    }
+  };
+
+  useEffect(() => {
+    // Initial check for screen size
+    updateCardsPerView();
+
+    // Update cardsPerView on window resize
+    window.addEventListener("resize", updateCardsPerView);
+
+    // Cleanup event listener on unmount
+    return () => {
+      window.removeEventListener("resize", updateCardsPerView);
+    };
+  }, []);
 
   const handleNext = () => {
     if (currentIndex < exercises.length - cardsPerView) {
@@ -20,45 +41,54 @@ const ExerciseCardList = ({ exercises }) => {
     }
   };
 
+  // Memoize the displayed exercises to prevent unnecessary re-renders
+  const displayedExercises = useMemo(() => {
+    return exercises.slice(currentIndex, currentIndex + cardsPerView);
+  }, [currentIndex, cardsPerView, exercises]);
+
   return (
     <div className="relative">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold">Show all</h2>
-        <div className="space-x-2">
-          <button onClick={handlePrev} disabled={currentIndex === 0}>
-            &lt; Prev
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={currentIndex >= exercises.length - cardsPerView}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {displayedExercises.map((exercise) => (
+          <div
+            key={exercise.id} // Ensure each exercise has a unique 'id'
+            className="bg-white p-4 rounded-lg shadow-lg transition-transform duration-300 hover:scale-105"
           >
-            Next &gt;
-          </button>
-        </div>
-      </div>
-
-      {/* Card Scrolling Area */}
-      <div className="flex space-x-4 overflow-x-hidden">
-        {exercises
-          .slice(currentIndex, currentIndex + cardsPerView)
-          .map((exercise, index) => (
-            <ExerciseCards
-              key={index}
-              title={exercise.name} // Ensure the exercise name is used
-              gifUrl={exercise.gifUrl} // Ensure the exercise GIF URL is used
+            <img
+              src={exercise.gifUrl}
+              alt={exercise.name}
+              className="w-full h-40 object-cover rounded-md"
             />
-          ))}
+            <p className="text-center mt-2 font-semibold">{exercise.name}</p>
+          </div>
+        ))}
       </div>
+      <button
+        onClick={handlePrev}
+        className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gray-300 rounded-full p-2 hover:bg-gray-400 transition-colors"
+        disabled={currentIndex === 0}
+        aria-label="Previous"
+      >
+        ◀
+      </button>
+      <button
+        onClick={handleNext}
+        className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-300 rounded-full p-2 hover:bg-gray-400 transition-colors"
+        disabled={currentIndex >= exercises.length - cardsPerView}
+        aria-label="Next"
+      >
+        ▶
+      </button>
     </div>
   );
 };
 
-// PropTypes validation for ExerciseCardList
 ExerciseCardList.propTypes = {
   exercises: PropTypes.arrayOf(
     PropTypes.shape({
-      name: PropTypes.string.isRequired,
+      id: PropTypes.string.isRequired, // Ensure id is a required string
       gifUrl: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
     })
   ).isRequired,
 };

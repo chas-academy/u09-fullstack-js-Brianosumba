@@ -4,6 +4,7 @@ import SearchField from "../../components/SearchField";
 import HeroBannerCarousel from "../../components/HeroBannerCarousel";
 import ExerciseCardList from "../../components/ExerciseCardList";
 import Footer from "../../components/Footer";
+import ExerciseCategories from "../../components/ExerciseCategories"; // Import the ExerciseCategories component
 import useAuthStore from "../Store/store";
 
 const UserPage = () => {
@@ -18,26 +19,27 @@ const UserPage = () => {
   };
 
   return (
-    <>
-      <div className="bg-gray-300 min-h-screen">
-        {/* Navbar with authentication props */}
-        <NavBar isAuthenticated={isAuthenticated} logout={logout} />
+    <div className="bg-gray-300 min-h-screen">
+      {/* Navbar with authentication props */}
+      <NavBar isAuthenticated={isAuthenticated} logout={logout} />
 
-        {/* Hero Carousel Banner */}
-        <HeroBannerCarousel />
+      {/* Hero Carousel Banner */}
+      <HeroBannerCarousel />
 
-        {/* SearchField component with onSearchResults to handle search results */}
-        <SearchField onSearchResults={handleSearchResults} />
+      {/* SearchField component with onSearchResults to handle search results */}
+      <SearchField onSearchResults={handleSearchResults} />
 
-        {/* Conditionally render ExerciseCardList if searchResults exist */}
-        {searchedExercises.length > 0 && (
-          <ExerciseCardList exercises={searchedExercises} />
-        )}
+      {/* Render Exercise Categories */}
+      <ExerciseCategories />
 
-        {/* Footer component */}
-        <Footer />
-      </div>
-    </>
+      {/* Conditionally render ExerciseCardList if searchResults exist */}
+      {searchedExercises.length > 0 && (
+        <ExerciseCardList exercises={searchedExercises} />
+      )}
+
+      {/* Footer component */}
+      <Footer />
+    </div>
   );
 };
 
