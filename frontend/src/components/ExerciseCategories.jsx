@@ -66,7 +66,7 @@ const ExerciseCategories = () => {
         {categories.map((category) => (
           <div
             key={category.name}
-            className="bg-gray-300 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg hover:scale-105 transition-transform"
+            className="bg-blue-400 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg hover:scale-105 transition-transform"
             onClick={() => handleCategoryClick(category.name)}
             role="button"
             tabIndex={0} // Make it keyboard accessible
