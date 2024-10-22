@@ -1,12 +1,15 @@
-import { useParams } from "react-router-dom";
-import NavBar from "../components/NavBar";
-import Footer from "../components/Footer";
 import { useState, useEffect } from "react";
-import CircularProgressBar from "./CircularProgressBar";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import NavBar from "../components/NavBar"; // Ensure to import your NavBar
+import Footer from "../components/Footer"; // Ensure to import your Footer
+import CircularProgressBar from "./CircularProgressBar"; // Import your CircularProgressBar component
+import Box from "@mui/material/Box"; // Import MUI Box
+import Typography from "@mui/material/Typography"; // Import MUI Typography
 
-const ExerciseDetail = () => {
-  const { exerciseName, level } = useParams();
-  const userName = "Taylor"; // This will be dynamic later
+const ExerciseDetailPage = () => {
+  const { exerciseId } = useParams(); // Get the exerciseId from the URL parameters
+  const [exercise, setExercise] = useState(null); // State to hold the exercise details
 
   // Track workouts and initialize progress
   const [workoutsToday, setWorkoutsToday] = useState(0);
@@ -74,66 +77,68 @@ const ExerciseDetail = () => {
     console.log("Done clicked!");
   };
 
-  // Exercise details
-  const exercisesDetails = {
-    Chest: {
-      beginner: [
-        {
-          name: "Pushups",
-          gifUrl: "https://gymvisual.com/img/p/2/0/9/4/8/20948.gif",
-          sets: 2,
-          reps: 10,
-          instructions: "Do pushups on your knees.",
-        },
-        {
-          name: "Band Bench Press",
-          gifUrl: "https://gymvisual.com/img/p/6/5/2/1/6521.gif",
-        },
-        {
-          name: "Dumbbell Flyes",
-          gifUrl: "https://gymvisual.com/img/p/2/1/7/5/5/21755.gif",
-        },
-      ],
-      // Add intermediate and advanced details...
-    },
-  };
+  useEffect(() => {
+    const fetchExerciseDetail = async () => {
+      try {
+        const response = await axios.get(
+          `https://exercisedb.p.rapidapi.com/exercises/exercise/${exerciseId}`,
+          {
+            headers: {
+              "X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY,
+              "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
+            },
+          }
+        );
 
-  const exerciseDetail = exercisesDetails[exerciseName]?.[level] || [];
+        console.log(response.data);
+        setExercise(response.data); // Set the exercise details
+      } catch (error) {
+        console.error("Failed to fetch exercise details:", error);
+      }
+    };
+
+    fetchExerciseDetail();
+  }, [exerciseId]);
+
+  if (!exercise) {
+    return <div>Loading...</div>; // Show loading while fetching exercise details
+  }
 
   return (
     <div className="bg-gray-200 min-h-screen">
       <NavBar />
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold text-center mb-4 capitalize">
-          {exerciseName} - {level} Level
-        </h1>
-        <p className="text-center">User: {userName}</p>
-        {exerciseDetail.length > 0 ? (
-          exerciseDetail.map((exercise, index) => (
-            <div
-              key={index}
-              className="flex flex-col md:flex-row items-center bg-white shadow-lg rounded-lg overflow-hidden mb-6"
-            >
-              <img
-                src={exercise.gifUrl}
-                alt={exercise.name}
-                className="w-full md:w-1/3 h-auto"
-              />
-              <div className="p-4 flex-1">
-                <h2 className="text-xl font-semibold mb-2 text-center md:text-left">
-                  {exercise.name}
-                </h2>
-                <div className="text-gray-600 text-center md:text-left">
-                  {exercise.sets && <p>Sets: {exercise.sets}</p>}
-                  {exercise.reps && <p>Reps: {exercise.reps}</p>}
-                  {exercise.instructions && <p>{exercise.instructions}</p>}
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-center">No exercises found for this level.</p>
-        )}
+        <Typography variant="h3" component="h1" className="mb-4" gutterBottom>
+          {exercise.name}
+        </Typography>
+
+        {/* Box for GIF using Material-UI Box */}
+        <Box
+          component="img"
+          src={exercise.gifUrl}
+          alt={exercise.name}
+          sx={{
+            width: "40%", // Set a fixed width for the GIF
+            height: "auto", // Set a fixed height for the GIF
+            objectFit: "cover", // Maintain aspect ratio of GIF
+            display: "block",
+            mb: 2, // Add margin below the image
+            mx: "auto", // Center the image
+            borderRadius: 2, // Add some border radius for aesthetics
+            boxShadow: 3, // Add shadow for better visibility
+          }}
+        />
+
+        <Typography variant="h6" className="mb-2">
+          Body Part: {exercise.bodyPart}
+        </Typography>
+        <Typography variant="h6" className="mb-2">
+          Target: {exercise.target}
+        </Typography>
+        <Typography variant="h6" className="mb-2">
+          Equipment: {exercise.equipment}
+        </Typography>
+
         <div className="text-center my-8">
           <button
             onClick={handleDoneClick}
@@ -142,6 +147,7 @@ const ExerciseDetail = () => {
             Done
           </button>
         </div>
+
         <div className="mt-8 space-y-4">
           <CircularProgressBar
             label="Workouts Completed Today"
@@ -174,4 +180,4 @@ const ExerciseDetail = () => {
   );
 };
 
-export default ExerciseDetail;
+export default ExerciseDetailPage;

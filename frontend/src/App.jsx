@@ -25,7 +25,7 @@ const App = () => {
         <Route path="userpage" element={<UserPage />} />
         <Route path="exercise/:exerciseName" element={<Exercise />} />
         <Route
-          path="exercise-detail/:exerciseName/:level"
+          path="exercise-detail/:exerciseId"
           element={<ExerciseDetailPage />}
         />
         <Route path="admin" element={<Admin />} />
