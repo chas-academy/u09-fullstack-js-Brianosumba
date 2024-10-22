@@ -19,7 +19,7 @@ const ExerciseCategories = () => {
   const navigate = useNavigate();
 
   const handleCategoryClick = (categoryName) => {
-    navigate(`/exercise/${categoryName.toLowerCase()}`);
+    navigate(`/exercise/${categoryName.toLowerCase()}`); // Navigate to the ExercisePage with the category name
   };
 
   return (

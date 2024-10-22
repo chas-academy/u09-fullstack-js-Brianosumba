@@ -2,49 +2,53 @@ import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 
 const ExerciseCardList = ({ exercises }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [cardsPerView, setCardsPerView] = useState(4);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [cardsPerPage, setCardsPerPage] = useState(4);
 
-  // Update cardsPerView based on the screen size
-  const updateCardsPerView = () => {
+  // Update cardsPerPage based on the screen size
+  const updateCardsPerPage = () => {
     if (window.innerWidth < 640) {
-      setCardsPerView(1);
+      setCardsPerPage(1);
     } else if (window.innerWidth < 1024) {
-      setCardsPerView(2);
+      setCardsPerPage(2);
     } else {
-      setCardsPerView(4);
+      setCardsPerPage(4);
     }
   };
 
   useEffect(() => {
     // Initial check for screen size
-    updateCardsPerView();
+    updateCardsPerPage();
 
-    // Update cardsPerView on window resize
-    window.addEventListener("resize", updateCardsPerView);
+    // Update cardsPerPage on window resize
+    window.addEventListener("resize", updateCardsPerPage);
 
     // Cleanup event listener on unmount
     return () => {
-      window.removeEventListener("resize", updateCardsPerView);
+      window.removeEventListener("resize", updateCardsPerPage);
     };
   }, []);
 
+  // Calculate the total number of pages
+  const totalPages = Math.ceil(exercises.length / cardsPerPage);
+
   const handleNext = () => {
-    if (currentIndex < exercises.length - cardsPerView) {
-      setCurrentIndex(currentIndex + 1);
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
     }
   };
 
   const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
     }
   };
 
   // Memoize the displayed exercises to prevent unnecessary re-renders
   const displayedExercises = useMemo(() => {
-    return exercises.slice(currentIndex, currentIndex + cardsPerView);
-  }, [currentIndex, cardsPerView, exercises]);
+    const start = currentPage * cardsPerPage;
+    return exercises.slice(start, start + cardsPerPage);
+  }, [currentPage, cardsPerPage, exercises]);
 
   return (
     <div className="relative">
@@ -63,22 +67,27 @@ const ExerciseCardList = ({ exercises }) => {
           </div>
         ))}
       </div>
-      <button
-        onClick={handlePrev}
-        className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gray-300 rounded-full p-2 hover:bg-gray-400 transition-colors"
-        disabled={currentIndex === 0}
-        aria-label="Previous"
-      >
-        ◀
-      </button>
-      <button
-        onClick={handleNext}
-        className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-300 rounded-full p-2 hover:bg-gray-400 transition-colors"
-        disabled={currentIndex >= exercises.length - cardsPerView}
-        aria-label="Next"
-      >
-        ▶
-      </button>
+      <div className="flex justify-between mt-4">
+        <button
+          onClick={handlePrev}
+          className="bg-gray-300 rounded-full p-2 hover:bg-gray-400 transition-colors"
+          disabled={currentPage === 0}
+          aria-label="Previous page"
+        >
+          ◀
+        </button>
+        <span>
+          Page {currentPage + 1} of {totalPages}
+        </span>
+        <button
+          onClick={handleNext}
+          className="bg-gray-300 rounded-full p-2 hover:bg-gray-400 transition-colors"
+          disabled={currentPage >= totalPages - 1}
+          aria-label="Next page"
+        >
+          ▶
+        </button>
+      </div>
     </div>
   );
 };

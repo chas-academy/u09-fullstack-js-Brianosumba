@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
-const Exercisepage = ({ exerciseName }) => {
+const Exercisepage = () => {
+  const { exerciseName } = useParams(); // Get the exerciseName from URL parameters
   const [exercises, setExercises] = useState({
     beginner: [],
     intermediate: [],
@@ -24,29 +25,29 @@ const Exercisepage = ({ exerciseName }) => {
           }
         );
 
-        console.log("fetched exercises:", response.data);
+        console.log(response.data);
 
         const allExercises = response.data;
 
-        // Manually categorize exercises by difficulty
-        const beginnerExercises = allExercises.filter(
-          (exercise) =>
-            exercise.intensity === "low" || exercise.level === "beginner"
-        );
-        const intermediateExercises = allExercises.filter(
-          (exercise) =>
-            exercise.intensity === "medium" || exercise.level === "intermediate"
-        );
-        const advancedExercises = allExercises.filter(
-          (exercise) =>
-            exercise.intensity === "high" || exercise.level === "advanced"
-        );
+        if (Array.isArray(allExercises)) {
+          const beginnerExercises = allExercises.filter(
+            (exercise) => exercise.level === "beginner"
+          );
+          const intermediateExercises = allExercises.filter(
+            (exercise) => exercise.level === "intermediate"
+          );
+          const advancedExercises = allExercises.filter(
+            (exercise) => exercise.level === "advanced"
+          );
 
-        setExercises({
-          beginner: beginnerExercises,
-          intermediate: intermediateExercises,
-          advanced: advancedExercises,
-        });
+          setExercises({
+            beginner: beginnerExercises,
+            intermediate: intermediateExercises,
+            advanced: advancedExercises,
+          });
+        } else {
+          console.error("Unexpected data structure:", allExercises);
+        }
       } catch (error) {
         console.error("Failed to fetch exercises:", error);
       }
@@ -55,7 +56,6 @@ const Exercisepage = ({ exerciseName }) => {
     fetchExercises();
   }, [exerciseName]);
 
-  // Handle when a user clicks on an exercise to see details
   const handleExerciseClick = (exerciseId, level) => {
     navigate(`/exercise-detail/${exerciseId}/${level}`);
   };
@@ -66,68 +66,45 @@ const Exercisepage = ({ exerciseName }) => {
         {exerciseName} Exercises
       </h1>
 
-      <div>
-        <h2 className="text-2xl font-bold mt-6">Beginner</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {exercises.beginner.map((exercise) => (
-            <div
-              key={exercise.id}
-              className="bg-blue-100 p-4 rounded-lg cursor-pointer"
-              onClick={() => handleExerciseClick(exercise.id, "beginner")}
-            >
-              <img
-                src={exercise.gifUrl}
-                alt={exercise.name}
-                className="w-full h-40 object-cover"
-              />
-              <p className="text-lg font-bold">{exercise.name}</p>
-            </div>
-          ))}
-        </div>
-
-        <h2 className="text-2xl font-bold mt-6">Intermediate</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {exercises.intermediate.map((exercise) => (
-            <div
-              key={exercise.id}
-              className="bg-yellow-100 p-4 rounded-lg cursor-pointer"
-              onClick={() => handleExerciseClick(exercise.id, "intermediate")}
-            >
-              <img
-                src={exercise.gifUrl}
-                alt={exercise.name}
-                className="w-full h-40 object-cover"
-              />
-              <p className="text-lg font-bold">{exercise.name}</p>
-            </div>
-          ))}
-        </div>
-
-        <h2 className="text-2xl font-bold mt-6">Advanced</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {exercises.advanced.map((exercise) => (
-            <div
-              key={exercise.id}
-              className="bg-red-100 p-4 rounded-lg cursor-pointer"
-              onClick={() => handleExerciseClick(exercise.id, "advanced")}
-            >
-              <img
-                src={exercise.gifUrl}
-                alt={exercise.name}
-                className="w-full h-40 object-cover"
-              />
-              <p className="text-lg font-bold">{exercise.name}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Render the exercises by level */}
+      {["beginner", "intermediate", "advanced"].map((level) => (
+        <div key={level}>
+          {" "}
+          {/* Replaced fragment with a div and added key here */}
+          <h2 className="text-2xl font-bold mt-6">
+            {level.charAt(0).toUpperCase() + level.slice(1)}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {exercises[level].map((exercise) => (
+              <div
+                key={exercise.id} // Ensure each exercise has a unique key
+                className={`bg-${
+                  level === "beginner"
+                    ? "blue"
+                    : level === "intermediate"
+                    ? "yellow"
+                    : "red"
+                }-100 p-4 rounded-lg cursor-pointer`}
+                onClick={() => handleExerciseClick(exercise.id, level)}
+              >
+                <img
+                  src={exercise.gifUrl}
+                  alt={exercise.name}
+                  className="w-full h-40 object-cover"
+                />
+                <p className="text-lg font-bold">{exercise.name}</p>
+              </div>
+            ))}
+          </div>
+        </div> // Closing div for the level section
+      ))}
     </div>
   );
 };
 
 // Define prop types for the Exercisepage component
 Exercisepage.propTypes = {
-  exerciseName: PropTypes.string.isRequired, // Specify that exerciseName is a required string
+  exerciseName: PropTypes.string.isRequired,
 };
 
 export default Exercisepage;
