@@ -129,10 +129,10 @@ const ExerciseDetailPage = () => {
           }}
         />
 
-        <Typography variant="h6" className="mb-2 font-semibold text-indigo-600">
+        <Typography variant="h6" className="mb-2 font-semibold text-green-600">
           Body Part: {exercise.bodyPart}
         </Typography>
-        <Typography variant="h6" className="mb-2 font-semibold text-green-500">
+        <Typography variant="h6" className="mb-2 font-semibold text-blue-500">
           Target: {exercise.target}
         </Typography>
         <Typography variant="h6" className="mb-2 font-semibold text-orange-500">
