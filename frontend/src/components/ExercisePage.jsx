@@ -91,7 +91,7 @@ const Exercisepage = () => {
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   {exercise.name}
                 </Typography>
-                <Typography variant="body1" color="text.secondary">
+                <Typography variant="body1" sx={{ color: "blue" }}>
                   Target: {exercise.target}
                 </Typography>
               </Box>
