@@ -3,54 +3,16 @@ import { GiWeightLiftingUp } from "react-icons/gi";
 
 // Define categories outside of the component to prevent re-definition on each render
 const categories = [
-  {
-    name: "Biceps",
-    icon: (
-      <GiWeightLiftingUp className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20" />
-    ),
-  },
-  {
-    name: "Triceps",
-    icon: (
-      <GiWeightLiftingUp className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20" />
-    ),
-  },
-  {
-    name: "Shoulders",
-    icon: (
-      <GiWeightLiftingUp className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20" />
-    ),
-  },
-  {
-    name: "Chest",
-    icon: (
-      <GiWeightLiftingUp className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20" />
-    ),
-  },
-  {
-    name: "Back",
-    icon: (
-      <GiWeightLiftingUp className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20" />
-    ),
-  },
-  {
-    name: "Quads",
-    icon: (
-      <GiWeightLiftingUp className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20" />
-    ),
-  },
-  {
-    name: "Hamstrings",
-    icon: (
-      <GiWeightLiftingUp className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20" />
-    ),
-  },
-  {
-    name: "Core",
-    icon: (
-      <GiWeightLiftingUp className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20" />
-    ),
-  },
+  { name: "back", icon: <GiWeightLiftingUp className="w-12 h-12" /> },
+  { name: "upper arms", icon: <GiWeightLiftingUp className="w-12 h-12" /> },
+  { name: "shoulders", icon: <GiWeightLiftingUp className="w-12 h-12" /> },
+  { name: "chest", icon: <GiWeightLiftingUp className="w-12 h-12" /> },
+  { name: "lower arms", icon: <GiWeightLiftingUp className="w-12 h-12" /> },
+  { name: "lower legs", icon: <GiWeightLiftingUp className="w-12 h-12" /> },
+  { name: "upper legs", icon: <GiWeightLiftingUp className="w-12 h-12" /> },
+  { name: "waist", icon: <GiWeightLiftingUp className="w-12 h-12" /> },
+  { name: "cardio", icon: <GiWeightLiftingUp className="w-12 h-12" /> },
+  { name: "neck", icon: <GiWeightLiftingUp className="w-12 h-12" /> },
 ];
 
 const ExerciseCategories = () => {
