@@ -4,7 +4,7 @@ import "./index.css";
 import AppComponent from "./components/AppComponent";
 import UserPage from "./pages/Userpage/UserPage";
 import Exercise from "./pages/Exercisepage/Exercise";
-import ExerciseDetailPage from "./pages/ExerciseDetailPage/ExerciseDetailPage";
+import ExerciseDetailPage from "./pages/Exercisedetailpage/Exercisedetailpage";
 import Login from "./pages/Loginpage/Login";
 import Register from "./pages/Loginpage/Register";
 import Admin from "./pages/AdminPage/Admin";
