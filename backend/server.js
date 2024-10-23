@@ -15,18 +15,18 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Import routes
-const userRoutes = require("./src/routes/userRoutes"); // Ensure this path is correct
+const userRoutes = require("./src/routes/user"); // Ensure this path is correct
 const authRoutes = require("./src/routes/auth"); // Ensure this path is correct
+const exerciseRoutes = require("./src/routes/exercise");
 
 // Use routes
 app.use("/api", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/exercises", exerciseRoutes);
 
 // Connect to MongoDB
 mongoose
-  .connect(
-    process.env.MONGODB_URI || "mongodb://localhost:27017/FitnessTrackerApp"
-  )
+  .connect(process.env.MONGODB_URI)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("Failed to connect to MongoDB", err));
 

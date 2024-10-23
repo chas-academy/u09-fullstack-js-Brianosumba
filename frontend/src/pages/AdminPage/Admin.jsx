@@ -2,115 +2,116 @@ import NavBar from "../../components/NavBar";
 import Footer from "../../components/footer";
 import AdminCard from "../../components/AdminCard";
 import { FaBell } from "react-icons/fa";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useAuthStore from "../Store/store";
-
-const usersData = [
-  {
-    id: 1,
-    name: "John Doe",
-    workoutType: "Pushups",
-    target: "Chest",
-    isActive: true,
-    level: "Beginner",
-    isNew: false,
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    workoutType: "Squats",
-    target: "Legs",
-    isActive: false,
-    level: "Intermediate",
-    isNew: false,
-  },
-  {
-    id: 3,
-    name: "Bob Johnson",
-    workoutType: "Deadlift",
-    target: "Back",
-    isActive: true,
-    level: "Advanced",
-    isNew: false,
-  },
-];
+import axios from "axios"; // To make API calls
 
 const Admin = () => {
-  const [users, setUsers] = useState(usersData); // State for users
-  const [notifications, setNotifications] = useState([]); // State for notifications
-  const [notificationCount, setNotificationCount] = useState(0); // State for notification badge count
-
-  //Access zustand store state
+  const [users, setUsers] = useState([]); // State for users
+  const [topWorkouts, setTopWorkouts] = useState([]); // State for top workouts
+  const [notifications, setNotifications] = useState([]); // Notifications state
+  const [notificationCount, setNotificationCount] = useState(0); // Notification badge count
   const { isAuthenticated, logout } = useAuthStore();
 
-  // Toggle user active status and generate notification
-  const toggleStatus = (userId) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) => {
-        if (user.id === userId) {
-          const updatedUser = { ...user, isActive: !user.isActive };
-          // If user becomes active, add a notification
-          if (updatedUser.isActive) {
-            addNotification(`${updatedUser.name} is on fire!`, "active");
-          }
-          return updatedUser;
-        }
-        return user;
-      })
-    );
+  // Fetch users from the backend
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await axios.get("/api/users"); // Assuming an API endpoint exists
+        setUsers(res.data);
+      } catch (error) {
+        console.error("Error fetching users", error);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // Fetch top workouts from the backend
+  useEffect(() => {
+    const fetchTopWorkouts = async () => {
+      try {
+        const res = await axios.get("/api/workouts/top"); // Assuming an API endpoint for top workouts
+        setTopWorkouts(res.data);
+      } catch (error) {
+        console.error("Error fetching top workouts", error);
+      }
+    };
+    fetchTopWorkouts();
+  }, []);
+
+  // Toggle user active status
+  const toggleStatus = async (userId) => {
+    try {
+      const updatedUser = await axios.patch(`/api/users/${userId}/status`); // Update status
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === userId
+            ? { ...user, isActive: updatedUser.data.isActive } // Make sure to access the correct property
+            : user
+        )
+      );
+
+      // Add notification
+      const statusMessage = updatedUser.data.isActive
+        ? `${updatedUser.data.name} is on fire!`
+        : `${updatedUser.data.name} has been set to inactive.`;
+      addNotification(statusMessage, "status");
+    } catch (error) {
+      console.error("Error updating user status", error);
+    }
   };
 
-  /* Add a new user and trigger a notification
-  const addNewUser = (newUser) => {
-    setUsers((prevUsers) => [
-      ...prevUsers,
-      { ...newUser, isNew: true, isActive: false },
-    ]);
-    addNotification(`New member alert: ${newUser.name}`, "newUser");
-  };*/
-
-  // Add a notification message to the notifications array
+  // Add a notification message
   const addNotification = (message, type) => {
     setNotifications((prevNotifications) => [
       ...prevNotifications,
       { message, type },
     ]);
-    setNotificationCount((prevCount) => prevCount + 1); // Increment the notification count
+    setNotificationCount((prevCount) => prevCount + 1);
   };
 
-  // Handle notification click to show all notifications in an alert
+  // Handle notification click to show all
   const handleNotificationClick = () => {
     if (notifications.length > 0) {
-      alert(notifications.map((n) => n.message).join("\n")); // Display all notifications
-      setNotifications([]); // Clear notifications after showing
-      setNotificationCount(0); // Reset notification count
+      alert(notifications.map((n) => n.message).join("\n"));
+      setNotifications([]); // Clear notifications
+      setNotificationCount(0); // Reset count
     } else {
-      alert("No new notifications"); // If no notifications
+      alert("No new notifications");
     }
   };
 
-  const recommendWorkout = (name) => {
-    console.log(`Recommended workout for ${name}`);
+  // Admin CRUD operations
+  const recommendWorkout = async (userId) => {
+    try {
+      await axios.post(`/api/users/${userId}/recommend`); // Send recommendation
+      addNotification(
+        `Recommended a workout for user ID: ${userId}`,
+        "recommendation"
+      );
+    } catch (error) {
+      console.error("Error recommending workout", error);
+    }
   };
 
-  const editWorkout = (name) => {
-    console.log(`Edit workout for ${name}`);
+  const editWorkout = (userId) => {
+    console.log(`Edit workout for user ID: ${userId}`);
+    // Add logic for editing workout via API if necessary
   };
 
-  const deleteWorkout = (userId) => {
+  const deleteWorkout = async (userId) => {
     if (
-      window.confirm(`Are you sure you want to delete user with ID: ${userId}`)
+      window.confirm(`Are you sure you want to delete user with ID: ${userId}?`)
     ) {
-      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
-      console.log(`Deleted workout for user with ID: ${userId}`);
+      try {
+        await axios.delete(`/api/users/${userId}`); // Delete user
+        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+        addNotification(`Deleted user ${userId}`, "deletion");
+      } catch (error) {
+        console.error("Error deleting user", error);
+      }
     }
   };
-
-  const topWorkoutsData = [
-    { name: "Pushups", count: 5 },
-    { name: "Squats", count: 10 },
-    { name: "Deadlifts", count: 10 },
-  ];
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-gray-100">
@@ -121,18 +122,18 @@ const Admin = () => {
           Welcome to Your Admin Dashboard
         </h1>
 
-        {/* Search and notification icon */}
+        {/* Search and Notification Icon */}
         <div className="flex justify-center items-center mb-8 px-4">
           <button
             type="button"
             aria-label="Notifications"
             className="relative text-gray-600 hover:text-gray-800 transition duration-300 ml-4"
-            onClick={handleNotificationClick} // Handle notification icon click
+            onClick={handleNotificationClick}
           >
             <FaBell className="h-8 w-8 text-blue-600 hover:text-goldenrod transition duration-300 ease-in-out transform hover:scale-110" />
             {notificationCount > 0 && (
               <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
-                {notificationCount} {/* Show notification count */}
+                {notificationCount}
               </span>
             )}
           </button>
@@ -152,10 +153,10 @@ const Admin = () => {
           </AdminCard>
           <AdminCard title="Top Workouts">
             <p className="text-2xl font-semibold text-blue-600">
-              {topWorkoutsData.length} workouts
+              {topWorkouts.length} workouts
             </p>
             <ul className="mt-2">
-              {topWorkoutsData.map((workout, index) => (
+              {topWorkouts.map((workout, index) => (
                 <li key={index} className="text-gray-600">
                   {workout.name} - {workout.count} times
                 </li>
@@ -189,7 +190,7 @@ const Admin = () => {
                   </td>
                   <td className="border-b border-gray-300 p-4">
                     <button
-                      onClick={() => toggleStatus(user.id)} // Toggle status on button click
+                      onClick={() => toggleStatus(user.id)}
                       className={`py-1 px-2 rounded text-white ${
                         user.isActive ? "bg-green-500" : "bg-red-500"
                       }`}
@@ -200,13 +201,13 @@ const Admin = () => {
                   <td className="border-b border-gray-300 p-4">{user.level}</td>
                   <td className="border-b border-gray-300 p-4 flex space-x-2">
                     <button
-                      onClick={() => recommendWorkout(user.name)}
+                      onClick={() => recommendWorkout(user.id)}
                       className="text-green-500 transition-all duration-500 ease-in-out transform hover:scale-110"
                     >
                       Recommend
                     </button>
                     <button
-                      onClick={() => editWorkout(user.name)}
+                      onClick={() => editWorkout(user.id)}
                       className="text-blue-500 transition-all duration-500 ease-in-out transform hover:scale-110"
                     >
                       Edit
