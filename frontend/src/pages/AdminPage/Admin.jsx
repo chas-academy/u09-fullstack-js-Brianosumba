@@ -1,6 +1,6 @@
 import NavBar from "../../components/NavBar";
 import Footer from "../../components/footer";
-import AdminCard from "../../components/Admincard";
+import AdminCard from "../../components/AdminCard";
 import { FaBell } from "react-icons/fa";
 import { useState } from "react";
 import useAuthStore from "../Store/store";
