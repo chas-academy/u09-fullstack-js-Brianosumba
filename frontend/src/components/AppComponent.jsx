@@ -1,5 +1,5 @@
 import NavBar from "./NavBar";
-import HomePage from "../pages/Homepage/HomePage";
+import HomePage from "../pages/Homepage/homePage";
 import Footer from "./Footer";
 
 const AppComponent = () => {
