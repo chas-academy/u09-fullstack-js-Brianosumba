@@ -7,7 +7,7 @@ import CircularProgressBar from "./CircularProgressBar"; // Import your Circular
 import Box from "@mui/material/Box"; // Import MUI Box
 import Typography from "@mui/material/Typography"; // Import MUI Typography
 
-const ExerciseDetailPage = () => {
+const ExerciseDetail = () => {
   const { exerciseId } = useParams(); // Get the exerciseId from the URL parameters
   const [exercise, setExercise] = useState(null); // State to hold the exercise details
 
@@ -183,4 +183,4 @@ const ExerciseDetailPage = () => {
   );
 };
 
-export default ExerciseDetailPage;
+export default ExerciseDetail;
