@@ -3,7 +3,7 @@ import NavBar from "../../components/NavBar";
 import SearchField from "../../components/SearchField";
 import HeroBannerCarousel from "../../components/HeroBannerCarousel";
 import ExerciseCardList from "../../components/ExerciseCardList";
-import Footer from "../../components/Footer";
+import Footer from "../../components/footer";
 import ExerciseCategories from "../../components/ExerciseCategories"; // Import the ExerciseCategories component
 import useAuthStore from "../Store/store";
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import NavBar from "../components/NavBar"; // Ensure to import your NavBar
-import Footer from "../components/Footer"; // Ensure to import your Footer
+import Footer from "./footer"; // Ensure to import your Footer
 import CircularProgressBar from "./CircularProgressBar"; // Import your CircularProgressBar component
 import Box from "@mui/material/Box"; // Import MUI Box
 import Typography from "@mui/material/Typography"; // Import MUI Typography

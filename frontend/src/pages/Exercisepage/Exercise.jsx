@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import Exercisepage from "../../components/ExercisePage";
-import Footer from "../../components/Footer";
+import Footer from "../../components/footer";
 import NavBar from "../../components/NavBar";
 import useAuthStore from "../Store/store";
 
