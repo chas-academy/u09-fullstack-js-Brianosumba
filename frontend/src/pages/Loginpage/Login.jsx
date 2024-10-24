@@ -1,4 +1,3 @@
-import axios from "axios";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
@@ -39,49 +38,23 @@ const Login = () => {
   // Form submission handler
   const onSubmit = async (data) => {
     setLoading(true); // Start loading state when submission begins
-
     try {
       // Send login request to the backend
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/login", // Ensure correct backend endpoint
-        {
-          email: data.email,
-          password: data.password,
-        }
-      );
-
-      console.log("Login successful:", response.data);
-      console.log("Remember Me checked:", rememberMe);
-
-      // Store token based on "Remember Me" state
-      if (rememberMe) {
-        localStorage.setItem("token", response.data.token); // Long-term storage
-      } else {
-        sessionStorage.setItem("token", response.data.token); // Short-term storage
-      }
-
-      // Zustand's login action - store the username for global use
-      login(response.data.user.username);
-
-      // Redirect the user to the user page
+      await login(data.email, data.password);
       navigate("/userpage");
-
-      alert("Login successful!");
     } catch (error) {
-      console.error("Login failed:", error.response?.data || error.message);
-      alert(
-        `Login failed: ${error.response?.data?.message || "Please try again."}`
-      );
+      console.error(error.message);
+      alert(`${error.message || "Please try again."}`);
     } finally {
       setLoading(false); // Stop loading state once the request completes
     }
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-900">
+    <div className="flex items-center justify-center h-screen  ">
       <form
         onSubmit={handleSubmit(onSubmit)} // Use handleSubmit from react-hook-form
-        className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4"
+        className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4 text-black"
       >
         <h2 className="text-2xl font-bold mb-5 text-center text-navy">Login</h2>
 

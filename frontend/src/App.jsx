@@ -20,20 +20,22 @@ const App = () => {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<AppComponent />} />
+      <div className="bg-gray-800 text-white">
+        <Routes>
+          <Route path="/" element={<AppComponent />} />
 
-        <Route path="userpage" element={<UserPage />} />
-        <Route path="exercise/:exerciseName" element={<Exercise />} />
-        <Route
-          path="exercise-detail/:exerciseId"
-          element={<ExerciseDetail />}
-        />
-        <Route path="admin" element={<Admin />} />
+          <Route path="userpage" element={<UserPage />} />
+          <Route path="exercise/:bodyPartName" element={<Exercise />} />
+          <Route
+            path="exercise-detail/:exerciseId"
+            element={<ExerciseDetail />}
+          />
+          <Route path="admin" element={<Admin />} />
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-      </Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 };

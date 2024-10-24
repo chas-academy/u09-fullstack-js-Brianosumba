@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
-    <section className="flex flex-col items-center justify-center bg-blue-700 text-white text-center py-12 px-4 min-h-[56vh]">
+    <section className="flex flex-col items-center justify-center  text-white text-center py-12 px-4 min-h-[56vh]">
       <h1 className="hero-section-title text-3xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-6xl font-bold mb-4 sm:mb-6 lg:mb-8">
         Welcome to Track Fit
       </h1>

@@ -3,126 +3,81 @@ import Footer from "../../components/footer";
 import AdminCard from "../../components/AdminCard";
 import { FaBell } from "react-icons/fa";
 import { useState, useEffect } from "react";
-import useAuthStore from "../Store/store";
-import axios from "axios"; // To make API calls
+
+import { fetchUsers, updateUserStatus } from "../../services/userService"; // Import your API functions
 
 const Admin = () => {
   const [users, setUsers] = useState([]); // State for users
-  const [topWorkouts, setTopWorkouts] = useState([]); // State for top workouts
-  const [notifications, setNotifications] = useState([]); // Notifications state
-  const [notificationCount, setNotificationCount] = useState(0); // Notification badge count
-  const { isAuthenticated, logout } = useAuthStore();
+  const [notifications, setNotifications] = useState([]); // State for notifications
+  const [notificationCount, setNotificationCount] = useState(0); // State for notification badge count
 
   // Fetch users from the backend
   useEffect(() => {
-    const fetchUsers = async () => {
+    const loadUsers = async () => {
       try {
-        const res = await axios.get("/api/users"); // Assuming an API endpoint exists
-        setUsers(res.data);
+        const usersData = await fetchUsers(); // Call the fetchUsers function
+        setUsers(usersData); // Set users state with fetched data
       } catch (error) {
-        console.error("Error fetching users", error);
+        console.error("Error fetching users:", error);
+        // Handle error (e.g., set error state, notify user)
       }
     };
-    fetchUsers();
-  }, []);
 
-  // Fetch top workouts from the backend
-  useEffect(() => {
-    const fetchTopWorkouts = async () => {
-      try {
-        const res = await axios.get("/api/workouts/top"); // Assuming an API endpoint for top workouts
-        setTopWorkouts(res.data);
-      } catch (error) {
-        console.error("Error fetching top workouts", error);
-      }
-    };
-    fetchTopWorkouts();
-  }, []);
+    loadUsers(); // Call the function to load users
+  }, []); // Run once on component mount
 
-  // Toggle user active status
+  // Toggle user active status and generate notification
   const toggleStatus = async (userId) => {
     try {
-      const updatedUser = await axios.patch(`/api/users/${userId}/status`); // Update status
+      await updateUserStatus(userId); // Call the API to update user status
       setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId
-            ? { ...user, isActive: updatedUser.data.isActive } // Make sure to access the correct property
-            : user
-        )
+        prevUsers.map((user) => {
+          if (user.id === userId) {
+            const updatedUser = { ...user, isActive: !user.isActive };
+            if (updatedUser.isActive) {
+              addNotification(`${updatedUser.name} is on fire!`, "active");
+            }
+            return updatedUser;
+          }
+          return user;
+        })
       );
-
-      // Add notification
-      const statusMessage = updatedUser.data.isActive
-        ? `${updatedUser.data.name} is on fire!`
-        : `${updatedUser.data.name} has been set to inactive.`;
-      addNotification(statusMessage, "status");
     } catch (error) {
-      console.error("Error updating user status", error);
+      console.error("Error updating user status:", error);
+      // Handle error (e.g., notify user)
     }
   };
 
-  // Add a notification message
+  // Add a notification message to the notifications array
   const addNotification = (message, type) => {
     setNotifications((prevNotifications) => [
       ...prevNotifications,
       { message, type },
     ]);
-    setNotificationCount((prevCount) => prevCount + 1);
+    setNotificationCount((prevCount) => prevCount + 1); // Increment the notification count
   };
 
-  // Handle notification click to show all
+  // Handle notification click to show all notifications in an alert
   const handleNotificationClick = () => {
     if (notifications.length > 0) {
-      alert(notifications.map((n) => n.message).join("\n"));
-      setNotifications([]); // Clear notifications
-      setNotificationCount(0); // Reset count
+      alert(notifications.map((n) => n.message).join("\n")); // Display all notifications
+      setNotifications([]); // Clear notifications after showing
+      setNotificationCount(0); // Reset notification count
     } else {
-      alert("No new notifications");
-    }
-  };
-
-  // Admin CRUD operations
-  const recommendWorkout = async (userId) => {
-    try {
-      await axios.post(`/api/users/${userId}/recommend`); // Send recommendation
-      addNotification(
-        `Recommended a workout for user ID: ${userId}`,
-        "recommendation"
-      );
-    } catch (error) {
-      console.error("Error recommending workout", error);
-    }
-  };
-
-  const editWorkout = (userId) => {
-    console.log(`Edit workout for user ID: ${userId}`);
-    // Add logic for editing workout via API if necessary
-  };
-
-  const deleteWorkout = async (userId) => {
-    if (
-      window.confirm(`Are you sure you want to delete user with ID: ${userId}?`)
-    ) {
-      try {
-        await axios.delete(`/api/users/${userId}`); // Delete user
-        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
-        addNotification(`Deleted user ${userId}`, "deletion");
-      } catch (error) {
-        console.error("Error deleting user", error);
-      }
+      alert("No new notifications"); // If no notifications
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-gray-100">
-      <NavBar isAuthenticated={isAuthenticated} logout={logout} />
+      <NavBar />
 
       <div className="container mx-auto py-8 flex-grow">
         <h1 className="text-4xl font-bold text-center text-blue-700 mb-8">
           Welcome to Your Admin Dashboard
         </h1>
 
-        {/* Search and Notification Icon */}
+        {/* Notification Icon */}
         <div className="flex justify-center items-center mb-8 px-4">
           <button
             type="button"
@@ -152,16 +107,8 @@ const Admin = () => {
             </p>
           </AdminCard>
           <AdminCard title="Top Workouts">
-            <p className="text-2xl font-semibold text-blue-600">
-              {topWorkouts.length} workouts
-            </p>
-            <ul className="mt-2">
-              {topWorkouts.map((workout, index) => (
-                <li key={index} className="text-gray-600">
-                  {workout.name} - {workout.count} times
-                </li>
-              ))}
-            </ul>
+            {/* Assume top workouts data is computed or fetched */}
+            <p className="text-2xl font-semibold text-blue-600">3 workouts</p>
           </AdminCard>
         </div>
 
@@ -190,7 +137,7 @@ const Admin = () => {
                   </td>
                   <td className="border-b border-gray-300 p-4">
                     <button
-                      onClick={() => toggleStatus(user.id)}
+                      onClick={() => toggleStatus(user.id)} // Toggle status on button click
                       className={`py-1 px-2 rounded text-white ${
                         user.isActive ? "bg-green-500" : "bg-red-500"
                       }`}
@@ -200,24 +147,9 @@ const Admin = () => {
                   </td>
                   <td className="border-b border-gray-300 p-4">{user.level}</td>
                   <td className="border-b border-gray-300 p-4 flex space-x-2">
-                    <button
-                      onClick={() => recommendWorkout(user.id)}
-                      className="text-green-500 transition-all duration-500 ease-in-out transform hover:scale-110"
-                    >
-                      Recommend
-                    </button>
-                    <button
-                      onClick={() => editWorkout(user.id)}
-                      className="text-blue-500 transition-all duration-500 ease-in-out transform hover:scale-110"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => deleteWorkout(user.id)}
-                      className="text-red-500 transition-all duration-500 ease-in-out transform hover:scale-110"
-                    >
-                      Delete
-                    </button>
+                    <button className="text-green-500">Recommend</button>
+                    <button className="text-blue-500">Edit</button>
+                    <button className="text-red-500">Delete</button>
                   </td>
                 </tr>
               ))}

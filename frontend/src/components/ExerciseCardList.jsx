@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { ExerciseCard } from "./ExcerciseCard";
 import PropTypes from "prop-types";
 
 const ExerciseCardList = ({ exercises }) => {
@@ -51,47 +52,42 @@ const ExerciseCardList = ({ exercises }) => {
   }, [currentPage, cardsPerPage, exercises]);
 
   return (
-    <div className="relative">
+    <div className="container container-md mx-auto py-4">
       {/* Update the card layout to use larger cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {displayedExercises.map((exercise) => (
-          <div
-            key={exercise.id} // Ensure each exercise has a unique 'id'
-            className="bg-white p-6 rounded-lg shadow-lg transition-transform duration-300 hover:scale-105"
-          >
-            <img
-              src={exercise.gifUrl}
-              alt={exercise.name}
-              className="w-full h-60 object-cover rounded-md" // Increased height to 60 (from 40)
-            />
-            <p className="text-center mt-4 text-lg font-semibold">
-              {exercise.name}
-            </p>
-          </div>
+          <ExerciseCard
+            key={exercise.id}
+            id={exercise.id}
+            name={exercise.name}
+            gifUrl={exercise.gifUrl}
+          />
         ))}
       </div>
 
       {/* Pagination buttons */}
-      <div className="flex justify-between mt-6">
-        <button
-          onClick={handlePrev}
-          className="bg-gray-300 rounded-full p-2 hover:bg-gray-400 transition-colors"
-          disabled={currentPage === 0}
-          aria-label="Previous page"
-        >
-          ◀
-        </button>
-        <span className="text-lg">
-          Page {currentPage + 1} of {totalPages}
-        </span>
-        <button
-          onClick={handleNext}
-          className="bg-gray-300 rounded-full p-2 hover:bg-gray-400 transition-colors"
-          disabled={currentPage >= totalPages - 1}
-          aria-label="Next page"
-        >
-          ▶
-        </button>
+      <div className="max-w-sm mx-auto">
+        <div className="flex justify-between mt-6">
+          <button
+            onClick={handlePrev}
+            className="bg-gray-300 rounded-full p-2 hover:bg-gray-400 transition-colors"
+            disabled={currentPage === 0}
+            aria-label="Previous page"
+          >
+            Previous
+          </button>
+          <span className="text-lg">
+            Page {currentPage + 1} of {totalPages}
+          </span>
+          <button
+            onClick={handleNext}
+            className="bg-gray-300 rounded-full p-2 hover:bg-gray-400 transition-colors"
+            disabled={currentPage >= totalPages - 1}
+            aria-label="Next page"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

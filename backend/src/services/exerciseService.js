@@ -1,5 +1,10 @@
-// src/services/exerciseService.js
-const fetch = require("node-fetch"); // Keep this for Node.js environment
+const dotenv = require("dotenv");
+
+dotenv.config();
+
+// Dynamic import for node-fetch
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 // Function to fetch a list of exercises with pagination
 const fetchExercises = async (limit = 10, offset = 0) => {
@@ -9,7 +14,7 @@ const fetchExercises = async (limit = 10, offset = 0) => {
     method: "GET",
     headers: {
       "x-rapidapi-host": "exercisedb.p.rapidapi.com",
-      "x-rapidapi-key": import.meta.env.VITE_RAPIDAPI_KEY, // Accessing the RapidAPI key
+      "x-rapidapi-key": process.env.RAPIDAPI_KEY, // Accessing the RapidAPI key
       "Content-Type": "application/json",
     },
   });
@@ -29,7 +34,7 @@ const fetchExerciseById = async (id) => {
     method: "GET",
     headers: {
       "x-rapidapi-host": "exercisedb.p.rapidapi.com",
-      "x-rapidapi-key": import.meta.env.VITE_RAPIDAPI_KEY, // Accessing the RapidAPI key
+      "x-rapidapi-key": process.env.RAPIDAPI_KEY, // Accessing the RapidAPI key
       "Content-Type": "application/json",
     },
   });
@@ -42,4 +47,4 @@ const fetchExerciseById = async (id) => {
 };
 
 // Export the functions for use in other parts of the application
-export { fetchExercises, fetchExerciseById };
+module.exports = { fetchExercises, fetchExerciseById }; // Use CommonJS export

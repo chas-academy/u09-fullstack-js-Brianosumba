@@ -85,10 +85,10 @@ const Register = () => {
 
   // Rendering the Sign-Up form
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-900">
+    <div className="flex items-center justify-center h-screen bg-gray-900 ">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4"
+        className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4 text-black"
       >
         <h2 className="text-2xl font-bold mb-5 text-center text-navy">
           Sign Up

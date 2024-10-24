@@ -2,16 +2,33 @@
 //Think of the store as a shared vault where all components can access and update values.
 
 import { create } from "zustand";
+import { loginWithCredentials } from "../../services/authService";
 
 const useAuthStore = create((set) => ({
   isAuthenticated: false,
   username: "",
+  isAdmin: false,
+  token: "",
 
-  // Action to log in a user
-  login: (username) => {
+  /**
+   * @param {string} username
+   * @param {string} password
+   * @desription Action to log in a user
+   */
+  login: async (username, password) => {
     console.log("Logging in user:", username);
-    set({ isAuthenticated: true, username });
-    console.log("User logged in:", { isAuthenticated: true, username });
+    const data = await loginWithCredentials(username, password);
+    if (data) {
+      set({
+        isAuthenticated: true,
+        username: data?.user?.username,
+        token: data?.token,
+        isAdmin: data?.user?.isAdmin,
+      });
+      console.log("User logged in:", { isAuthenticated: true, username });
+      return true;
+    }
+    return false;
   },
 
   // Action to log out a user

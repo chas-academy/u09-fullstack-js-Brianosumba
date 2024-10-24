@@ -10,7 +10,10 @@ const router = express.Router(); // Create a new Express router
 router.post("/register", async (req, res) => {
   // Destructure username, email, and password from the request body
   const { username, email, password, secretCode } = req.body; // Secret code for admin registration
-
+  const validateBody = req.body && !!username && !!email && !!password;
+  if (!validateBody) {
+    return res.status(400).json({ message: "Invalid body" });
+  }
   try {
     // Check if the user already exists in the database using their email
     const existingUser = await User.findOne({ email });
@@ -72,7 +75,7 @@ router.post("/login", async (req, res) => {
     // Generate a JWT token with user ID and admin status
     const token = jwt.sign(
       { id: user._id, isAdmin: user.isAdmin }, // Payload contains user ID and admin status
-      "jwtSecret", // Secret key for signing the token (should be stored securely)
+      process.env.JWT_SECRET, // Secret key for signing the token (should be stored securely)
       {
         expiresIn: "1h", // Token expiration time
       }

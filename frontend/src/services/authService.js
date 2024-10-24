@@ -6,7 +6,7 @@
 import axios from "axios"; // Importing axios for making HTTP requests
 
 //Base URL for your backend
-const API_URL = "http://localhost:3000/api";
+const API_URL = "http://localhost:3000/api/auth";
 
 // Register API call function
 // This function sends a POST request to the server to register a new user.
@@ -25,16 +25,29 @@ export const register = async (userData) => {
   }
 };
 
-// Login API call function
-// This function sends a POST request to the server to log in a user.
-// It takes userData as an argument, which contains the login credentials.
-export const login = async (userData) => {
+/**
+ * @param {string} username
+ * @param {string} password
+ * @desription Login API call function
+ * This function sends a POST request to the server to log in a user.
+ *  It takes userData as an argument, which contains the login credentials.
+ */
+export const loginWithCredentials = async (username, password) => {
   try {
     // Sending a POST request to the /api/login endpoint with userData
-    const response = await axios.post(`${API_URL}/login`, userData, {
-      withCredentials: true, //Include cookies or jwt tokens in the request
-    });
+    const response = await axios.post(
+      `${API_URL}/login`,
+      {
+        email: username,
+        password,
+      },
+      {
+        withCredentials: true, //Include cookies or jwt tokens in the request
+      }
+    );
+
     // Returning the response data from the server (usually user info or a success message)
+    localStorage.setItem("token", response.data.token);
     return response.data;
   } catch (error) {
     // Handle any errors that occur during the request

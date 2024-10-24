@@ -2,14 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import useAuthStore from "../pages/Store/store";
-
+import { Link } from "react-router-dom";
 const NavBar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
   //Zustand state
-  const { isAuthenticated, username, logout } = useAuthStore();
+  const { isAuthenticated, username, logout, isAdmin } = useAuthStore();
 
   // Handle user logout
   const handleLogout = () => {
@@ -51,6 +51,16 @@ const NavBar = () => {
       }`}
     >
       <ul className="py-2">
+        {isAdmin ? (
+          <li>
+            <Link
+              to="/admin"
+              className="block w-full text-left px-4 py-2 hover:bg-gray-300 transition-colors"
+            >
+              Admin
+            </Link>
+          </li>
+        ) : null}
         {isAuthenticated ? (
           <li>
             <button
@@ -79,7 +89,9 @@ const NavBar = () => {
 
   return (
     <nav className="bg-blue-900 text-white p-4 flex justify-between items-center relative">
-      <div className="text-xl font-semibold">TRACKFIT</div>
+      <div className="text-xl font-semibold">
+        <Link to="/">TRACKFIT</Link>
+      </div>
       <div className="relative" ref={dropdownRef}>
         <button
           aria-expanded={isDropdownOpen}

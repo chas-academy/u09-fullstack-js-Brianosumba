@@ -105,7 +105,7 @@ const ExerciseDetail = () => {
   }
 
   return (
-    <div className="bg-gray-200 min-h-screen">
+    <div className=" min-h-screen">
       <NavBar />
       <div className="container mx-auto py-8">
         <Typography variant="h3" component="h1" className="mb-4" gutterBottom>
