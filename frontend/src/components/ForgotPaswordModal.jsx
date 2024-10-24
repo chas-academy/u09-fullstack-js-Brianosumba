@@ -76,11 +76,8 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
 
         <form onSubmit={handleSubmit(onSubmit)}>
           {/* Username Field */}
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 font-bold mb-2"
-              htmlFor="username"
-            >
+          <div className="mb-4 text-gray-900">
+            <label className="block  font-bold mb-2" htmlFor="username">
               Username
             </label>
             <input
@@ -99,11 +96,8 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* New Password Field */}
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 font-bold mb-2"
-              htmlFor="newPassword"
-            >
+          <div className="mb-4 text-gray-900">
+            <label className="block  font-bold mb-2" htmlFor="newPassword">
               New Password
             </label>
             <input
@@ -122,11 +116,8 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* Confirm Password Field */}
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 font-bold mb-2"
-              htmlFor="confirmPassword"
-            >
+          <div className="mb-4 text-gray-900">
+            <label className="block  font-bold mb-2" htmlFor="confirmPassword">
               Confirm Password
             </label>
             <input
