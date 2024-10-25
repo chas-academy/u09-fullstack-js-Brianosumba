@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { ExerciseCard } from "./ExcerciseCard";
+import { ExerciseCard } from "../components/ExcerciseCard"; // Ensure correct import
+
 const Exercisepage = () => {
-  const { bodyPartName } = useParams(); // Get the exerciseName from URL parameters
+  const { bodyPartName } = useParams(); // Get the body part name from URL parameters
   const [exercises, setExercises] = useState([]); // State to hold exercises
 
   useEffect(() => {
@@ -18,6 +19,7 @@ const Exercisepage = () => {
             },
           }
         );
+        console.log(response.data); // Log the fetched data
         setExercises(response.data); // Set the exercises for the selected body part
       } catch (error) {
         console.error("Failed to fetch exercises:", error);
@@ -34,14 +36,14 @@ const Exercisepage = () => {
       </h3>
 
       <div className="container container-md mx-auto py-4">
-        {/* Update the card layout to use larger cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {exercises.map((exercise) => (
             <ExerciseCard
-              key={exercise.id}
+              key={exercise.id} // Ensure this key is correct
+              id={exercise.id} // Ensure this key is correct
               name={exercise.name}
               gifUrl={exercise.gifUrl}
-              href={`/exercise-detail/${exercise.id}`}
+              target={exercise.target} // Optional: include target if it exists
             />
           ))}
         </div>
