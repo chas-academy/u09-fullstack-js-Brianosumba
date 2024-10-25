@@ -22,12 +22,14 @@ const UserPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pageLoad, setPageload] = useState(false);
+
   const handleSearch = useCallback(
     async (e) => {
       e?.preventDefault();
       setError(null);
 
-      if (query.trim()) {
+      // Only proceed if query exists and is not null
+      if (query && query.trim()) {
         setLoading(true);
         try {
           const response = await axios.get(
@@ -61,7 +63,6 @@ const UserPage = () => {
   useEffect(() => {
     setPageload(true);
     if (pageLoad && !searchedExercises) {
-      console.log("HEllo");
       handleSearch();
     }
   }, [searchedExercises, handleSearch, pageLoad]);

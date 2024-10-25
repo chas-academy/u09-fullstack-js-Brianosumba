@@ -1,14 +1,16 @@
 import PropTypes from "prop-types";
+
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
+
 const SearchField = ({ query, setQuery, error, loading }) => {
   return (
     <div className="flex flex-col justify-center items-center mt-6 text-black">
       <div className="flex w-full md:w-1/2">
         <input
           type="text"
-          value={query}
+          value={query ?? ""} // Default to an empty string if query is null or undefined
           onChange={(e) => setQuery(`query=${e.target.value}`)}
           placeholder="Search exercises"
           className={classNames(
@@ -19,7 +21,7 @@ const SearchField = ({ query, setQuery, error, loading }) => {
 
         <button
           type="submit"
-          className="bg-blue-600 text-white p-4 rounded-lg ml-2"
+          className="bg-blue-600 text-white p-4 rounded-lg ml-2 hover:bg-blue-700 hover:shadow-lg transform hover:scale-105 transition duration-200 ease-in-out"
           disabled={loading}
         >
           {loading ? "Loading..." : "Search"}
@@ -35,10 +37,10 @@ const SearchField = ({ query, setQuery, error, loading }) => {
 };
 
 SearchField.propTypes = {
-  setQuery: PropTypes.func.isRequired,
   query: PropTypes.string,
+  setQuery: PropTypes.func.isRequired,
   loading: PropTypes.bool,
-  error: PropTypes.bool,
+  error: PropTypes.string, // Expect a string for the error message
 };
 
 export default SearchField;

@@ -1,5 +1,6 @@
 import { GiWeightLiftingUp } from "react-icons/gi";
 import { Link } from "react-router-dom";
+
 // Define categories outside of the component to prevent re-definition on each render
 const categories = [
   {
@@ -63,17 +64,23 @@ const categories = [
     href: "/exercise/neck",
   },
 ];
+
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
+
 const ExerciseCategories = () => {
   return (
     <div className="p-6">
-      <h2 className="text-sm font-medium text-gray-500">Workout categories</h2>
-      <ul role="list" className="mt-3 flex gap-5 items-center justify-center">
+      <h2 className="text-sm font-medium text-gray-500">Workout Categories</h2>
+      {/* Responsive container for categories */}
+      <ul
+        role="list"
+        className="mt-3 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 items-center"
+      >
         {categories.map((project) => (
           <Link to={project.href} key={project.name}>
-            <li className=" flex rounded-md shadow-sm border border-gray-100 border-sm hover:border-gray-500 rounded-r-md">
+            <li className="flex rounded-md shadow-sm border border-gray-100 border-sm hover:border-gray-500">
               <div
                 className={classNames(
                   project.bgColor,
@@ -85,10 +92,7 @@ const ExerciseCategories = () => {
 
               <div className="flex flex-1 items-center justify-between truncate rounded-r-md border-b border-r border-t border-gray-200 bg-white">
                 <div className="flex-1 truncate px-4 py-2 text-sm">
-                  <p
-                    href={project.href}
-                    className="font-medium text-gray-900 hover:text-gray-600 capitalize"
-                  >
+                  <p className="font-medium text-gray-900 hover:text-gray-600 capitalize">
                     {project.name}
                   </p>
                 </div>
@@ -100,6 +104,9 @@ const ExerciseCategories = () => {
     </div>
   );
 };
+
+export default ExerciseCategories;
+
 /*   return (
     <div className="p-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -123,4 +130,3 @@ const ExerciseCategories = () => {
   );
 };
  */
-export default ExerciseCategories;
