@@ -4,8 +4,9 @@ export const fetchUsers = async () => {
   const token = localStorage.getItem("token");
 
   if (!token) {
-    throw new Error("WOOOW sätt en token");
+    throw new Error("No token found. Please log in again.");
   }
+
   const response = await fetch("http://localhost:3000/api/users", {
     method: "GET",
     headers: {
@@ -14,8 +15,11 @@ export const fetchUsers = async () => {
     },
   });
 
+  // Enhanced error handling with detailed logging
   if (!response.ok) {
-    throw new Error("Network response was not ok " + response.statusText);
+    const errorDetails = await response.text(); // Get detailed error message
+    console.error("Error fetching users:", errorDetails); // Log error details
+    throw new Error("Network response was not ok: " + errorDetails);
   }
 
   return response.json(); // Return the parsed JSON data
@@ -37,7 +41,9 @@ export const updateUserStatus = async (userId) => {
   );
 
   if (!response.ok) {
-    throw new Error("Failed to update user status: " + response.statusText);
+    const errorDetails = await response.text(); // Get detailed error message
+    console.error("Failed to update user status:", errorDetails);
+    throw new Error("Failed to update user status: " + errorDetails);
   }
 
   return response.json(); // Return the updated user data if needed
