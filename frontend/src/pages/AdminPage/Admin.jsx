@@ -114,7 +114,7 @@ const Admin = () => {
 
         {/* User Table */}
         <div className="overflow-x-auto bg-white rounded-lg shadow-md">
-          <table className="min-w-full border border-gray-300">
+          <table className="min-w-full border border-gray-300 text-black">
             <thead className="bg-blue-600 text-white">
               <tr>
                 <th className="py-4 px-6 text-left">Name</th>
@@ -126,8 +126,11 @@ const Admin = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
-                <tr key={user.id} className="border-b hover:bg-gray-100">
+              {users.map((user, index) => (
+                <tr
+                  key={user.id || index}
+                  className="border-b hover:bg-gray-100"
+                >
                   <td className="border-b border-gray-300 p-4">{user.name}</td>
                   <td className="border-b border-gray-300 p-4">
                     {user.workoutType}
