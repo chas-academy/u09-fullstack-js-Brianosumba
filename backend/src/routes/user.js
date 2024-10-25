@@ -2,7 +2,7 @@
 
 const express = require("express");
 const { verifyToken, verifyAdmin } = require("../middlewares/authMiddleware");
-const { getAllUsers, toggleUserStatus } = require("../services/userservice"); // Import your user service
+const { getAllUsers, toggleUserStatus } = require("../services/serviceUser"); // Import your user service
 
 const router = express.Router();
 
