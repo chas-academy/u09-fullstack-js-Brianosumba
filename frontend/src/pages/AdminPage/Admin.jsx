@@ -3,69 +3,87 @@ import Footer from "../../components/footer";
 import AdminCard from "../../components/AdminCard";
 import { FaBell } from "react-icons/fa";
 import { useState, useEffect } from "react";
-import { fetchUsers, updateUserStatus } from "../../services/userService"; // Import your API functions
+import {
+  fetchUsers,
+  updateUserStatus,
+  recommendWorkout,
+  deleteUser,
+} from "../../services/userService"; // Import API functions
 
 const Admin = () => {
-  const [users, setUsers] = useState([]); // State for users
-  const [notifications, setNotifications] = useState([]); // State for notifications
-  const [notificationCount, setNotificationCount] = useState(0); // State for notification badge count
-  const [error, setError] = useState(null); // State for error messages
+  const [users, setUsers] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [error, setError] = useState(null);
 
-  // Fetch users from the backend
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const usersData = await fetchUsers(); // Call the fetchUsers function
-        setUsers(usersData); // Set users state with fetched data
+        const usersData = await fetchUsers();
+        setUsers(usersData);
       } catch (error) {
-        console.error("Error fetching users:", error); // Log error to console
-        setError(error.message); // Set error message to state
+        console.error("Error fetching users:", error);
+        setError(error.message);
       }
     };
+    loadUsers();
+  }, []);
 
-    loadUsers(); // Call the function to load users
-  }, []); // Run once on component mount
-
-  // Toggle user active status and generate notification
   const toggleStatus = async (userId) => {
     try {
-      await updateUserStatus(userId); // Call the API to update user status
+      await updateUserStatus(userId);
       setUsers((prevUsers) =>
-        prevUsers.map((user) => {
-          if (user.id === userId) {
-            const updatedUser = { ...user, isActive: !user.isActive };
-            if (updatedUser.isActive) {
-              addNotification(`${updatedUser.name} is on fire!`, "active");
-            }
-            return updatedUser;
-          }
-          return user;
-        })
+        prevUsers.map((user) =>
+          user.id === userId ? { ...user, isActive: !user.isActive } : user
+        )
       );
+      addNotification("User status updated", "info");
     } catch (error) {
       console.error("Error updating user status:", error);
-      // Optionally, you could display this error in the UI
       setError("Failed to update user status. Please try again.");
     }
   };
 
-  // Add a notification message to the notifications array
+  const handleRecommend = async (userId) => {
+    const workoutId = prompt("Enter the workout ID to recommend:");
+    if (workoutId) {
+      try {
+        await recommendWorkout(userId, workoutId);
+        alert("Workout recommended successfully");
+      } catch (error) {
+        console.error("Error recommending workout:", error);
+        setError("Failed to recommend workout. Please try again.");
+      }
+    }
+  };
+
+  const handleDelete = async (userId) => {
+    console.log("Delete is working");
+    try {
+      await deleteUser(userId);
+      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+      addNotification("User deleted successfully", "danger");
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      setError("Failed to delete user. Please try again.");
+    }
+  };
+
   const addNotification = (message, type) => {
     setNotifications((prevNotifications) => [
       ...prevNotifications,
       { message, type },
     ]);
-    setNotificationCount((prevCount) => prevCount + 1); // Increment the notification count
+    setNotificationCount((prevCount) => prevCount + 1);
   };
 
-  // Handle notification click to show all notifications in an alert
   const handleNotificationClick = () => {
     if (notifications.length > 0) {
-      alert(notifications.map((n) => n.message).join("\n")); // Display all notifications
-      setNotifications([]); // Clear notifications after showing
-      setNotificationCount(0); // Reset notification count
+      alert(notifications.map((n) => n.message).join("\n"));
+      setNotifications([]);
+      setNotificationCount(0);
     } else {
-      alert("No new notifications"); // If no notifications
+      alert("No new notifications");
     }
   };
 
@@ -73,16 +91,13 @@ const Admin = () => {
     <>
       <div className="min-h-screen flex flex-col justify-between bg-gray-100">
         <NavBar />
-
         <div className="container mx-auto py-8 flex-grow">
           <h1 className="text-4xl font-bold text-center text-blue-700 mb-8">
             Welcome to Your Admin Dashboard
           </h1>
 
-          {/* Display error message if exists */}
           {error && <p className="text-red-500 text-center">{error}</p>}
 
-          {/* Notification Icon */}
           <div className="flex justify-center items-center mb-8 px-4">
             <button
               type="button"
@@ -99,7 +114,6 @@ const Admin = () => {
             </button>
           </div>
 
-          {/* Admin Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <AdminCard title="Total Users">
               <p className="text-2xl font-semibold text-red-600">
@@ -112,12 +126,10 @@ const Admin = () => {
               </p>
             </AdminCard>
             <AdminCard title="Top Workouts">
-              {/* Assume top workouts data is computed or fetched */}
               <p className="text-2xl font-semibold text-blue-600">3 workouts</p>
             </AdminCard>
           </div>
 
-          {/* User Table */}
           <div className="overflow-x-auto bg-white rounded-lg shadow-md">
             <table className="min-w-full border border-gray-300 text-black">
               <thead className="bg-blue-600 text-white">
@@ -147,7 +159,7 @@ const Admin = () => {
                     </td>
                     <td className="border-b border-gray-300 p-4">
                       <button
-                        onClick={() => toggleStatus(user.id)} // Toggle status on button click
+                        onClick={() => toggleStatus(user.id)}
                         className={`py-1 px-2 rounded text-white ${
                           user.isActive ? "bg-green-500" : "bg-red-500"
                         }`}
@@ -159,9 +171,19 @@ const Admin = () => {
                       {user.level}
                     </td>
                     <td className="border-b border-gray-300 p-4 flex space-x-2">
-                      <button className="text-green-500">Recommend</button>
+                      <button
+                        onClick={() => handleRecommend(user.id)}
+                        className="text-green-500"
+                      >
+                        Recommend
+                      </button>
                       <button className="text-blue-500">Edit</button>
-                      <button className="text-red-500">Delete</button>
+                      <button
+                        onClick={() => handleDelete(user.id)}
+                        className="text-red-500"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
