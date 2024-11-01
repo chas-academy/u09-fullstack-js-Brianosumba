@@ -6,9 +6,10 @@ import { useState, useEffect } from "react";
 import {
   fetchUsers,
   updateUserStatus,
-  recommendWorkout,
-  deleteUser,
-} from "../../services/userService"; // Import API functions
+  recommendExercise,
+  editExercise,
+  deleteExercise,
+} from "../../services/exerciseService";
 
 const Admin = () => {
   const [users, setUsers] = useState([]);
@@ -46,9 +47,10 @@ const Admin = () => {
 
   const handleRecommend = async (userId) => {
     const workoutId = prompt("Enter the workout ID to recommend:");
+    const notes = prompt("Add any notes:");
     if (workoutId) {
       try {
-        await recommendWorkout(userId, workoutId);
+        await recommendExercise({ userId, workoutId, notes });
         alert("Workout recommended successfully");
       } catch (error) {
         console.error("Error recommending workout:", error);
@@ -57,15 +59,30 @@ const Admin = () => {
     }
   };
 
-  const handleDelete = async (userId) => {
-    console.log("Delete is working");
+  const handleEdit = async (exerciseId) => {
+    const updatedFields = prompt("Enter updated field values in JSON format:");
     try {
-      await deleteUser(userId);
-      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
-      addNotification("User deleted successfully", "danger");
+      await editExercise({
+        exerciseId,
+        updatedFields: JSON.parse(updatedFields),
+      });
+      alert("Workout edited successfully");
     } catch (error) {
-      console.error("Error deleting user:", error);
-      setError("Failed to delete user. Please try again.");
+      console.error("Error editing workout:", error);
+      setError("Failed to edit workout. Please try again.");
+    }
+  };
+
+  const handleDelete = async (exerciseId) => {
+    try {
+      await deleteExercise(exerciseId);
+      setUsers((prevUsers) =>
+        prevUsers.filter((user) => user.id !== exerciseId)
+      );
+      addNotification("Workout deleted successfully", "danger");
+    } catch (error) {
+      console.error("Error deleting workout:", error);
+      setError("Failed to delete workout. Please try again.");
     }
   };
 
@@ -177,7 +194,12 @@ const Admin = () => {
                       >
                         Recommend
                       </button>
-                      <button className="text-blue-500">Edit</button>
+                      <button
+                        onClick={() => handleEdit(user.id)}
+                        className="text-blue-500"
+                      >
+                        Edit
+                      </button>
                       <button
                         onClick={() => handleDelete(user.id)}
                         className="text-red-500"
