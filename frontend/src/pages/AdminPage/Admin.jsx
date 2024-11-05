@@ -3,13 +3,12 @@ import Footer from "../../components/footer";
 import AdminCard from "../../components/AdminCard";
 import { FaBell } from "react-icons/fa";
 import { useState, useEffect } from "react";
+import { editExercise, deleteExercise } from "../../services/exerciseService";
 import {
   fetchUsers,
+  recommendWorkout,
   updateUserStatus,
-  recommendExercise,
-  editExercise,
-  deleteExercise,
-} from "../../services/exerciseService";
+} from "../../services/userService";
 
 const Admin = () => {
   const [users, setUsers] = useState([]);
@@ -50,7 +49,7 @@ const Admin = () => {
     const notes = prompt("Add any notes:");
     if (workoutId) {
       try {
-        await recommendExercise({ userId, workoutId, notes });
+        await recommendWorkout({ userId, workoutId, notes });
         alert("Workout recommended successfully");
       } catch (error) {
         console.error("Error recommending workout:", error);

@@ -48,6 +48,33 @@ export const fetchExerciseById = async (id) => {
   }
 };
 
+//Function to edit  a specific exercise
+export const editExercise = async ({ exerciseId, updatedFields }) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    throw new Error("No token found. Please log in again.");
+  }
+  const url = `http://localhost:3000/api/exercises/${exerciseId}`;
+  try {
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updatedFields),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to edit exercise with ID ${exerciseId}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error("Error editing exercise:", error);
+    throw error;
+  }
+};
+
 //function to delet a specific exercise by ID
 export const deleteExercise = async (id) => {
   const token = localStorage.getItem("token");
