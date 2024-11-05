@@ -20,6 +20,7 @@ const Admin = () => {
     const loadUsers = async () => {
       try {
         const usersData = await fetchUsers();
+        console.log("Fetched users", usersData);
         setUsers(usersData);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -165,7 +166,7 @@ const Admin = () => {
                     className="border-b hover:bg-gray-100"
                   >
                     <td className="border-b border-gray-300 p-4">
-                      {user.name}
+                      {user.username}
                     </td>
                     <td className="border-b border-gray-300 p-4">
                       {user.workoutType}

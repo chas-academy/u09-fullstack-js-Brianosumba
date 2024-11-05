@@ -11,18 +11,44 @@ const ExerciseDetail = () => {
   const { exerciseId } = useParams(); // Get the exerciseId from the URL parameters
   const [exercise, setExercise] = useState(null); // State to hold the exercise details
 
-  // Track workouts and initialize progress
-  const [workoutsToday, setWorkoutsToday] = useState(0);
-  const [workoutsThisWeek, setWorkoutsThisWeek] = useState(0);
-  const [workoutsThisMonth, setWorkoutsThisMonth] = useState(0);
-  const [strengthProgress, setStrengthProgress] = useState(0);
+  // State Initialization with localStorage
+  const [workoutsToday, setWorkoutsToday] = useState(
+    () => parseInt(localStorage.getItem("workoutsToday")) || 0
+  );
+  const [workoutsThisWeek, setWorkoutsThisWeek] = useState(
+    () => parseInt(localStorage.getItem("workoutsThisWeek")) || 0
+  );
+  const [workoutsThisMonth, setWorkoutsThisMonth] = useState(
+    () => parseInt(localStorage.getItem("workoutsThisMonth")) || 0
+  );
+  const [strengthProgress, setStrengthProgress] = useState(
+    () => parseFloat(localStorage.getItem("strengthProgress")) || 0
+  );
+
+  //Save progress
+  useEffect(() => {
+    localStorage.setItem("workoutsToday", workoutsToday);
+    localStorage.setItem("workoutsThisWeek", workoutsThisWeek);
+    localStorage.setItem("workoutsThisMonth", workoutsThisMonth);
+    localStorage.setItem("strengthProgress", strengthProgress);
+  }, [workoutsToday, workoutsThisWeek, workoutsThisMonth, strengthProgress]);
 
   // Reset functions
-  const resetDay = () => setWorkoutsToday(0);
-  const resetWeek = () => setWorkoutsThisWeek(0);
+  const resetDay = () => {
+    setWorkoutsToday(0);
+    localStorage.setItem("workoutsToday", 0);
+  };
+
+  const resetWeek = () => {
+    setWorkoutsThisWeek(0);
+    localStorage.setItem("workoutsThisWeek", 0);
+  };
+
   const resetMonth = () => {
     setWorkoutsThisMonth(0);
     setStrengthProgress(0);
+    localStorage.setItem("workoutsThisMonth", 0);
+    localStorage.setItem("strengthProgress", 0);
   };
 
   // Reset logic
@@ -32,7 +58,7 @@ const ExerciseDetail = () => {
       if (now.getHours() === 0 && now.getMinutes() === 0) {
         resetDay();
       }
-    }, 60000);
+    }, 300000);
 
     const resetWeekly = setInterval(() => {
       const now = new Date();
@@ -43,7 +69,7 @@ const ExerciseDetail = () => {
       ) {
         resetWeek();
       }
-    }, 60000);
+    }, 300000);
 
     const resetMonthly = setInterval(() => {
       const now = new Date();
@@ -54,7 +80,7 @@ const ExerciseDetail = () => {
       ) {
         resetMonth();
       }
-    }, 60000);
+    }, 300000);
 
     return () => {
       clearInterval(resetDaily);
