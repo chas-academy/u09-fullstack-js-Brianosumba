@@ -1,9 +1,12 @@
-//Controllers/exerciseController.js
+// controllers/exerciseController.js
 
-import RecommendedExercise from "../models/crud/RecommendExercise";
+const RecommendedExercise = require("../models/crud/RecommendExercise");
+const EditedExercises = require("../models/crud/EditedExercises");
+const DeletedExercises = require("../models/crud/DeletedExercises");
+const ExerciseCompletion = require("../models/ExerciseCompletion");
 
-//Create a recommendation
-export const recommendExercise = async (req, res) => {
+// Create a recommendation
+const recommendExercise = async (req, res) => {
   try {
     const { userId, exerciseId, notes, tags } = req.body;
     const recommendation = new RecommendedExercise({
@@ -23,8 +26,8 @@ export const recommendExercise = async (req, res) => {
   }
 };
 
-//fetch all recomandations for a user
-export const getRecommendations = async (req, res) => {
+// Fetch all recommendations for a user
+const getRecommendations = async (req, res) => {
   try {
     const { userId } = req.params;
     const recommendations = await RecommendedExercise.find({ userId });
@@ -37,8 +40,8 @@ export const getRecommendations = async (req, res) => {
   }
 };
 
-//Delete a recommendation
-export const deleteRecommendation = async (req, res) => {
+// Delete a recommendation
+const deleteRecommendation = async (req, res) => {
   try {
     const { recommendationId } = req.params;
     await RecommendedExercise.findByIdAndDelete(recommendationId);
@@ -50,18 +53,16 @@ export const deleteRecommendation = async (req, res) => {
   }
 };
 
-// Crud functions for edited exercises
-
-import EditedExercises from "../models/crud/EditedExercises";
+// CRUD functions for edited exercises
 
 // Create or update an edited exercise
-export const EditExercise = async (req, res) => {
+const editExercise = async (req, res) => {
   try {
     const { exerciseId, updatedFields } = req.body;
     const editedExercise = await EditedExercises.findOneAndUpdate(
       { exerciseId },
       { updatedFields },
-      { new: true, upsert: true } //creates a new document if not found
+      { new: true, upsert: true } // creates a new document if not found
     );
     res.json({ message: "Exercise edited successfully", editedExercise });
   } catch (error) {
@@ -72,12 +73,12 @@ export const EditExercise = async (req, res) => {
 };
 
 // Fetch edited exercise by ID
-export const getEditedExercise = async (req, res) => {
+const getEditedExercise = async (req, res) => {
   try {
     const { exerciseId } = req.params;
     const editedExercise = await EditedExercises.findOne({ exerciseId });
     if (!editedExercise) {
-      return res.staus(404).json({ message: "Edited exercise not found" });
+      return res.status(404).json({ message: "Edited exercise not found" });
     }
     res.json(editedExercise);
   } catch (error) {
@@ -88,11 +89,11 @@ export const getEditedExercise = async (req, res) => {
   }
 };
 
-//Delete an edited exercise
-export const deleteEditedExercise = async (req, res) => {
+// Delete an edited exercise
+const deleteEditedExercise = async (req, res) => {
   try {
     const { exerciseId } = req.params;
-    await EditedExercise.findOneAndDelete({ exerciseId });
+    await EditedExercises.findOneAndDelete({ exerciseId });
     res.json({ message: "Edited exercise deleted successfully" });
   } catch (error) {
     res.status(500).json({
@@ -102,12 +103,10 @@ export const deleteEditedExercise = async (req, res) => {
   }
 };
 
-// Crud functions for deleted exercises
+// CRUD functions for deleted exercises
 
-import DeletedExercises from "../models/crud/DeletedExercises";
-
-//Mark an exercise as deleted
-export const deleteExercise = async (req, res) => {
+// Mark an exercise as deleted
+const deleteExercise = async (req, res) => {
   try {
     const { exerciseId } = req.params;
     const deletedExercise = new DeletedExercises({ exerciseId });
@@ -121,7 +120,69 @@ export const deleteExercise = async (req, res) => {
   }
 };
 
-//Check if an exercise is deleted
-export const isExerciseDeleted = async (exerciseId) => {
-  return await DeletedExercise.exists({ exerciseId });
+// Check if an exercise is deleted
+const isExerciseDeleted = async (exerciseId) => {
+  return await DeletedExercises.exists({ exerciseId });
+};
+
+// Record exercise completion
+const completeExercise = async (req, res) => {
+  try {
+    // Extract user information from request
+    const userId = req.user.id;
+    const username = req.user.username;
+
+    // Extract exercise data from the request body
+    const { exerciseId } = req.body;
+
+    // Fetch exercise details from the database
+    const exercise = await Exercise.findById(exerciseId);
+
+    if (!exercise) {
+      return res.status(404).json({ message: "Exercise not found" });
+    }
+
+    // Create a new ExerciseCompletion document
+    const completion = new ExerciseCompletion({
+      userId,
+      username,
+      exerciseId,
+      workoutType: exercise.workoutType,
+      target: exercise.target,
+      level: exercise.level,
+      completedAt: new Date(),
+    });
+
+    // Save the completion record to the database
+    await completion.save();
+
+    // Emit a websocket event to notify the admin
+    req.io.to("admins").emit("exerciseCompleted", {
+      userId,
+      username,
+      workoutType: exercise.workoutType,
+      target: exercise.target,
+      level: exercise.level,
+      completedAt: completion.completedAt,
+    });
+
+    // Send a success response back to the client
+    res.status(200).json({ message: "Exercise completion recorded" });
+  } catch (error) {
+    console.error("Error recording exercise completion:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Export the controller functions
+module.exports = {
+  recommendExercise,
+  getRecommendations,
+  deleteRecommendation,
+  editExercise,
+  getEditedExercise,
+  deleteEditedExercise,
+  deleteExercise,
+  isExerciseDeleted,
+  completeExercise,
 };

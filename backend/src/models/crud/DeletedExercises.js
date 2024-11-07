@@ -1,10 +1,10 @@
-//models/DeletedExercise.js
+// models/crud/DeletedExercise.js
 
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
-const deletedExerciseSchema = new mongoose.Schema({
-  exerciseId: { type: String, required: true }, //ID from ExerciseDB
+const DeletedExerciseSchema = new mongoose.Schema({
+  exerciseId: { type: String, required: true }, // ID from ExerciseDB
   deletedAt: { type: Date, default: Date.now },
 });
 
-export default mongoose.model("DeletedExercise", deletedExerciseSchema);
+module.exports = mongoose.model("DeletedExercise", DeletedExerciseSchema);

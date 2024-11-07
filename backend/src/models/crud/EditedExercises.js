@@ -1,10 +1,20 @@
-//models/EditExercise.js
-import mongoose from "mongoose";
+//models/EditedExercise.js
+const mongoose = require("mongoose");
 
-const editedExerciseSchema = new mongoose.Schema({
-  exerciseId: { type: String, required: true }, //Original exercise ID from ExerciseDB
-  updatedFields: { type: Map, of: String }, //A map to store updated fields and values
-  editedAt: { type: Date, default: Date.now },
+const EditedExerciseSchema = new mongoose.Schema({
+  exerciseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Exercise",
+    required: true,
+  },
+  updatedFields: {
+    type: Object,
+    required: true,
+  },
+  editedAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-export default mongoose.model("EditedExercise", editedExerciseSchema);
+module.exports = mongoose.model("EditedExercise", EditedExerciseSchema);

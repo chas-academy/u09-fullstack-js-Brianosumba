@@ -1,6 +1,8 @@
 // routes/exercise.js
 const express = require("express");
 const router = express.Router();
+const { verifyToken } = require("../middlewares/authMiddleware");
+const exerciseController = require("../controllers/exerciseController");
 const {
   fetchExercises,
   fetchExerciseById,
@@ -33,35 +35,17 @@ router.get("/exercise/:id", async (req, res) => {
   }
 });
 
-// POST /exercises/recommend - Recommend a new exercise (Placeholder for now)
-router.post("/recommend", (req, res) => {
-  const { exerciseId } = req.body; // Extract exercise ID from request body
-  // Logic to save recommended exercise to your database (if applicable)
+// POST /exercises/recommend - Recommend a new exercise
+router.post("/recommend", exerciseController.recommendExercise);
 
-  // For now, just send a success message
-  res
-    .status(201)
-    .json({ message: `Exercise ${exerciseId} recommended successfully!` });
-});
+// PUT /exercises/edit/:id - Edit an existing exercise
+router.put("/edit/:id", exerciseController.editExercise);
 
-// PUT /exercises/edit/:id - Edit an existing exercise (Placeholder for now)
-router.put("/edit/:id", (req, res) => {
-  const { id } = req.params; // Extract ID from route parameters
-  const updatedData = req.body; // Get updated data from request body
-  // Logic to update exercise in your database (if applicable)
+// DELETE /exercises/delete/:id - Delete an exercise
+router.delete("/delete/:id", exerciseController.deleteExercise);
 
-  // For now, just send a success message
-  res.status(200).json({ message: `Exercise ${id} updated successfully!` });
-});
-
-// DELETE /exercises/delete/:id - Delete an exercise (Placeholder for now)
-router.delete("/delete/:id", (req, res) => {
-  const { id } = req.params; // Extract ID from route parameters
-  // Logic to delete exercise from your database (if applicable)
-
-  // For now, just send a success message
-  res.status(200).json({ message: `Exercise ${id} deleted successfully!` });
-});
+//Post /exercises/complete -Record exercise completion
+router.post("/complete", verifyToken, exerciseController.completeExercise);
 
 // Export the router
 module.exports = router;

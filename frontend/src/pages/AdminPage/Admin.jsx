@@ -9,12 +9,14 @@ import {
   recommendWorkout,
   updateUserStatus,
 } from "../../services/userService";
+import io from "socket.io-client";
 
 const Admin = () => {
   const [users, setUsers] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [notificationCount, setNotificationCount] = useState(0);
   const [error, setError] = useState(null);
+  const [exerciseCompletions, setExerciseCompletions] = useState([]); // New state for exercise completions
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -28,6 +30,26 @@ const Admin = () => {
       }
     };
     loadUsers();
+
+    // Set up Socket.IO connection
+    const socket = io("http://localhost:3000", {
+      withCredentials: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("Connected to server");
+      socket.emit("joinAdminRoom"); // Join the 'admins' room
+    });
+
+    socket.on("exerciseCompleted", (data) => {
+      console.log("Received exercise completion:", data);
+      setExerciseCompletions((prev) => [...prev, data]);
+      addNotification(`${data.username} completed an exercise`, "info");
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const toggleStatus = async (userId) => {
@@ -152,27 +174,20 @@ const Admin = () => {
               <thead className="bg-blue-600 text-white">
                 <tr>
                   <th className="py-4 px-6 text-left">Name</th>
-                  <th className="py-4 px-6 text-left">Workout Type</th>
+                  <th className="py-4 px-6 text-left">Email</th>
                   <th className="py-4 px-6 text-left">Target</th>
                   <th className="py-4 px-6 text-left">Status</th>
-                  <th className="py-4 px-6 text-left">Level</th>
                   <th className="py-4 px-6 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((user, index) => (
-                  <tr
-                    key={user.id || index}
-                    className="border-b hover:bg-gray-100"
-                  >
+                  <tr key={index} className="border-b hover:bg-gray-100">
                     <td className="border-b border-gray-300 p-4">
                       {user.username}
                     </td>
                     <td className="border-b border-gray-300 p-4">
-                      {user.workoutType}
-                    </td>
-                    <td className="border-b border-gray-300 p-4">
-                      {user.target}
+                      {user.email}
                     </td>
                     <td className="border-b border-gray-300 p-4">
                       <button
@@ -206,6 +221,45 @@ const Admin = () => {
                       >
                         Delete
                       </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Exercise Completions table*/}
+          <h2 className="text-2xl font-bold mt-8 mb-4">
+            Recent Exercise Completions
+          </h2>
+          <div className="overflow-x-auto bg-white rounded-lg shadow-md">
+            <table className="min-w-full border border-gray-300 text-black">
+              <thead className="bg-blue-600 text-white">
+                <tr>
+                  <th className="py-4 px-6 text-left">Username</th>
+                  <th className="py-4 px-6 text-left">Workout Type</th>
+                  <th className="py-4 px-6 text-left">Target</th>
+                  <th className="py-4 px-6 text-left">Level</th>
+                  <th className="py-4 px-6 text-left">Completed At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {exerciseCompletions.map((completion, index) => (
+                  <tr key={index} className="border-b hover:bg-gray-100">
+                    <td className="border-b border-gray-300 p-4">
+                      {completion.username}
+                    </td>
+                    <td className="border-b border-gray-300 p-4">
+                      {completion.workoutType}
+                    </td>
+                    <td className="border-b border-gray-300 p-4">
+                      {completion.target}
+                    </td>
+                    <td className="border-b border-gray-300 p-4">
+                      {completion.level}
+                    </td>
+                    <td className="border-b border-gray-300 p-4">
+                      {new Date(completion.completedAt).toLocaleString()}
                     </td>
                   </tr>
                 ))}

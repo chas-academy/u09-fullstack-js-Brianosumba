@@ -90,7 +90,7 @@ const ExerciseDetail = () => {
   }, []);
 
   // Handle workout completion
-  const handleDoneClick = () => {
+  const handleDoneClick = async () => {
     setWorkoutsToday((prev) => Math.min(prev + 1, 1));
     setWorkoutsThisWeek((prev) => Math.min(prev + 1, 3));
     setWorkoutsThisMonth((prev) => Math.min(prev + 1, 12));
@@ -101,6 +101,28 @@ const ExerciseDetail = () => {
     }
 
     console.log("Done clicked!");
+    //Send data to server
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        "/exercises/complete",
+        {
+          exerciseId: exercise.Id,
+          workoutType: exercise.bodyPart,
+          target: exercise.target,
+          level: "Beginner",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("Workout completion sent to server.");
+    } catch (error) {
+      console.error("Error sending workout completion:", error);
+    }
   };
 
   useEffect(() => {
