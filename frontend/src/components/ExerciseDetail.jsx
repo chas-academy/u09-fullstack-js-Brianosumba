@@ -1,17 +1,18 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import NavBar from "../components/NavBar"; // Ensure to import your NavBar
-import Footer from "./footer"; // Ensure to import your Footer
-import CircularProgressBar from "./CircularProgressBar"; // Import your CircularProgressBar component
-import Box from "@mui/material/Box"; // Import MUI Box
-import Typography from "@mui/material/Typography"; // Import MUI Typography
+import NavBar from "../components/NavBar"; // Ensure NavBar is imported
+import Footer from "../components/Footer"; // Ensure Footer is imported
+import CircularProgressBar from "../components/CircularProgressBar"; // Import CircularProgressBar component
+import Box from "@mui/material/Box"; // Material-UI Box for layout
+import Typography from "@mui/material/Typography"; // Material-UI Typography for text
 
 const ExerciseDetail = () => {
-  const { exerciseId } = useParams(); // Get the exerciseId from the URL parameters
-  const [exercise, setExercise] = useState(null); // State to hold the exercise details
+  const { exerciseId } = useParams(); // Get exerciseId from the URL parameters
+  const [exercise, setExercise] = useState(null); // State for exercise details
+  const [recommendedWorkouts, setRecommendedWorkouts] = useState([]); // Recommended workouts
 
-  // State Initialization with localStorage
+  // Progress tracking state
   const [workoutsToday, setWorkoutsToday] = useState(
     () => parseInt(localStorage.getItem("workoutsToday")) || 0
   );
@@ -25,7 +26,7 @@ const ExerciseDetail = () => {
     () => parseFloat(localStorage.getItem("strengthProgress")) || 0
   );
 
-  //Save progress
+  // Save progress to localStorage
   useEffect(() => {
     localStorage.setItem("workoutsToday", workoutsToday);
     localStorage.setItem("workoutsThisWeek", workoutsThisWeek);
@@ -33,53 +34,76 @@ const ExerciseDetail = () => {
     localStorage.setItem("strengthProgress", strengthProgress);
   }, [workoutsToday, workoutsThisWeek, workoutsThisMonth, strengthProgress]);
 
-  // Reset functions
-  const resetDay = () => {
-    setWorkoutsToday(0);
-    localStorage.setItem("workoutsToday", 0);
-  };
+  // Fetch exercise details
+  useEffect(() => {
+    const fetchExerciseDetail = async () => {
+      try {
+        const response = await axios.get(
+          `https://exercisedb.p.rapidapi.com/exercises/exercise/${exerciseId}`,
+          {
+            headers: {
+              "X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY,
+              "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
+            },
+          }
+        );
+        setExercise(response.data);
+      } catch (error) {
+        console.error("Failed to fetch exercise details:", error);
+      }
+    };
 
-  const resetWeek = () => {
-    setWorkoutsThisWeek(0);
-    localStorage.setItem("workoutsThisWeek", 0);
-  };
+    fetchExerciseDetail();
+  }, [exerciseId]);
 
+  // Fetch recommended workouts
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        const userId = localStorage.getItem("userId"); // Assume userId is stored in localStorage
+
+        if (!userId) {
+          console.error("User ID not found in localStorage");
+          return;
+        }
+        S;
+        const response = await axios.get(
+          `http://localhost:3000/api/exercises/recommendations/${userId}`
+        );
+        setRecommendedWorkouts(response.data);
+      } catch (error) {
+        console.error("Failed to fetch recommended workouts:", error);
+      }
+    };
+
+    fetchRecommendations();
+  }, []);
+
+  // Reset progress functions
+  const resetDay = () => setWorkoutsToday(0);
+  const resetWeek = () => setWorkoutsThisWeek(0);
   const resetMonth = () => {
     setWorkoutsThisMonth(0);
     setStrengthProgress(0);
-    localStorage.setItem("workoutsThisMonth", 0);
-    localStorage.setItem("strengthProgress", 0);
   };
 
-  // Reset logic
+  // Reset logic with intervals
   useEffect(() => {
     const resetDaily = setInterval(() => {
       const now = new Date();
-      if (now.getHours() === 0 && now.getMinutes() === 0) {
-        resetDay();
-      }
+      if (now.getHours() === 0 && now.getMinutes() === 0) resetDay();
     }, 300000);
 
     const resetWeekly = setInterval(() => {
       const now = new Date();
-      if (
-        now.getDay() === 1 &&
-        now.getHours() === 0 &&
-        now.getMinutes() === 0
-      ) {
+      if (now.getDay() === 1 && now.getHours() === 0 && now.getMinutes() === 0)
         resetWeek();
-      }
     }, 300000);
 
     const resetMonthly = setInterval(() => {
       const now = new Date();
-      if (
-        now.getDate() === 1 &&
-        now.getHours() === 0 &&
-        now.getMinutes() === 0
-      ) {
+      if (now.getDate() === 1 && now.getHours() === 0 && now.getMinutes() === 0)
         resetMonth();
-      }
     }, 300000);
 
     return () => {
@@ -94,23 +118,17 @@ const ExerciseDetail = () => {
     setWorkoutsToday((prev) => Math.min(prev + 1, 1));
     setWorkoutsThisWeek((prev) => Math.min(prev + 1, 3));
     setWorkoutsThisMonth((prev) => Math.min(prev + 1, 12));
+    setStrengthProgress((prev) => Math.min(prev + 100 / 12, 100));
 
-    if (strengthProgress < 100) {
-      const newStrength = Math.min(strengthProgress + 100 / 12, 100);
-      setStrengthProgress(newStrength);
-    }
-
-    console.log("Done clicked!");
-    //Send data to server
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "/exercises/complete",
+        "http://localhost:3000/api/exercises/complete",
         {
-          exerciseId: exercise.Id,
+          exerciseId: exercise.id,
           workoutType: exercise.bodyPart,
           target: exercise.target,
-          level: "Beginner",
+          level: "Beginner", // Example level
         },
         {
           headers: {
@@ -118,78 +136,52 @@ const ExerciseDetail = () => {
           },
         }
       );
-
       console.log("Workout completion sent to server.");
     } catch (error) {
       console.error("Error sending workout completion:", error);
     }
   };
 
-  useEffect(() => {
-    const fetchExerciseDetail = async () => {
-      try {
-        const response = await axios.get(
-          `https://exercisedb.p.rapidapi.com/exercises/exercise/${exerciseId}`,
-          {
-            headers: {
-              "X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY,
-              "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
-            },
-          }
-        );
-
-        console.log(response.data);
-        setExercise(response.data); // Set the exercise details
-      } catch (error) {
-        console.error("Failed to fetch exercise details:", error);
-      }
-    };
-
-    fetchExerciseDetail();
-  }, [exerciseId]);
-
   if (!exercise) {
-    return <div>Loading...</div>; // Show loading while fetching exercise details
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className=" min-h-screen">
+    <div className="min-h-screen">
       <NavBar />
       <div className="container mx-auto py-8">
-        <Typography variant="h3" component="h1" className="mb-4" gutterBottom>
+        <Typography variant="h3" component="h1" gutterBottom>
           {exercise.name}
         </Typography>
 
-        {/* Box for GIF using Material-UI Box */}
+        {/* Exercise GIF */}
         <Box
           component="img"
           src={exercise.gifUrl}
           alt={exercise.name}
           sx={{
-            width: "40%", // Set a fixed width for the GIF
-            height: "auto", // Set a fixed height for the GIF
-            objectFit: "cover", // Maintain aspect ratio of GIF
+            width: "40%",
+            height: "auto",
+            objectFit: "cover",
             display: "block",
-            mb: 2, // Add margin below the image
-            mx: "auto", // Center the image
-            borderRadius: 2, // Add some border radius for aesthetics
-            boxShadow: 3, // Add shadow for better visibility
+            mb: 2,
+            mx: "auto",
+            borderRadius: 2,
+            boxShadow: 3,
           }}
         />
 
-        <Typography variant="h6" className="mb-2 font-semibold text-green-600">
-          Body Part: {exercise.bodyPart}
+        <Typography variant="h6" gutterBottom>
+          <strong>Body Part:</strong> {exercise.bodyPart}
         </Typography>
-        <Typography variant="h6" className="mb-2 font-semibold text-blue-500">
-          Target: {exercise.target}
+        <Typography variant="h6" gutterBottom>
+          <strong>Target:</strong> {exercise.target}
         </Typography>
-        <Typography variant="h6" className="mb-2 font-semibold text-orange-500">
-          Equipment: {exercise.equipment}
-        </Typography>
-        <Typography variant="h6" className="mb-2 font-semibold text-slate-500">
-          Instructions: {exercise.instructions}
+        <Typography variant="h6" gutterBottom>
+          <strong>Equipment:</strong> {exercise.equipment}
         </Typography>
 
+        {/* Done Button */}
         <div className="text-center my-8">
           <button
             onClick={handleDoneClick}
@@ -199,6 +191,21 @@ const ExerciseDetail = () => {
           </button>
         </div>
 
+        {/* Recommended Workouts */}
+        <div className="mt-8">
+          <Typography variant="h5" component="h2" gutterBottom>
+            Recommended Workouts
+          </Typography>
+          <ul>
+            {recommendedWorkouts.map((workout) => (
+              <li key={workout.exerciseId}>
+                <Typography>{workout.notes}</Typography>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Progress Bars */}
         <div className="mt-8 space-y-4">
           <CircularProgressBar
             label="Workouts Completed Today"
@@ -219,7 +226,7 @@ const ExerciseDetail = () => {
             color="red"
           />
           <CircularProgressBar
-            label="Strength Growth"
+            label="Strength Progress"
             value={strengthProgress}
             max={100}
             color="blue"

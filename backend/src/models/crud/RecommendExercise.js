@@ -1,23 +1,27 @@
-//models/RecommededEcercise.js
-
 const mongoose = require("mongoose");
 
 const recommendedExerciseSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "User", // Reference to the User model
     required: true,
   },
   exerciseId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Exercise",
-    required: "true",
+    ref: "Exercise", // Reference to the Exercise model
+    required: true,
   },
-  notes: String,
-  tags: [String],
+  notes: {
+    type: String,
+    trim: true, // Optional: Trim whitespace
+  },
+  tags: {
+    type: [String],
+    default: [], // Default to an empty array if no tags are provided
+  },
   recommendedAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now, // Automatically set the current date
   },
 });
 
