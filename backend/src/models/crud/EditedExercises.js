@@ -1,10 +1,10 @@
 //models/EditedExercise.js
+
 const mongoose = require("mongoose");
 
 const EditedExerciseSchema = new mongoose.Schema({
   exerciseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Exercise",
+    type: String,
     required: true,
   },
   updatedFields: {

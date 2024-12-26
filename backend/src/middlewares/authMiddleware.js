@@ -11,16 +11,14 @@ const verifyToken = (req, res, next) => {
     return res.status(401).json({ message: "No token, authorization denied" });
   }
 
-  try {
-    // Verify the token using the secret key
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Attach decoded user info to the request
-
-    next(); // Proceed to the next middleware or route handler
-  } catch (err) {
-    console.error("Token verification error:", err);
-    res.status(400).json({ message: "Invalid token" });
-  }
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.error("Token verification error:", err);
+      return res.status(403).json({ message: "Invalid or expired token" });
+    }
+    req.user = decoded; //Attach decoded token payload to the request
+    next();
+  });
 };
 
 // Middleware to check if the user is an admin

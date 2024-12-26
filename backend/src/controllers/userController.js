@@ -4,7 +4,15 @@ const User = require("../models/User");
 const getUsers = async (req, res) => {
   try {
     const users = await User.find(); //fetches all users from the MongoDB database
-    res.status(200).json(users); // send the users as a Json response
+    const formattedUsers = users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      isActive: user.isActive,
+      level: user.level || 1,
+      recommendWorkouts: user.recommendedWorkouts || [],
+    }));
+    res.status(200).json(formattedUsers); // send the users as a Json response
   } catch (error) {
     res.status(500).json({ message: "Error fetching users", error });
   }
@@ -20,9 +28,9 @@ const updateUserStatus = async (req, res) => {
     }
     user.isActive = !user.isActive; // toggle the status
     await user.save();
-    res.json(user);
+    res.json({ id: user._id, isActive: user.isActive });
   } catch (error) {
-    res.status(500).json({ message: "Failed to update user status." });
+    res.status(500).json({ message: "Failed to update user status.", error });
   }
 };
 
@@ -37,7 +45,7 @@ const recommendWorkout = async (req, res) => {
     }
     user.recommendedWorkouts.push(workoutId); // Add workout to recommendations
     await user.save();
-    res.json(user);
+    res.json({ id: user._id, recommendWorkouts: user.recommendWorkouts });
   } catch (error) {
     res.status(500).json({ message: "Failed to recommend workout" });
   }

@@ -26,12 +26,29 @@ const Admin = () => {
       try {
         const usersData = await fetchUsers();
         console.log("Fetched users:", usersData);
+
+        if (!Array.isArray(usersData) || !usersData.every((user) => user.id)) {
+          throw new Error("Invalid users data structure");
+        }
         setUsers(usersData || []);
 
-        await getExercises(setExercises);
+        const exerciseData = await getExercises();
+        console.log("Fetched exercises:", exerciseData);
+
+        if (
+          !Array.isArray(exerciseData) ||
+          !exerciseData.every((exercise) => exercise.id)
+        ) {
+          throw new Error("Invalid exercises data structure");
+        }
+        setExercises(exerciseData);
       } catch (err) {
+        if (err.message.includes("401")) {
+          alert("Session expired. Redirecting to login");
+          window.location.href = "/login";
+        }
         console.error("Error loading data:", err);
-        setError("Failed to load data. Please try again later.");
+        setError("Failed to load data. Please try again later");
       }
     };
 
@@ -91,13 +108,12 @@ const Admin = () => {
 
   const onRecommendClick = async (userId, exerciseId) => {
     if (!userId || !exerciseId) {
-      console.error("Invalid parameters. userId or exerciseId is missing");
       alert("Please provide valid user and exercise details.");
       return;
     }
 
     try {
-      await handleRecommendExercise(userId, exerciseId);
+      await handleRecommendExercise(userId, exerciseId); // Updated
       addNotification("Exercise recommended successfully!", "success");
     } catch (error) {
       console.error("Failed to recommend exercise:", error);
@@ -108,16 +124,17 @@ const Admin = () => {
     }
   };
 
-  const onEditRecommendation = async (exerciseId, updatedFields) => {
+  const onEditRecommendation = async (recommendationId, updatedFields) => {
+    if (!recommendationId || !updatedFields) {
+      alert("Recommendation ID and updated fields are required.");
+      return;
+    }
+
     try {
-      await handleUpdateRecommendation(
-        recommendationId,
-        updatedFields,
-        setExercises
-      );
-      addNotification("Exercise recommendation updated!", "success");
+      await handleUpdateRecommendation(recommendationId, updatedFields); // Updated
+      addNotification("Recommendation updated successfully!", "success");
     } catch (error) {
-      console.error("Failed to edit exercise recommendation:", error);
+      console.error("Failed to edit recommendation:", error);
       addNotification(
         "Failed to edit recommendation. Please try again.",
         "error"
@@ -126,9 +143,14 @@ const Admin = () => {
   };
 
   const onDeleteRecommendation = async (recommendationId) => {
+    if (!recommendationId) {
+      alert("Recommendation ID is required.");
+      return;
+    }
+
     try {
-      await handleDeleteRecommendation(recommendationId, setExercises);
-      addNotification("Exercise recommendation deleted!", "success");
+      await handleDeleteRecommendation(recommendationId); // Updated
+      addNotification("Recommendation deleted successfully!", "success");
     } catch (error) {
       console.error("Failed to delete recommendation:", error);
       addNotification(
@@ -192,8 +214,8 @@ const Admin = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((user, index) => (
-                <tr key={user.id || `user-${index}`}>
+              {users.map((user) => (
+                <tr key={user.id}>
                   <td>{user.username}</td>
                   <td>{user.email}</td>
                   <td>
@@ -212,7 +234,8 @@ const Admin = () => {
                       defaultValue=""
                       onChange={(e) => {
                         const exerciseId = e.target.value;
-                        if (exerciseId) onRecommendClick(user.id, exerciseId);
+                        if (!exerciseId) return;
+                        onRecommendClick(user.id, exerciseId);
                       }}
                       className="p-1 rounded border"
                     >
