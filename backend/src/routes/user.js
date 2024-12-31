@@ -14,13 +14,13 @@ const router = express.Router();
  * Fetch all users (Admin access only)
  */
 router.get("/", verifyToken, verifyAdmin, async (req, res) => {
-  console.log("Fetching all users...");
   try {
+    console.log("Fetching all users...");
     const users = await getAllUsers();
     res.status(200).json(users);
   } catch (error) {
     console.error("Error fetching users:", error);
-    res.status(500).json({ message: "Error fetching users" });
+    res.status(500).json({ message: "Error fetching users." });
   }
 });
 
@@ -29,46 +29,79 @@ router.get("/", verifyToken, verifyAdmin, async (req, res) => {
  * Toggle user active status (Admin access only)
  */
 router.patch("/:id/status", verifyToken, verifyAdmin, async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const updatedUser = await toggleUserStatus(req.params.id);
-    res.status(200).json(updatedUserser); // Send the updated user object as response
+    // Validate user ID (if applicable, e.g., MongoDB ObjectId format)
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid user ID format." });
+    }
+
+    const updatedUser = await toggleUserStatus(id);
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    res.status(200).json({
+      message: "User status updated successfully.",
+      user: updatedUser,
+    });
   } catch (error) {
     console.error("Error updating user status:", error);
-    res.status(500).json({ message: "Error updating user status" });
+    res.status(500).json({ message: "Error updating user status." });
   }
 });
 
 /**
  * GET /api/users/:id
- * Fetch a single user by ID (Admin acess only)
+ * Fetch a single user by ID (Admin access only)
  */
 router.get("/:id", verifyToken, verifyAdmin, async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const user = await getUserById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    // Validate user ID
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid user ID format." });
     }
+
+    const user = await getUserById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
     res.status(200).json(user);
   } catch (error) {
     console.error("Error fetching user:", error);
-    res.status(500).json({ message: "Error fetching user" });
+    res.status(500).json({ message: "Error fetching user." });
   }
 });
 
 /**
  * DELETE /api/users/:id
- * Delete a user by ID(Admin access only)
+ * Delete a user by ID (Admin access only)
  */
 router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const deletedUser = await deleteUserById(req.params.id);
-    if (!deletedUser) {
-      return res.status(404).json({ message: "User not found" });
+    // Validate user ID
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid user ID format." });
     }
-    res.status(200).json({ message: "User deleted successfully" });
+
+    const deletedUser = await deleteUserById(id);
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    res.status(200).json({ message: "User deleted successfully." });
   } catch (error) {
     console.error("Error deleting user:", error);
-    res.status(500).json({ message: "Error deleting user" });
+    res.status(500).json({ message: "Error deleting user." });
   }
 });
 

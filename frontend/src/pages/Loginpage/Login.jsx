@@ -40,8 +40,12 @@ const Login = () => {
     setLoading(true); // Start loading state when submission begins
     try {
       // Send login request to the backend
-      await login(data.email, data.password);
-      navigate("/userpage");
+      const success = await login(data.email, data.password);
+      if (success) {
+        navigate("/userpage");
+      } else {
+        alert("Login failed. Please check your credentials");
+      }
     } catch (error) {
       console.error(error.message);
       alert(`${error.message || "Please try again."}`);

@@ -63,14 +63,47 @@ const ExerciseDetail = () => {
         const userId = localStorage.getItem("userId"); // Assume userId is stored in localStorage
 
         if (!userId) {
-          console.error("User ID not found in localStorage");
+          console.error("User ID not found in localStorage. Redirecting...");
+          window.location.href = "/login";
           return;
         }
-        S;
-        const response = await axios.get(
+
+        // Fetch recommendations from your backend
+        const backendResponse = await axios.get(
           `http://localhost:3000/api/exercises/recommendations/${userId}`
         );
-        setRecommendedWorkouts(response.data);
+
+        // Fetch exercise details for each recommendation from Exercise DB API
+        const recommendationWithDetails = await Promise.all(
+          backendResponse.data.map(async (recommendation) => {
+            try {
+              const exerciseResponse = await axios.get(
+                `https://exercisedb.p.rapidapi.com/exercises/exercise/${recommendation.exerciseId}`,
+                {
+                  headers: {
+                    "X-RAPIDAPI-KEY": import.meta.env.VITE_RAPIDAPI_KEY,
+                    "X_RAPIDAPI-HOST": "exercisedb.p.rapidapi.com",
+                  },
+                }
+              );
+
+              // merge recommendations data with exercise details
+              return {
+                ...recommendation,
+                exerciseDetails: exerciseResponse.data,
+              };
+            } catch (error) {
+              console.error(
+                `Failed to fetch details for exerciseId: ${recommendation.exerciseId}`,
+                error
+              );
+              return recommendation; // Return recommendation without details if fetch fails
+            }
+          })
+        );
+
+        //Update state with recommendations and their details
+        setRecommendedWorkouts(recommendationWithDetails);
       } catch (error) {
         console.error("Failed to fetch recommended workouts:", error);
       }
@@ -192,17 +225,52 @@ const ExerciseDetail = () => {
         </div>
 
         {/* Recommended Workouts */}
-        <div className="mt-8">
-          <Typography variant="h5" component="h2" gutterBottom>
+        <div className="mt-8 px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
             Recommended Workouts
-          </Typography>
-          <ul>
-            {recommendedWorkouts.map((workout) => (
-              <li key={workout.exerciseId}>
-                <Typography>{workout.notes}</Typography>
-              </li>
-            ))}
-          </ul>
+          </h2>
+          {recommendedWorkouts.length > 0 ? (
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recommendedWorkouts.map((workout) => (
+                <li
+                  key={workout.id || workout.exerciseId}
+                  className="flex flex-col items-center bg-white rounded-lg shadow-md p-6"
+                >
+                  {/* Image */}
+                  {workout.exerciseDetails?.gifUrl && (
+                    <img
+                      src={workout.exerciseDetails.gifUrl}
+                      alt={workout.exerciseDetails.name}
+                      className="w-full max-w-sm rounded-md shadow-lg mb-4 transition-transform transform hover:scale-105"
+                    />
+                  )}
+                  {/* Details */}
+                  <div className="text-center">
+                    <p className="text-lg font-medium text-gray-800">
+                      <strong>Exercise Name:</strong>{" "}
+                      {workout.exerciseDetails?.name || "N/A"}
+                    </p>
+                    <p className="text-gray-600 mt-1">
+                      <strong>Body Part:</strong>{" "}
+                      {workout.exerciseDetails?.bodyPart || "N/A"}
+                    </p>
+                    <p className="text-gray-600 mt-1">
+                      <strong>Target:</strong>{" "}
+                      {workout.exerciseDetails?.target || "N/A"}
+                    </p>
+                    <p className="text-gray-600 mt-1">
+                      <strong>Notes:</strong>{" "}
+                      {workout.notes || "No additional notes."}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-600 text-center">
+              No recommended workouts found.
+            </p>
+          )}
         </div>
 
         {/* Progress Bars */}

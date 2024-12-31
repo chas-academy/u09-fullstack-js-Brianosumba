@@ -6,7 +6,7 @@ const HEADERS = {
 
 const BASE_URL = "http://localhost:3000/api/exercises";
 
-export const fetchExercisesfromDB = async (limit = 10, offset = 0) => {
+export const fetchExercisesfromDB = async (limit = 30, offset = 0) => {
   try {
     const response = await fetch(
       `${EXERCISE_DB_API}?limit=${limit}&offset=${offset}`,
@@ -31,10 +31,21 @@ export const fetchRecommendations = async (userId) => {
     const response = await fetch(`${BASE_URL}/recommendations/${userId}`);
 
     if (!response.ok) {
-      throw new Error("Failed to fetch recommendations.");
+      const errorDetails = await response.json();
+      console.error("Error from backend:", errorDetails);
+      throw new Error(
+        errorDetails.message || "Failed to fetch recommendations."
+      );
     }
 
-    return response.json();
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+      console.error("Invalid recommendations data:", data);
+      throw new Error("Expected an array of recommendations.");
+    }
+
+    return data;
   } catch (error) {
     console.error("Error fetching recommendations:", error.message || error);
     throw error;
@@ -43,6 +54,8 @@ export const fetchRecommendations = async (userId) => {
 
 export const recommendExercise = async (recommendationData) => {
   try {
+    console.log("Payload being sent to backend:", recommendationData);
+
     const response = await fetch(`${BASE_URL}/recommend`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -50,10 +63,26 @@ export const recommendExercise = async (recommendationData) => {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to recommend exercise.");
+      const errorDetails = await response.json();
+      console.error("Error from backend:", errorDetails);
+      throw new Error(errorDetails.message || "Failed to recommend exercise.");
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log("Backend Response Data:", data);
+
+    if (!data?.recommendation || !data.recommendation._id) {
+      console.error("Invalid recommendation data:", data);
+      throw new Error("Invalid recommendation data from backend");
+    }
+
+    const reformatted = {
+      id: data.recommendation._id,
+      ...data.recommendation,
+    };
+
+    console.log("Reformatted Recommendation:", reformatted);
+    return reformatted;
   } catch (error) {
     console.error("Error recommending exercise:", error.message || error);
     throw error;

@@ -9,6 +9,7 @@ const useAuthStore = create((set) => ({
   username: "",
   isAdmin: false,
   token: "",
+  userId: "",
 
   /**
    * @param {string} username
@@ -17,34 +18,64 @@ const useAuthStore = create((set) => ({
    */
   login: async (username, password) => {
     console.log("Logging in user:", username);
-    const data = await loginWithCredentials(username, password);
-    if (data) {
-      set({
-        isAuthenticated: true,
-        username: data?.user?.username,
-        token: data?.token,
-        isAdmin: data?.user?.isAdmin,
-      });
-      console.log("User logged in:", { isAuthenticated: true, username });
-      return true;
+    try {
+      const { token, user } = await loginWithCredentials(username, password);
+
+      if (token) {
+        set({
+          isAuthenticated: true,
+          username: user.username || "",
+          token,
+          isAdmin: user.isAdmin || false,
+          userId: user.id || "",
+        });
+
+        //store token and userId in localstorage for persistence
+        localStorage.setItem("token", token);
+        localStorage.setItem("userId", user.id); //save userId for later use
+        console.log("User logged in successfully:", {
+          isAuthenticated: true,
+          username: user.username,
+        });
+        return true;
+      }
+    } catch (error) {
+      console.error("Login failed", error.message || error);
+      return false;
     }
-    return false;
   },
 
   // Action to log out a user
   logout: () => {
     console.log("Logging out user");
-    set({ isAuthenticated: false, username: "" });
+    set({
+      isAuthenticated: false,
+      username: "",
+      token: "",
+      isAdmin: false,
+      userId: "",
+    });
+
+    // Clear localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
     console.log("User logged out:", { isAuthenticated: false, username: "" });
   },
 
   // Action to check if token exists (for auto-login)
   checkAuth: () => {
     const token = localStorage.getItem("token");
-    console.log("Checking auth. Token found:", token !== null);
-    if (token) {
-      set({ isAuthenticated: true });
-      console.log("User is authenticated:", { isAuthenticated: true });
+    const userId = localStorage.getItem("userId");
+
+    console.log(
+      "Checking auth. Token found:",
+      !!token,
+      "User ID found:",
+      !!userId
+    );
+    if (token && userId) {
+      set({ isAuthenticated: true, userId, token }); // Restore userId from localStorage
+      console.log("User is authenticated:", { isAuthenticated: true, userId }); // Optionally restore token if needed in other areas
     } else {
       console.log("User is not authenticated:", { isAuthenticated: false });
     }

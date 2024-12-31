@@ -4,7 +4,10 @@ const RecommendedExercise = require("../models/crud/RecommendExercise");
 const getRecommendations = async (req, res) => {
   try {
     const { userId } = req.params;
-    const recommendations = await RecommendedExercise.find({ userId });
+    const recommendations = await RecommendedExercise.find({ userId }).populate(
+      "exerciseId",
+      "name bodypart target"
+    );
     res.status(200).json(recommendations);
   } catch (error) {
     console.error("Error fetching recommendations:", error.message);
@@ -54,16 +57,20 @@ const deleteRecommendation = async (req, res) => {
 const editRecommendation = async (req, res) => {
   try {
     const { recommendationId } = req.params;
-    const updatedFields = req.body;
+    const { exerciseId } = req.body;
 
-    if (!updatedFields) {
-      return res.status(400).json({ error: "Updated fields are required." });
+    if (!exerciseId) {
+      return res.status(400).json({ error: "Exercise ID is required." });
     }
     const updatedRecommendation = await RecommendedExercise.findByIdAndUpdate(
       recommendationId,
-      updatedFields,
+      { exerciseId },
       { new: true }
     );
+
+    if (!updatedRecommendation) {
+      return res.status(404).json({ error: "Recommendation not found." });
+    }
 
     res.status(200).json({
       message: "Recommendation updated successfully",

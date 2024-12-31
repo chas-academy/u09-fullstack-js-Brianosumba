@@ -38,12 +38,21 @@ export const handleRecommendExercise = async (userId, exerciseId) => {
       tags: ["strength", "cardio"],
     };
 
+    console.log(
+      "Payload being sent to recommendExercise:",
+      recommendationPayload
+    );
+
     const response = await recommendExercise(recommendationPayload);
+
     console.log("Recommendation Response:", response);
     alert("Exercise recommended successfully!");
+
+    return response;
   } catch (error) {
     console.error("Error recommending exercise:", error.message || error);
     alert("Failed to recommend exercise. Please try again.");
+    throw error;
   }
 };
 
@@ -57,6 +66,9 @@ export const handleUpdateRecommendation = async (
   setRecommendations
 ) => {
   try {
+    if (!recommendationId) {
+      throw new Error("Recommendation ID is missing");
+    }
     const updatedRecommendation = await editRecommendation(
       recommendationId,
       updatedFields

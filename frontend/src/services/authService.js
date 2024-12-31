@@ -21,7 +21,10 @@ export const register = async (userData) => {
     return response.data;
   } catch (error) {
     // Handle any errors that occur during the request
-    throw new Error("Registration failed: " + error.message);
+    const errorMessage =
+      error.response?.data?.message || "Registration failed.";
+    console.error("Refistration failed:", errorMessage);
+    throw new Error(errorMessage);
   }
 };
 
@@ -46,11 +49,16 @@ export const loginWithCredentials = async (username, password) => {
       }
     );
 
-    // Returning the response data from the server (usually user info or a success message)
-    localStorage.setItem("token", response.data.token);
-    return response.data;
+    const { token, user } = response.data;
+
+    // Savve token locally for persistance
+    localStorage.setItem("token", token);
+    return { token, user };
   } catch (error) {
     // Handle any errors that occur during the request
-    throw new Error("Login failed: " + error.message);
+    const errorMessage =
+      error.response?.data?.message || "Login failed. Please try again.";
+    console.error("Login failed:", errorMessage);
+    throw new Error(errorMessage);
   }
 };
