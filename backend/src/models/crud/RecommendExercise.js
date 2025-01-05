@@ -1,5 +1,4 @@
-//models/RecommededEcercise.js
-
+//models/RecommededExercise.js
 const mongoose = require("mongoose");
 
 const RecommendedExerciseSchema = new mongoose.Schema({
@@ -9,12 +8,13 @@ const RecommendedExerciseSchema = new mongoose.Schema({
     required: true,
   },
   exerciseId: {
-    type: String,
+    type: String, // Store the exercise ID from the external API
     required: true,
   },
   notes: {
     type: String,
     default: "",
+    trim: true,
   },
   tags: {
     type: [String],

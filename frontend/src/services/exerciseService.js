@@ -4,25 +4,29 @@ const HEADERS = {
   "x-rapidapi-key": import.meta.env.VITE_RAPIDAPI_KEY,
 };
 
-const BASE_URL = "http://localhost:3000/api/exercises";
-
+/**
+ * Fetch exercises from the ExerciseDB API.
+ * @param {number} limit - The maximum number of results to fetch.
+ * @param {number} offset - The offset for paginated results.
+ * @returns {object[]} Array of exercises from the API.
+ */
 export const fetchExercisesfromDB = async (limit = 30, offset = 0) => {
   try {
-    const response = await fetch(
-      `${EXERCISE_DB_API}?limit=${limit}&offset=${offset}`,
-      {
-        headers: HEADERS,
-      }
+    console.log(
+      `Fetching exercises with limit=${limit} and offset=${offset}...`
     );
+    const response = await axios.get(EXERCISE_DB_API, {
+      headers: HEADERS,
+      params: { limit, offset },
+    });
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch exercises.");
-    }
-
-    return response.json();
+    return response.data;
   } catch (error) {
-    console.error("Error fetching exercises:", error.message || error);
-    throw error;
+    console.error(
+      "Error fetching exercises from ExerciseDB API:",
+      error.message
+    );
+    throw new Error("Failed to fetch exercises. Please try again later.");
   }
 };
 

@@ -29,26 +29,17 @@ const Admin = () => {
     const loadData = async () => {
       try {
         const usersData = await fetchUsers();
+        setUsers(usersData);
         console.log("Fetched users:", usersData);
 
-        if (!Array.isArray(usersData)) {
-          throw new Error("Invalid users data structure: Expected an array");
-        }
-
-        setUsers(usersData.filter((user) => user && user.id));
+        // setUsers(usersData.filter((user) => user && user.id));
 
         const exerciseData = await getExercises();
-        console.log("Fetched exercises:", exerciseData);
-
-        if (!Array.isArray(exerciseData)) {
-          throw new Error(
-            "Invalid exercises data structure: Expected an array"
-          );
-        }
         setExercises(exerciseData);
+        console.log("Fetched exercises:", exerciseData);
       } catch (err) {
         console.error("Error loading data:", err);
-        setError(err.message || "Failed to load data. Please try again later");
+        setError("Failed to load data. Please try again later");
       }
     };
 
