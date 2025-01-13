@@ -15,13 +15,14 @@ const router = express.Router();
  */
 router.get("/", verifyToken, verifyAdmin, async (req, res) => {
   try {
-    console.log("Fetching all users...");
-    console.log("Authenticated user data:", req.user); // Ensure `req.user` is populated
+    console.log("Authenticated user data:", req.user);
     const users = await getAllUsers();
     res.status(200).json(users);
   } catch (error) {
-    console.error("Error fetching users:", error.message);
-    res.status(500).json({ message: "Error fetching users.", error: error.message });
+    console.error("Error in GET /api/users route:", error.message);
+    res
+      .status(500)
+      .json({ message: "Error fetching users.", error: error.message });
   }
 });
 
@@ -53,7 +54,9 @@ router.patch("/:id/status", verifyToken, verifyAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating user status:", error.message);
-    res.status(500).json({ message: "Error updating user status.", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error updating user status.", error: error.message });
   }
 });
 
@@ -82,7 +85,9 @@ router.get("/:id", verifyToken, verifyAdmin, async (req, res) => {
     res.status(200).json(user);
   } catch (error) {
     console.error("Error fetching user:", error.message);
-    res.status(500).json({ message: "Error fetching user.", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching user.", error: error.message });
   }
 });
 
@@ -111,7 +116,9 @@ router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
     res.status(200).json({ message: "User deleted successfully." });
   } catch (error) {
     console.error("Error deleting user:", error.message);
-    res.status(500).json({ message: "Error deleting user.", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error deleting user.", error: error.message });
   }
 });
 

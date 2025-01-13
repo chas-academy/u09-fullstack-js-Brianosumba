@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
 
 const exerciseSchema = new mongoose.Schema({
-  exerciseId: { type: String, required: true, unique: true },
-  requestedAt: { type: Date, default: Date.now },
+  name: { type: String, required: true },
+  bodyPart: { type: String, required: true },
+  target: { type: String, required: true },
 });
 
 module.exports = mongoose.model("Exercise", exerciseSchema);

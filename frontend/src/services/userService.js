@@ -1,71 +1,59 @@
-const BASE_URL = "http://localhost:3000/api"; // Base URL for the API
+const BASE_URL = "http://localhost:3000/api";
 
-/**
- * Fetches the valid token from localStorage or a token handler utility
- * @returns {string} token - The valid token
- */
+// Utility: Fetch token from localStorage
 const getToken = () => {
   const token = localStorage.getItem("token");
   if (!token) {
-    alert("Session expired. Please log in again.");
-    window.location.href = "/login";
+    console.error("No token found in localStorage.");
     throw new Error("No token found. Please log in again.");
   }
   return token;
 };
 
-/**
- * Handles API responses and throws errors for non-OK responses
- * @param {Response} response - The fetch response object
- */
+// Utility: Get headers
+const getHeaders = (isJson = true) => {
+  const headers = {
+    Authorization: `Bearer ${getToken()}`,
+  };
+  console.log("Headers being sent:", headers);
+  if (isJson) {
+    headers["Content-Type"] = "application/json";
+  }
+  return headers;
+};
+
+// Utility: Handle API responses
 const handleResponse = async (response) => {
   if (!response.ok) {
-    const errorDetails = await response.json().catch(() => null); // Fallback for non-JSON responses
-    console.error("API Error:", errorDetails || response.statusText);
+    const errorDetails = await response.json().catch(() => null);
+    console.error("Error details from backend:", errorDetails);
     throw new Error(errorDetails?.message || response.statusText);
   }
   return response.json();
 };
 
-/**
- * Fetches users from the backend
- */
+// Fetch all users
 export const fetchUsers = async () => {
-  const token = getToken();
-
   try {
-    console.log("Fetching users with token:", token);
     const response = await fetch(`${BASE_URL}/users`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getHeaders(),
     });
-    console.log("Response details:", response);
+    console.log("Response from /api/users:", response);
     return await handleResponse(response);
   } catch (error) {
-    console.error("Error in fetchUsers:", error.message || error);
+    console.error("Error in fetchUsers:", error.message);
     throw error;
   }
 };
 
-/**
- * Updates the status of a user
- * @param {string} userId - The ID of the user
- */
+// Update user status
 export const updateUserStatus = async (userId) => {
-  const token = getToken();
-
   try {
     const response = await fetch(`${BASE_URL}/users/${userId}/status`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getHeaders(),
     });
-
     return await handleResponse(response);
   } catch (error) {
     console.error("Error in updateUserStatus:", error.message || error);
@@ -73,74 +61,46 @@ export const updateUserStatus = async (userId) => {
   }
 };
 
-/**
- * Recommends a workout to a user
- * @param {string} userId - The ID of the user
- * @param {string} workoutId - The ID of the workout
- */
+// Recommend a workout
 export const recommendWorkout = async (userId, workoutId) => {
-  const token = getToken();
-
   try {
     const response = await fetch(`${BASE_URL}/users/${userId}/recommend`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getHeaders(),
       body: JSON.stringify({ workoutId }),
     });
-
     return await handleResponse(response);
   } catch (error) {
-    console.error("Error in recommendWorkout:", error.message || error);
+    console.error("Error in recommendWorkout:", error);
     throw error;
   }
 };
 
-/**
- * Edits user details
- * @param {string} userId - The ID of the user
- * @param {object} updates - The updated user data
- */
+// Edit user
 export const editUser = async (userId, updates) => {
-  const token = getToken();
-
   try {
     const response = await fetch(`${BASE_URL}/users/${userId}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getHeaders(),
       body: JSON.stringify(updates),
     });
-
     return await handleResponse(response);
   } catch (error) {
-    console.error("Error in editUser:", error.message || error);
+    console.error("Error in editUser:", error);
     throw error;
   }
 };
 
-/**
- * Deletes a user
- * @param {string} userId - The ID of the user
- */
+// Delete user
 export const deleteUser = async (userId) => {
-  const token = getToken();
-
   try {
     const response = await fetch(`${BASE_URL}/users/${userId}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getHeaders(),
     });
-
     return await handleResponse(response);
   } catch (error) {
-    console.error("Error in deleteUser:", error.message || error);
+    console.error("Error in deleteUser:", error);
     throw error;
   }
 };

@@ -32,8 +32,6 @@ const Admin = () => {
         setUsers(usersData);
         console.log("Fetched users:", usersData);
 
-        // setUsers(usersData.filter((user) => user && user.id));
-
         const exerciseData = await getExercises();
         setExercises(exerciseData);
         console.log("Fetched exercises:", exerciseData);
@@ -66,23 +64,28 @@ const Admin = () => {
   }, []);
 
   const toggleStatus = async (userId) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === userId ? { ...user, isActive: !user.isActive } : user
-      )
+    const updatedUsers = users.map((user) =>
+      user._id === userId ? { ...user, isActive: !user.isActive } : user
     );
+
+    setUsers(updatedUsers);
 
     try {
       await updateUserStatus(userId);
 
-      addNotification("User status updated", "info");
+      addNotification("User status updated successfully", "success");
     } catch (err) {
       console.error("Error updating status:", err);
+      const revertedUsers = users.map((user) =>
+        user._id == userId ? { ...user, isActive: !user.isActive } : user
+      );
+
+      setUsers(revertedUsers);
+
       setError("Failed to update user status. Please try again");
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId ? { ...user, isActive: !user.isActive } : user
-        )
+      addNotification(
+        "Failed to update user status. Please try again.",
+        "error"
       );
     }
   };
@@ -130,7 +133,10 @@ const Admin = () => {
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.id === userId
-            ? { ...user, recommendationId: recommendation.id, exerciseId }
+            ? {
+                ...user,
+                recommendations: [...user.recommendations, recommendation],
+              }
             : user
         )
       );
@@ -286,14 +292,14 @@ const Admin = () => {
             </thead>
             <tbody>
               {users
-                .filter((user) => user && user.id)
+                .filter((user) => user && user._id)
                 .map((user) => (
-                  <tr key={user.id}>
+                  <tr key={user._id}>
                     <td>{user.username}</td>
                     <td>{user.email}</td>
                     <td>
                       <button
-                        onClick={() => toggleStatus(user.id)}
+                        onClick={() => toggleStatus(user._id)}
                         className={`py-1 px-2 rounded text-white ${
                           user.isActive ? "bg-green-500" : "bg-red-500"
                         }`}
@@ -308,7 +314,7 @@ const Admin = () => {
                         onChange={(e) => {
                           const exerciseId = e.target.value;
                           if (!exerciseId) return;
-                          onRecommendClick(user.id, exerciseId);
+                          onRecommendClick(user._id, exerciseId);
                         }}
                         className="p-1 rounded border"
                       >

@@ -9,6 +9,7 @@ const RecommendedExerciseSchema = new mongoose.Schema({
   },
   exerciseId: {
     type: String, // Store the exercise ID from the external API
+    ref: "Exercise",
     required: true,
   },
   notes: {

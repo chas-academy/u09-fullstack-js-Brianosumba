@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const RecommendedExercise = require("../models/crud/RecommendExercise");
 
 // Get all recommendations for a user
@@ -5,8 +6,14 @@ const getRecommendations = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    if (!!userId) {
+    if (!userId) {
       return res.status(400).json({ error: "User ID is required." });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid User ID." });
     }
 
     const recommendations = await RecommendedExercise.find({ userId }).populate(
@@ -32,24 +39,36 @@ const getRecommendations = async (req, res) => {
 //Save Recommendation
 const recommendExercise = async (req, res) => {
   try {
-    const { userId, exerciseId, notes, tags } = req.body;
+    const { userId, exerciseId, notes = "", tags = [] } = req.body;
+
     if (!userId || !exerciseId) {
       return res
         .status(400)
-        .json({ error: "userId and exerciseId are required" });
+        .json({ success: false, error: "userId and exerciseId are required" });
+    }
+    if (
+      !mongoose.Types.ObjectId.isValid(userId) ||
+      !mongoose.Types.ObjectId.isValid(exerciseId)
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid User Id or Exercise ID.",
+      });
     }
     const recommendation = new RecommendedExercise({
       userId,
       exerciseId,
-      notes: notes?.trim(),
+      notes: notes.trim(),
       tags: Array.isArray(tags) ? tags : [],
     });
 
     await recommendation.save();
     console.log("Exercise recommended successfully:", recommendation);
-    res
-      .status(201)
-      .json({ message: "Exercise recommended successfully", recommendation });
+    res.status(201).json({
+      success: true,
+      message: "Exercise recommended successfully",
+      data: recommendation,
+    });
   } catch (error) {
     console.error("Error recommending exercise:", error.message);
     res.status(500).json({ error: "Failed to recommend exercise." });
@@ -62,7 +81,15 @@ const deleteRecommendation = async (req, res) => {
     const { recommendationId } = req.params;
 
     if (!recommendationId) {
-      return res.status(400).json({ error: "Recommendation ID is required." });
+      return res
+        .status(400)
+        .json({ success: false, error: "Recommendation ID is required." });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(recommendationId)) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid Recommendation ID." });
     }
 
     const deleteRecommendation = await RecommendedExercise.findByIdAndDelete(
@@ -70,11 +97,15 @@ const deleteRecommendation = async (req, res) => {
     );
 
     if (!deleteRecommendation) {
-      return res.status(404).json({ error: "Recommmendation not found." });
+      return res
+        .status(404)
+        .json({ success: false, error: "Recommmendation not found." });
     }
 
     console.log("Recommendation deleted succesfully:", recommendationId);
-    res.status(200).json({ message: "Recommendation deleted successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Recommendation deleted successfully" });
   } catch (error) {
     console.error("Error deleting recommendation:", error.message);
     res.status(500).json({ error: "Failed to delete recommendation" });
@@ -85,26 +116,51 @@ const deleteRecommendation = async (req, res) => {
 const editRecommendation = async (req, res) => {
   try {
     const { recommendationId } = req.params;
-    const { exerciseId } = req.body;
+    const { exerciseId, notes = "", tags = [] } = req.body;
+
+    if (!recommendationId) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Recommendation ID is required." });
+    }
+    if (!mongoose.Types.ObjectId.isValid(recommendationId)) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid Recommendation ID." });
+    }
 
     if (!exerciseId) {
-      return res.status(400).json({ error: "Exercise ID is required." });
+      return res
+        .status(400)
+        .json({ success: false, error: "Exercise ID is required." });
+    }
+    if (!mongoose.Types.ObjectId.isValid(recommendationId)) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid Exercise ID." });
     }
     const updatedRecommendation = await RecommendedExercise.findByIdAndUpdate(
       recommendationId,
-      { exerciseId, notes, tags },
+      {
+        exerciseId,
+        notes: notes.trim(),
+        tags: Array.isArray(tags) ? tags : [],
+      },
       { new: true }
     );
 
     if (!updatedRecommendation) {
-      return res.status(404).json({ error: "Recommendation not found." });
+      return res
+        .status(404)
+        .json({ success: false, error: "Recommendation not found." });
     }
 
     console.log("Recommendation updated successfully:", updatedRecommendation);
 
     res.status(200).json({
+      success: true,
       message: "Recommendation updated successfully",
-      updatedRecommendation,
+      data: updatedRecommendation,
     });
   } catch (error) {
     console.error("Error editing recommendation:", error.message);

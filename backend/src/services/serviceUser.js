@@ -6,43 +6,12 @@ const User = require("../models/User");
 const getAllUsers = async () => {
   try {
     console.log("Fetching users from the database...");
+    const users = await User.find(); // Basic query without populate
+    console.log("Fetched users:", users); // Log raw user data
 
-    const users = await User.find()
-      .populate({
-        path: "recommendations",
-        select: "exerciseId notes tags",
-        populate: {
-          path: "exerciseId",
-          select: "name bodyPart target",
-        },
-      })
-
-      .exec();
-
-    if (!users || users.length === 0) {
-      console.warn("No users found in the database.");
-      return [];
-    }
-
-    console.log(`Fetched ${users.length} users successfully.`);
-    return users.map((user) => ({
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      isActive: user.isActive,
-      isAdmin: user.isAdmin,
-      recommendations: (user.recommendations || []).map((rec) => ({
-        id: rec._id,
-        exerciseId: rec.exerciseId?._id || null,
-        exerciseName: rec.exerciseId?.name || "Unknown Exercise",
-        bodyPart: rec.exerciseId?.bodyPart || "N/A",
-        target: rec.exerciseId?.target || "N/A",
-        notes: rec.notes,
-        tags: rec.tags,
-      })),
-    }));
+    return users; // For now, return users without transformation
   } catch (error) {
-    console.error("Error fetching users:", error.message);
+    console.error("Error fetching users in getAllUsers:", error.message);
     throw new Error("Error fetching users from the database.");
   }
 };
@@ -52,6 +21,10 @@ const getAllUsers = async () => {
  */
 const toggleUserStatus = async (userId) => {
   try {
+    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+      console.warn("Invalid user ID format:", userId);
+      throw new Error("Invalid user ID format");
+    }
     console.log(`Toggling status for user ID: ${userId}`);
     const user = await User.findById(userId);
 
@@ -78,6 +51,11 @@ const toggleUserStatus = async (userId) => {
  */
 const getUserById = async (userId) => {
   try {
+    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+      console.warn("Invalid user ID format:", userId);
+      throw new Error("Invalid user ID format");
+    }
+
     console.log(`Fetching user by ID: ${userId}`);
     const user = await User.findById(userId).populate({
       path: "recommendations",
@@ -121,6 +99,10 @@ const getUserById = async (userId) => {
  */
 const deleteUserById = async (userId) => {
   try {
+    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+      console.warn("Invalid user ID format:", userId);
+      throw new Error("Invalid user ID format");
+    }
     console.log(`Deleting user by ID: ${userId}`);
     const deletedUser = await User.findByIdAndDelete(userId);
 

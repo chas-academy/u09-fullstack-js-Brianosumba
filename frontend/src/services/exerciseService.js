@@ -1,3 +1,7 @@
+import axios from "axios";
+
+const BASE_URL = "http://localhost:3000/api";
+
 const EXERCISE_DB_API = "https://exercisedb.p.rapidapi.com/exercises";
 const HEADERS = {
   "x-rapidapi-host": "exercisedb.p.rapidapi.com",
@@ -32,7 +36,9 @@ export const fetchExercisesfromDB = async (limit = 30, offset = 0) => {
 
 export const fetchRecommendations = async (userId) => {
   try {
-    const response = await fetch(`${BASE_URL}/recommendations/${userId}`);
+    const response = await fetch(`${BASE_URL}/recommendations/${userId}`, {
+      method: "GET",
+    });
 
     if (!response.ok) {
       const errorDetails = await response.json();
@@ -93,26 +99,6 @@ export const recommendExercise = async (recommendationData) => {
   }
 };
 
-export const deleteRecommendation = async (recommendationId) => {
-  try {
-    const response = await fetch(
-      `${BASE_URL}/recommendation/${recommendationId}`,
-      {
-        method: "DELETE",
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to delete recommendation.");
-    }
-
-    return response.json();
-  } catch (error) {
-    console.error("Error deleting recommendation:", error.message || error);
-    throw error;
-  }
-};
-
 export const editRecommendation = async (recommendationId, updatedFields) => {
   try {
     const response = await fetch(
@@ -125,12 +111,39 @@ export const editRecommendation = async (recommendationId, updatedFields) => {
     );
 
     if (!response.ok) {
-      throw new Error("Failed to edit recommendation.");
+      const errorDetails = await response.json();
+      console.error("Error from backend:", errorDetails);
+      throw new Error(errorDetails.message || "Failed to edit recommendation.");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error editing recommendation:", error.message || error);
+    throw error;
+  }
+};
+
+export const deleteRecommendation = async (recommendationId) => {
+  try {
+    const response = await fetch(
+      `${BASE_URL}/recommendation/${recommendationId}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.ok) {
+      const errorDetails = await response.json();
+      console.error("Error from backend:", errorDetails);
+      throw new Error(
+        errorDetails.message || "Failed to delete recommendation."
+      );
     }
 
     return response.json();
   } catch (error) {
-    console.error("Error editing recommendation:", error.message || error);
+    console.error("Error deleting recommendation:", error.message || error);
     throw error;
   }
 };
