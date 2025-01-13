@@ -44,7 +44,7 @@ app.use((req, res, next) => {
 // Routes
 app.use("/api/users", require("./src/routes/user"));
 app.use("/api/auth", require("./src/routes/auth"));
-app.use("/api/exercises", require("./src/routes/exerciseRoutes"));
+app.use("/api/recommendations", require("./src/routes/recommendationRoutes"));
 
 // Check if MongoDB URI is set
 if (!process.env.MONGODB_URI) {
