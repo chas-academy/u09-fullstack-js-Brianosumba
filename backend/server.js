@@ -9,7 +9,12 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 // HTTP server and Socket.IO
 const server = http.createServer(app);
@@ -45,6 +50,7 @@ app.use((req, res, next) => {
 app.use("/api/users", require("./src/routes/user"));
 app.use("/api/auth", require("./src/routes/auth"));
 app.use("/api/recommendations", require("./src/routes/recommendationRoutes"));
+app.use("/api/exercises", require("./src/routes/exerciseRoutes"));
 
 // Check if MongoDB URI is set
 if (!process.env.MONGODB_URI) {

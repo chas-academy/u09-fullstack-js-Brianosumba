@@ -66,7 +66,7 @@ export const recommendExercise = async (recommendationData) => {
   try {
     console.log("Payload being sent to backend:", recommendationData);
 
-    const response = await fetch(`${BASE_URL}/recommend`, {
+    const response = await fetch(`${BASE_URL}/recommendations`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(recommendationData),
@@ -81,14 +81,14 @@ export const recommendExercise = async (recommendationData) => {
     const data = await response.json();
     console.log("Backend Response Data:", data);
 
-    if (!data?.recommendation || !data.recommendation._id) {
+    if (!data?.data || !data.data._id) {
       console.error("Invalid recommendation data:", data);
       throw new Error("Invalid recommendation data from backend");
     }
 
     const reformatted = {
-      id: data.recommendation._id,
-      ...data.recommendation,
+      id: data.data._id,
+      ...data.data,
     };
 
     console.log("Reformatted Recommendation:", reformatted);

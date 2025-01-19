@@ -12,6 +12,7 @@ import {
 } from "./ExerciseCrud";
 import { fetchUsers, updateUserStatus } from "../../services/userService";
 import EditRecommendationModal from "../../components/EditRecommendationModal";
+import axios from "axios";
 
 const Admin = () => {
   const [users, setUsers] = useState([]);
@@ -44,6 +45,22 @@ const Admin = () => {
     loadData();
   }, []);
 
+  // Fetch completed workouts from the backend
+  useEffect(() => {
+    const fetchCompletedWorkouts = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:3000/api/exercises/completed"
+        );
+        setExerciseCompletions(response.data);
+      } catch (error) {
+        console.error("Error fetching completed workouts:", error.message);
+      }
+    };
+
+    fetchCompletedWorkouts();
+  }, []);
+
   // Setup Socket.IO
   useEffect(() => {
     const socket = io("http://localhost:3000", { withCredentials: true });
@@ -53,9 +70,10 @@ const Admin = () => {
       socket.emit("joinAdminRoom");
     });
 
+    // Listen for exerciseCompleted event
     socket.on("exerciseCompleted", (data) => {
-      setExerciseCompletions((prev) => [...prev, data]);
-      addNotification(`${data.username} completed an exercise`, "info");
+      console.log("Received exercise completion:", data);
+      setExerciseCompletions((prev) => [data, ...prev]); // Add new completion to the list
     });
 
     return () => {
@@ -371,7 +389,7 @@ const Admin = () => {
                 {exerciseCompletions.map((completion, index) => (
                   <tr key={index} className="border-b hover:bg-gray-100">
                     <td className="border-b border-gray-300 p-4">
-                      {completion.username}
+                      {completion.username || "Unkown User"}
                     </td>
                     <td className="border-b border-gray-300 p-4">
                       {completion.workoutType}

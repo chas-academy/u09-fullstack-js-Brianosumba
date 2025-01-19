@@ -9,9 +9,9 @@ const {
 const router = express.Router();
 
 // Recommendations API
-router.get("/recommendations/:userId", getRecommendations); // Fetch all recommendations for a user
-router.post("/recommend", recommendExercise); // Save a recommendation
-router.delete("/recommendation/:recommendationId", deleteRecommendation); // Delete a recommendation
-router.patch("/recommendation/:recommendationId", editRecommendation); // Update a recommendation
+router.get("/:userId", getRecommendations); // Fetch all recommendations for a user
+router.post("/", recommendExercise); // Save a recommendation
+router.delete("/:recommendationId", deleteRecommendation); // Delete a recommendation
+router.patch("/:recommendationId", editRecommendation); // Update a recommendation
 
 module.exports = router;
