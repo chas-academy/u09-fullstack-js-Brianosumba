@@ -14,7 +14,6 @@ import { fetchUsers, updateUserStatus } from "../../services/userService";
 import EditRecommendationModal from "../../components/EditRecommendationModal";
 import axios from "axios";
 import { fetchAllRecommendations } from "../../services/exerciseService";
-import { string } from "prop-types";
 
 const Admin = () => {
   const [users, setUsers] = useState([]);
