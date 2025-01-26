@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const EditRecommendationModal = ({
   isOpen,
@@ -7,9 +7,14 @@ const EditRecommendationModal = ({
   exercises,
   currentExerciseId,
   recommendationId,
+  currentNotes,
 }) => {
   const [selectedExercise, setSelectedExercise] = useState(currentExerciseId);
   const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    setNotes(currentNotes || "");
+  }, [currentNotes]);
 
   if (!isOpen) return null;
 

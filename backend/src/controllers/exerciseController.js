@@ -4,6 +4,45 @@ const RecommendedExercise = require("../models/crud/RecommendExercise");
 const WorkoutCompletion = require("../models/WorkoutCompletion");
 const axios = require("axios");
 
+// Get all recommendations for all users
+const getAllRecommendations = async (req, res) => {
+  try {
+    //Fetch all recommendations from the database
+    const recommendations = await RecommendedExercise.find();
+
+    //Map over recommendations to fetch exercise details in parallel
+    const recommendationsWithDetails = await Promise.all(
+      recommendations.map(async (recommendation) => {
+        try {
+          // Fetch exercise details from the external API
+          const exerciseResponse = await axios.get(
+            `https://exercisedb.p.rapidapi.com/exercises/exercise/${recommendation.exerciseId}`,
+            {
+              headers: { "X-RAPIDAPI-KEY": process.env.RAPIDAPI_KEY },
+            }
+          );
+          // Return recommendation with exercise details
+          return {
+            ...recommendation.toObject(),
+            exerciseDetails: exerciseResponse.data,
+          };
+        } catch (error) {
+          console.error(
+            `Failed to fetch exercise details for ID: ${recommendation.exerciseId}`,
+            error.message
+          );
+          //Return the recommendation without exercise details on failure
+          return recommendation.toObject();
+        }
+      })
+    );
+    //Send the response with all recommendations including details
+    res.status(200).json(recommendationsWithDetails);
+  } catch (error) {
+    console.error("Error fetching all recommendations:", error.message);
+    res.status(500).json({ error: "Failed to fetch recommendations." });
+  }
+};
 // Get all recommendations for a user
 const getRecommendations = async (req, res) => {
   try {
@@ -265,6 +304,7 @@ const getCompletedWorkouts = async (req, res) => {
 
 module.exports = {
   getRecommendations,
+  getAllRecommendations,
   recommendExercise,
   deleteRecommendation,
   editRecommendation,

@@ -13,6 +13,8 @@ import {
 import { fetchUsers, updateUserStatus } from "../../services/userService";
 import EditRecommendationModal from "../../components/EditRecommendationModal";
 import axios from "axios";
+import { fetchAllRecommendations } from "../../services/exerciseService";
+import { string } from "prop-types";
 
 const Admin = () => {
   const [users, setUsers] = useState([]);
@@ -21,21 +23,22 @@ const Admin = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   const [exerciseCompletions, setExerciseCompletions] = useState([]);
   const [error, setError] = useState(null);
-
+  const [recommendations, setRecommendations] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecommendation, setEditingRecommendation] = useState(null);
 
-  // Fetch users and exercises
+  useEffect(() => {
+    console.log("Recommendations:", recommendations);
+    console.log("Exercises:", exercises);
+  }, [recommendations, exercises]);
+
+  // Fetch users
   useEffect(() => {
     const loadData = async () => {
       try {
         const usersData = await fetchUsers();
         setUsers(usersData);
         console.log("Fetched users:", usersData);
-
-        const exerciseData = await getExercises();
-        setExercises(exerciseData);
-        console.log("Fetched exercises:", exerciseData);
       } catch (err) {
         console.error("Error loading data:", err);
         setError("Failed to load data. Please try again later");
@@ -43,6 +46,38 @@ const Admin = () => {
     };
 
     loadData();
+  }, []);
+
+  //Fetch recommendations
+
+  useEffect(() => {
+    const loadRecommendations = async () => {
+      try {
+        const recommendationData = await fetchAllRecommendations();
+        console.log("Fetched Recommendations:", recommendationData);
+        setRecommendations(recommendationData);
+      } catch (error) {
+        console.error("Error fetching recommendations:", error.message);
+      }
+    };
+
+    const loadExercises = async () => {
+      try {
+        const exerciseData = await getExercises();
+        console.log("Fetched Exercises:", exerciseData);
+
+        if (!Array.isArray(exerciseData)) {
+          throw new Error("Invalid exercises data format");
+        }
+
+        setExercises(exerciseData);
+      } catch (error) {
+        console.error("Error fetchinf exercises:", error.message);
+      }
+    };
+
+    loadRecommendations();
+    loadExercises();
   }, []);
 
   // Fetch completed workouts from the backend
@@ -183,8 +218,8 @@ const Admin = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveRecommendation = async (recommendationId, updatedFields) => {
-    if (!recommendationId) {
+  const handleSaveRecommendation = async (Id, updatedFields) => {
+    if (!Id) {
       console.error("Cannot update: Recommendation ID is missing");
       return;
     }
@@ -195,19 +230,21 @@ const Admin = () => {
     }
 
     try {
-      await handleUpdateRecommendation(recommendationId, updatedFields);
+      const updatedRecommendation = await handleUpdateRecommendation(
+        Id,
+        updatedFields
+      );
 
       addNotification("Recommendation updated successfully", "success");
 
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.recommendationId === recommendationId
-            ? { ...user, ...updatedFields }
-            : user
+      //Update the recommendations state
+      setRecommendations((prev) =>
+        prev.map((rec) =>
+          rec._id === Id ? { ...rec, ...updatedRecommendation } : rec
         )
       );
 
-      //Update UI to reflect changes
+      //Close modal
       setEditingRecommendation(null);
       setIsModalOpen(false);
     } catch (error) {
@@ -230,16 +267,12 @@ const Admin = () => {
     }
 
     try {
-      await handleDeleteRecommendation(recommendationId); // Updated
+      await handleDeleteRecommendation(recommendationId); // call API
       addNotification("Recommendation deleted successfully!", "success");
 
-      //Upadte the users state
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.recommendationId === recommendationId
-            ? { ...user, recommendationId: null, exerciseId: null }
-            : user
-        )
+      //Update recommendations state
+      setRecommendations((prev) =>
+        prev.filter((rec) => rec._id !== recommendationId)
       );
     } catch (error) {
       console.error("Failed to delete recommendation:", error);
@@ -345,30 +378,83 @@ const Admin = () => {
                           </option>
                         ))}
                       </select>
-                      <button
-                        onClick={() => openEditModal(user)}
-                        className={`text-blue-500 hover:underline ${
-                          !user.recommendationId || !user.exerciseId
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                        disabled={!user.recommendationId || !user.exerciseId}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() =>
-                          onDeleteRecommendation(user.recommendationId)
-                        }
-                        className="text-red-500 hover:underline"
-                      >
-                        Delete
-                      </button>
                     </td>
                   </tr>
                 ))}
             </tbody>
           </table>
+
+          <h2 className="text-2xl font-bold mt-8 mb-4">
+            Recommended Exercises
+          </h2>
+          <div className="overflow-x-auto bg-white rounded-lg shadow-md">
+            <table className="min-w-full border border-gray-300">
+              <thead className="bg-blue-600 text-white">
+                <tr>
+                  <th className="py-4 px-6 text-left">User</th>
+                  <th className="py-4 px-6 text-left">Exercise</th>
+                  <th className="py-4 px-6 text-left">Notes</th>
+                  <th className="py-4 px-6 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recommendations.map((rec) => {
+                  console.log("Processing recommendation:", rec);
+
+                  const user = users.find(
+                    (user) => String(user._id) === String(rec.userId)
+                  );
+                  const exercise = exercises.find(
+                    (ex) => String(ex.id || ex._id) === String(rec.exerciseId)
+                  );
+
+                  if (!user) {
+                    console.warn(`User not found for userId: ${rec.userId}`);
+                  }
+
+                  if (!exercise) {
+                    console.warn(
+                      `Exercise not found for exerciseId: ${rec.exerciseId}`
+                    );
+                    console.log("Available exercises:", exercises);
+                  }
+
+                  return (
+                    <tr key={rec._id}>
+                      <td>
+                        {user?.username || `User not found (ID: ${rec.userId})`}
+                      </td>
+                      <td>
+                        {exercise?.name ||
+                          `Exercise not found (ID: ${rec.exerciseId})`}
+                      </td>
+                      <td>{rec.notes || "No notes provided"}</td>
+                      <td>
+                        <button
+                          onClick={() =>
+                            setEditingRecommendation({
+                              id: rec._id,
+                              currentExerciseId: rec.exerciseId,
+                              notes: rec.notes,
+                            }) || setIsModalOpen(true)
+                          }
+                          className="text-blue-500 hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => onDeleteRecommendation(rec._id)}
+                          className="text-red-500 hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
           {/* Recent Exercise Completions Table */}
           <h2 className="text-2xl font-bold mt-8 mb-4">

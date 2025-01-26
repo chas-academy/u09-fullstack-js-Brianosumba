@@ -14,7 +14,7 @@ const HEADERS = {
  * @param {number} offset - The offset for paginated results.
  * @returns {object[]} Array of exercises from the API.
  */
-export const fetchExercisesfromDB = async (limit = 30, offset = 0) => {
+export const fetchExercisesfromDB = async (limit = 10, offset = 0) => {
   try {
     console.log(
       `Fetching exercises with limit=${limit} and offset=${offset}...`
@@ -24,6 +24,7 @@ export const fetchExercisesfromDB = async (limit = 30, offset = 0) => {
       params: { limit, offset },
     });
 
+    console.log("Response from ExerciseDB:", response.data);
     return response.data;
   } catch (error) {
     console.error(
@@ -31,6 +32,17 @@ export const fetchExercisesfromDB = async (limit = 30, offset = 0) => {
       error.message
     );
     throw new Error("Failed to fetch exercises. Please try again later.");
+  }
+};
+
+export const fetchAllRecommendations = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/recommendations`);
+    console.log("All recommendations fetched:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching all recommendations:", error.message);
+    throw error;
   }
 };
 

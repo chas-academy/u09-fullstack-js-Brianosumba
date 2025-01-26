@@ -62,25 +62,11 @@ export const handleRecommendExercise = async (userId, exerciseId) => {
 
 export const handleUpdateRecommendation = async (
   recommendationId,
-  updatedFields,
-  setRecommendations
+  updatedFields
 ) => {
   try {
-    if (!recommendationId) {
-      throw new Error("Recommendation ID is missing");
-    }
-    const updatedRecommendation = await editRecommendation(
-      recommendationId,
-      updatedFields
-    );
-    console.log("Updated recommendation:", updatedRecommendation);
-    alert("Recommendation updated successfully!");
-
-    setRecommendations((prev) =>
-      prev.map((rec) =>
-        rec._id === recommendationId ? updatedRecommendation : rec
-      )
-    );
+    const response = await editRecommendation(recommendationId, updatedFields);
+    return response.data;
   } catch (error) {
     console.error("Error updating recommendation:", error.message || error);
     alert("Failed to update recommendation. Please try again.");
@@ -90,18 +76,11 @@ export const handleUpdateRecommendation = async (
 /**
  *  Handle deleting a recommendation
  */
-export const handleDeleteRecommendation = async (
-  recommendationId,
-  setRecommendations
-) => {
+export const handleDeleteRecommendation = async (recommendationId) => {
   try {
     await deleteRecommendation(recommendationId);
     console.log(`Deleted recommendation with ID ${recommendationId}`);
     alert("Recommendation deleted successfully!");
-
-    setRecommendations((prev) =>
-      prev.filter((rec) => rec._id !== recommendationId)
-    );
   } catch (error) {
     console.error("Error deleting recommendation:", error.message || error);
     alert("Failed to delete recommendation. Please try again.");
