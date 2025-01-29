@@ -13,7 +13,10 @@ import {
 import { fetchUsers, updateUserStatus } from "../../services/userService";
 import EditRecommendationModal from "../../components/EditRecommendationModal";
 import axios from "axios";
-import { fetchAllRecommendations } from "../../services/exerciseService";
+import {
+  fetchAllRecommendations,
+  fetchExercisesfromDB,
+} from "../../services/exerciseService";
 
 const Admin = () => {
   const [users, setUsers] = useState([]);
@@ -57,7 +60,7 @@ const Admin = () => {
 
     const loadExercises = async () => {
       try {
-        const exerciseData = await getExercises();
+        const exerciseData = await fetchExercisesfromDB(10, 0);
         console.log("Fetched Exercises:", exerciseData);
 
         if (!Array.isArray(exerciseData)) {

@@ -133,9 +133,10 @@ const recommendExercise = async (req, res) => {
 
 //Delete a Recommendation
 const deleteRecommendation = async (req, res) => {
+  console.log("DELETE request received for ID:", req.params);
+
   try {
     const { recommendationId } = req.params;
-
     if (!recommendationId) {
       return res
         .status(400)
@@ -148,23 +149,24 @@ const deleteRecommendation = async (req, res) => {
         .json({ success: false, error: "Invalid Recommendation ID." });
     }
 
-    const deleteRecommendation = await RecommendedExercise.findByIdAndDelete(
+    const deletedRecommendation = await RecommendedExercise.findByIdAndDelete(
       recommendationId
     );
-
-    if (!deleteRecommendation) {
+    if (!deletedRecommendation) {
       return res
         .status(404)
-        .json({ success: false, error: "Recommmendation not found." });
+        .json({ success: false, error: "Recommendation not found." });
     }
 
-    console.log("Recommendation deleted succesfully:", recommendationId);
+    console.log("Successfully deleted:", recommendationId);
     res
       .status(200)
       .json({ success: true, message: "Recommendation deleted successfully" });
   } catch (error) {
     console.error("Error deleting recommendation:", error.message);
-    res.status(500).json({ error: "Failed to delete recommendation" });
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to delete recommendation" });
   }
 };
 

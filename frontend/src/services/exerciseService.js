@@ -8,13 +8,27 @@ const HEADERS = {
   "x-rapidapi-key": import.meta.env.VITE_RAPIDAPI_KEY,
 };
 
-/**
- * Fetch exercises from the ExerciseDB API.
- * @param {number} limit - The maximum number of results to fetch.
- * @param {number} offset - The offset for paginated results.
- * @returns {object[]} Array of exercises from the API.
- */
+const CACHE_KEY = "exercises_cache";
+const CACHE_EXPIRATION_KEY = "exercises_cache_expiration";
+const CACHE_DURATION_MS = 30 * 60 * 1000;
+
+// /**
+//  * Fetch exercises from the ExerciseDB API.
+//  * @param {number} limit - The maximum number of results to fetch.
+//  * @param {number} offset - The offset for paginated results.
+//  * @returns {object[]} Array of exercises from the API.
+//  */
+
 export const fetchExercisesfromDB = async (limit = 10, offset = 0) => {
+  const now = new Date().getTime();
+  const cachedData = localStorage.getItem(CACHE_KEY);
+  const cacheExpiration = localStorage.getItem(CACHE_EXPIRATION_KEY);
+
+  if (cachedData && cacheExpiration && now < parseInt(cacheExpiration)) {
+    console.log("Using cached exercises from localstorage.");
+    return JSON.parse(cachedData);
+  }
+
   try {
     console.log(
       `Fetching exercises with limit=${limit} and offset=${offset}...`
@@ -25,6 +39,10 @@ export const fetchExercisesfromDB = async (limit = 10, offset = 0) => {
     });
 
     console.log("Response from ExerciseDB:", response.data);
+
+    localStorage.setItem(CACHE_KEY, JSON.stringify(response.data));
+    localStorage.setItem(CACHE_EXPIRATION_KEY, now + CACHE_DURATION_MS);
+
     return response.data;
   } catch (error) {
     console.error(
@@ -135,25 +153,33 @@ export const editRecommendation = async (recommendationId, updatedFields) => {
     throw error;
   }
 };
-
 export const deleteRecommendation = async (recommendationId) => {
   try {
+    console.log("Deleting recommendation with ID:", recommendationId);
+
     const response = await fetch(
-      `${BASE_URL}/recommendation/${recommendationId}`,
+      `${BASE_URL}/recommendations/${recommendationId}`,
       {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
       }
     );
 
+    const isJsonResponse = response.headers
+      .get("content-type")
+      ?.includes("application/json");
+
     if (!response.ok) {
-      const errorDetails = await response.json();
+      const errorDetails = isJsonResponse
+        ? await response.json()
+        : { message: await response.text() };
       console.error("Error from backend:", errorDetails);
       throw new Error(
         errorDetails.message || "Failed to delete recommendation."
       );
     }
 
-    return response.json();
+    return isJsonResponse ? await response.json() : {};
   } catch (error) {
     console.error("Error deleting recommendation:", error.message || error);
     throw error;

@@ -5,7 +5,7 @@ const DeletedExerciseSchema = new mongoose.Schema({
   exerciseId: {
     type: String,
     required: true,
-    unique: true, // Prevent duplicate entries
+    unique: true,
   },
   deletedAt: {
     type: Date,
