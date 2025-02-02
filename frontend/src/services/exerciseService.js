@@ -132,7 +132,7 @@ export const recommendExercise = async (recommendationData) => {
 export const editRecommendation = async (recommendationId, updatedFields) => {
   try {
     const response = await fetch(
-      `${BASE_URL}/recommendation/${recommendationId}`,
+      `${BASE_URL}/recommendations/${recommendationId}`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
