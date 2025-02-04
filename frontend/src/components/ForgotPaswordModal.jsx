@@ -55,8 +55,15 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         );
       }
     } catch (error) {
-      console.error("Error resetting password:", error);
-      alert("An error occurred while resetting the password.");
+      console.error(
+        "Error resetting password:",
+        error.response?.data || error.message
+      );
+      alert(
+        `Password reset failed: ${
+          error.response?.data?.error || "An unexpected error occurred."
+        }`
+      );
     }
   };
 

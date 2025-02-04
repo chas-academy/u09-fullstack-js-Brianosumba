@@ -9,30 +9,50 @@ import Typography from "@mui/material/Typography"; // Material-UI Typography for
 
 const ExerciseDetail = () => {
   const { exerciseId } = useParams(); // Get exerciseId from the URL parameters
+  const userId = localStorage.getItem("userId");
+  const token = localStorage.getItem("token");
+
   const [exercise, setExercise] = useState(null); // State for exercise details
   const [recommendedWorkouts, setRecommendedWorkouts] = useState([]); // Recommended workouts
+  const [progress, setProgress] = useState({
+    workoutsToday: 0,
+    workoutsThisWeek: 0,
+    workoutsThisMonth: 0,
+    strengthProgress: 0,
+  });
 
-  // Progress tracking state
-  const [workoutsToday, setWorkoutsToday] = useState(
-    () => parseInt(localStorage.getItem("workoutsToday")) || 0
-  );
-  const [workoutsThisWeek, setWorkoutsThisWeek] = useState(
-    () => parseInt(localStorage.getItem("workoutsThisWeek")) || 0
-  );
-  const [workoutsThisMonth, setWorkoutsThisMonth] = useState(
-    () => parseInt(localStorage.getItem("workoutsThisMonth")) || 0
-  );
-  const [strengthProgress, setStrengthProgress] = useState(
-    () => parseFloat(localStorage.getItem("strengthProgress")) || 0
-  );
-
-  // Save progress to localStorage
+  // Fetch Progress from Backend
   useEffect(() => {
-    localStorage.setItem("workoutsToday", workoutsToday);
-    localStorage.setItem("workoutsThisWeek", workoutsThisWeek);
-    localStorage.setItem("workoutsThisMonth", workoutsThisMonth);
-    localStorage.setItem("strengthProgress", strengthProgress);
-  }, [workoutsToday, workoutsThisWeek, workoutsThisMonth, strengthProgress]);
+    const fetchProgress = async () => {
+      if (!userId || !token) {
+        console.error("User not authenticated. Reirecting to login...");
+        window.location.href = "/login";
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/api/progress/${userId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setProgress(response.data);
+      } catch (error) {
+        console.error("Failed to fetch progress:", error.message);
+        alert("Could not load progress. Please try again later");
+      }
+    };
+    fetchProgress();
+  }, [userId, token]);
+
+  // Save progress to locally
+  useEffect(() => {
+    localStorage.setItem("workoutsToday", progress.workoutsToday);
+    localStorage.setItem("workoutsThisWeek", progress.workoutsThisWeek);
+    localStorage.setItem("workoutsThisMonth", progress.workoutsThisMonth);
+    localStorage.setItem("strengthProgress", progress.strengthProgress);
+  }, [progress]);
 
   // Fetch exercise details
   useEffect(() => {
@@ -56,41 +76,56 @@ const ExerciseDetail = () => {
     fetchExerciseDetail();
   }, [exerciseId]);
 
+  //Handle done click
+  const handleDoneClick = async () => {
+    const updatedProgress = {
+      workoutsToday: Math.min(progress.workoutsToday + 1, 1),
+      workoutsThisWeek: Math.min(progress.workoutsThisWeek + 1, 3),
+      workoutsThisMonth: Math.min(progress.workoutsThisMonth + 1, 12),
+      strengthProgress: Math.min(progress.strengthProgress + 100 / 12, 100),
+    };
+    setProgress(updatedProgress);
+
+    try {
+      const payload = { ...updatedProgress };
+      await axios.put(`http://localhost:3000/api/progress/${userId}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("Progress updated successfully.");
+    } catch (error) {
+      console.error("Failed to update progress:", error.message);
+      alert("Could not update progress. Please try again later");
+    }
+  };
+
   // Fetch recommended workouts
   useEffect(() => {
     const fetchRecommendations = async () => {
+      if (!userId) {
+        console.error("User ID not found. Redirecting...");
+        window.location.href = "/login";
+        return;
+      }
       try {
-        const userId = localStorage.getItem("userId"); // Assume userId is stored in localStorage
-
-        if (!userId) {
-          console.error("User ID not found in localStorage. Redirecting...");
-          window.location.href = "/login";
-          return;
-        }
-
-        // Step 1: Fetch recommendations from your backend
         const backendResponse = await axios.get(
           `http://localhost:3000/api/recommendations/${userId}`
         );
-
         const recommendations = backendResponse.data;
-        console.log("Fetched recommendations from backend:", recommendations);
 
-        // Step 2: Fetch exercise details for each recommendation
+        //Fetch exercise details for each recommendation
         const recommendationWithDetails = await Promise.all(
-          backendResponse.data.map(async (recommendation, index) => {
+          recommendations.map(async (recommendation, index) => {
             try {
               const exerciseResponse = await axios.get(
                 `https://exercisedb.p.rapidapi.com/exercises/exercise/${recommendation.exerciseId}`,
                 {
                   headers: {
                     "X-RAPIDAPI-KEY": import.meta.env.VITE_RAPIDAPI_KEY,
-                    "X-RAPIDAPI-HOST": "exercisedb.p.rapidapi.com",
+                    "X_RAPIDAPI-HOST": "exercisedb.p.rapidapi.com",
                   },
                 }
               );
 
-              // Merge recommendations data with exercise details
               return {
                 ...recommendation,
                 uniqueKey:
@@ -102,119 +137,68 @@ const ExerciseDetail = () => {
                 `Failed to fetch details for exerciseId: ${recommendation.exerciseId}`,
                 error
               );
-
-              // Return recommendation with empty exerciseDetails on failure
               return {
                 ...recommendation,
                 uniqueKey:
                   recommendation.id || `${recommendation.exerciseId}-${index}`,
                 exerciseDetails: {
-                  name: "Unknown",
+                  name: "Unkown",
                   bodyPart: "Unkown",
                   target: "Unkown",
-                  gifUrl: null,
+                  giftUrl: null,
                 },
               };
             }
           })
         );
 
-        // Step 3: Update state with recommendations and their details
         setRecommendedWorkouts(recommendationWithDetails);
-        console.log(
-          "Recommendations with exercise details:",
-          recommendationWithDetails
-        );
       } catch (error) {
         console.error("Failed to fetch recommended workouts:", error.message);
       }
     };
 
     fetchRecommendations();
-  }, []); // Dependency array: [] ensures it only runs on mount
-
-  // Reset progress functions
-  const resetDay = () => setWorkoutsToday(0);
-  const resetWeek = () => setWorkoutsThisWeek(0);
-  const resetMonth = () => {
-    setWorkoutsThisMonth(0);
-    setStrengthProgress(0);
-  };
-
-  // Reset logic with intervals
-  useEffect(() => {
-    const resetDaily = setInterval(() => {
-      const now = new Date();
-      if (now.getHours() === 0 && now.getMinutes() === 0) resetDay();
-    }, 300000);
-
-    const resetWeekly = setInterval(() => {
-      const now = new Date();
-      if (now.getDay() === 1 && now.getHours() === 0 && now.getMinutes() === 0)
-        resetWeek();
-    }, 300000);
-
-    const resetMonthly = setInterval(() => {
-      const now = new Date();
-      if (now.getDate() === 1 && now.getHours() === 0 && now.getMinutes() === 0)
-        resetMonth();
-    }, 300000);
-
-    return () => {
-      clearInterval(resetDaily);
-      clearInterval(resetWeekly);
-      clearInterval(resetMonthly);
-    };
-  }, []);
+  }, [userId]);
 
   // Handle workout completion
-  const handleDoneClick = async () => {
-    setWorkoutsToday((prev) => Math.min(prev + 1, 1));
-    setWorkoutsThisWeek((prev) => Math.min(prev + 1, 3));
-    setWorkoutsThisMonth((prev) => Math.min(prev + 1, 12));
-    setStrengthProgress((prev) => Math.min(prev + 100 / 12, 100));
+  const handleDoneComplete = async () => {
+    // Verify that user and exercise details are available
+    if (!userId || !token || !exerciseId) {
+      console.error("Missing user authentication or exercise details.");
+      alert("Unable to complete workout. Please try again.");
+      return;
+    }
+
+    const payload = {
+      userId,
+      exerciseId,
+      workoutType: exercise?.bodyPart || "N/A",
+      target: exercise?.target || "N/A",
+      level: "Beginner",
+    };
+
+    console.log("Payload being sent to backend:", payload);
 
     try {
-      const token = localStorage.getItem("token");
-      const userId = localStorage.getItem("userId");
-
-      if (!token) {
-        console.error(
-          "Token not found in localStorage. Redirecting to login..."
-        );
-        window.location.href = "/login";
-        return;
-      }
-
-      if (!userId) {
-        console.error("User ID not found in localstorage. Redirecting...");
-        window.location.href = "/login";
-        return;
-      }
-
-      const payload = {
-        userId: userId, // Ensure userId is included
-        exerciseId: exercise?.id, // Ensure exerciseId is included
-        workoutType: exercise?.bodyPart || "N/A", // Optional field
-        target: exercise?.target || "N/A", // Optional field
-        level: "Beginner", // Example field
-      };
-
-      console.log("Payload being sent to backend:", payload);
-
+      // Send POST request to complete the workout
       const response = await axios.post(
-        "http://localhost:3000/api/exercises/complete", // Backend endpoint
+        "http://localhost:3000/api/exercises/complete",
         payload,
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Include authorization header
+            Authorization: `Bearer ${token}`,
           },
         }
       );
 
       console.log("Workout completion sent to server:", response.data);
+
+      // Optionally display success feedback to the user
+      alert("Workout marked as complete!");
     } catch (error) {
       console.error("Error sending workout completion:", error.message);
+      alert("Could not complete workout. Please try again.");
     }
   };
 
@@ -260,7 +244,7 @@ const ExerciseDetail = () => {
         {/* Done Button */}
         <div className="text-center my-8">
           <button
-            onClick={handleDoneClick}
+            onClick={handleDoneComplete}
             className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition"
           >
             Done
@@ -320,25 +304,25 @@ const ExerciseDetail = () => {
         <div className="mt-8 space-y-4">
           <CircularProgressBar
             label="Workouts Completed Today"
-            value={workoutsToday}
+            value={progress.workoutsToday}
             max={1}
             color="green"
           />
           <CircularProgressBar
             label="Workouts Completed This Week"
-            value={workoutsThisWeek}
+            value={progress.workoutsThisWeek}
             max={3}
             color="orange"
           />
           <CircularProgressBar
             label="Workouts Completed This Month"
-            value={workoutsThisMonth}
+            value={progress.workoutsThisMonth}
             max={12}
             color="red"
           />
           <CircularProgressBar
             label="Strength Progress"
-            value={strengthProgress}
+            value={progress.strengthProgress}
             max={100}
             color="blue"
           />
