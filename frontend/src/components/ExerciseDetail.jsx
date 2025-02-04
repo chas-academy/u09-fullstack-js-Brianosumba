@@ -76,27 +76,27 @@ const ExerciseDetail = () => {
     fetchExerciseDetail();
   }, [exerciseId]);
 
-  //Handle done click
-  const handleDoneClick = async () => {
-    const updatedProgress = {
-      workoutsToday: Math.min(progress.workoutsToday + 1, 1),
-      workoutsThisWeek: Math.min(progress.workoutsThisWeek + 1, 3),
-      workoutsThisMonth: Math.min(progress.workoutsThisMonth + 1, 12),
-      strengthProgress: Math.min(progress.strengthProgress + 100 / 12, 100),
-    };
-    setProgress(updatedProgress);
+  // //Handle done click
+  // const handleDoneClick = async () => {
+  //   const updatedProgress = {
+  //     workoutsToday: Math.min(progress.workoutsToday + 1, 1),
+  //     workoutsThisWeek: Math.min(progress.workoutsThisWeek + 1, 3),
+  //     workoutsThisMonth: Math.min(progress.workoutsThisMonth + 1, 12),
+  //     strengthProgress: Math.min(progress.strengthProgress + 100 / 12, 100),
+  //   };
+  //   setProgress(updatedProgress);
 
-    try {
-      const payload = { ...updatedProgress };
-      await axios.put(`http://localhost:3000/api/progress/${userId}`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("Progress updated successfully.");
-    } catch (error) {
-      console.error("Failed to update progress:", error.message);
-      alert("Could not update progress. Please try again later");
-    }
-  };
+  //   try {
+  //     const payload = { ...updatedProgress };
+  //     await axios.put(`http://localhost:3000/api/progress/${userId}`, payload, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+  //     console.log("Progress updated successfully.");
+  //   } catch (error) {
+  //     console.error("Failed to update progress:", error.message);
+  //     alert("Could not update progress. Please try again later");
+  //   }
+  // };
 
   // Fetch recommended workouts
   useEffect(() => {
@@ -170,21 +170,39 @@ const ExerciseDetail = () => {
       return;
     }
 
-    const payload = {
-      userId,
-      exerciseId,
-      workoutType: exercise?.bodyPart || "N/A",
-      target: exercise?.target || "N/A",
-      level: "Beginner",
+    // Update progress locally
+    const updatedProgress = {
+      workoutsToday: Math.min(progress.workoutsToday + 1, 1),
+      workoutsThisWeek: Math.min(progress.workoutsThisWeek + 1, 3),
+      workoutsThisMonth: Math.min(progress.workoutsThisMonth + 1, 12),
+      strengthProgress: Math.min(progress.strengthProgress + 100 / 12, 100),
     };
 
-    console.log("Payload being sent to backend:", payload);
+    setProgress(updatedProgress);
 
     try {
-      // Send POST request to complete the workout
+      // 2. Send progress update to the backend
+      await axios.put(
+        `http://localhost:3000/api/progress/${userId}`,
+        updatedProgress,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      console.log("Progress updated successfully.");
+
+      // 3. Send workout completion event to admin (optional but required in your case)
+      const completionPayload = {
+        userId,
+        exerciseId,
+        workoutType: exercise?.bodyPart || "N/A",
+        target: exercise?.target || "N/A",
+        level: "Beginner",
+      };
+
       const response = await axios.post(
         "http://localhost:3000/api/exercises/complete",
-        payload,
+        completionPayload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -194,10 +212,13 @@ const ExerciseDetail = () => {
 
       console.log("Workout completion sent to server:", response.data);
 
-      // Optionally display success feedback to the user
+      // 4. Provide success feedback to the user
       alert("Workout marked as complete!");
     } catch (error) {
-      console.error("Error sending workout completion:", error.message);
+      console.error(
+        "Error updating progress or completing workout:",
+        error.message
+      );
       alert("Could not complete workout. Please try again.");
     }
   };

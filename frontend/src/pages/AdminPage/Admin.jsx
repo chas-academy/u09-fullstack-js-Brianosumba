@@ -179,17 +179,15 @@ const Admin = () => {
 
       addNotification("Exercise recommended successfully!", "success");
 
-      //Update the users recommendation in the state
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId
-            ? {
-                ...user,
-                recommendations: [...user.recommendations, recommendation],
-              }
-            : user
-        )
-      );
+      // Update the recommendations state immediately
+      setRecommendations((prevRecommendations) => [
+        {
+          ...recommendation,
+          userId: userId, // Ensure userId is included in the recommendation
+          exerciseDetails: exercises.find((ex) => ex.id === exerciseId), // Add exercise details
+        },
+        ...prevRecommendations,
+      ]);
     } catch (error) {
       console.error("Failed to recommend exercise:", error.message || error);
       addNotification(
@@ -215,8 +213,8 @@ const Admin = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveRecommendation = async (Id, updatedFields) => {
-    if (!Id) {
+  const handleSaveRecommendation = async (recommendationId, updatedFields) => {
+    if (!recommendationId) {
       console.error("Cannot update: Recommendation ID is missing");
       return;
     }
@@ -227,17 +225,27 @@ const Admin = () => {
     }
 
     try {
+      // send API request to update the recommendation
       const updatedRecommendation = await handleUpdateRecommendation(
-        Id,
+        recommendationId,
         updatedFields
       );
 
       addNotification("Recommendation updated successfully", "success");
 
       //Update the recommendations state
-      setRecommendations((prev) =>
-        prev.map((rec) =>
-          rec._id === Id ? { ...rec, ...updatedRecommendation } : rec
+      setRecommendations((prevRecommendations) =>
+        prevRecommendations.map((rec) =>
+          rec._id === recommendationId
+            ? {
+                ...rec,
+                exerciseId: updatedFields.exerciseId,
+                notes: updatedFields.notes || rec.notes,
+                exerciseDetails: exercises.find(
+                  (ex) => ex.id === updatedFields.exerciseId
+                ),
+              }
+            : rec
         )
       );
 
