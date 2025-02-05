@@ -5,7 +5,6 @@ import AdminCard from "../../components/AdminCard";
 import { FaBell } from "react-icons/fa";
 import io from "socket.io-client";
 import {
-  getExercises,
   handleRecommendExercise,
   handleUpdateRecommendation,
   handleDeleteRecommendation,
