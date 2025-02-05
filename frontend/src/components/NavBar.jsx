@@ -1,20 +1,21 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import useAuthStore from "../pages/Store/store";
-import { Link } from "react-router-dom";
+
 const NavBar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation(); // Get the current URL path
 
-  //Zustand state
+  // Zustand state
   const { isAuthenticated, username, logout, isAdmin } = useAuthStore();
 
   // Handle user logout
   const handleLogout = () => {
-    logout(); //logout action from zustand
-    localStorage.removeItem("token"); // Clear the token from local storage
+    logout();
+    localStorage.removeItem("token");
     navigate("/"); // Redirect to homepage after logout
   };
 
@@ -30,12 +31,22 @@ const NavBar = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [dropdownRef]);
+  }, []);
 
-  // Navigate to login page
-  const handleLoginClick = () => {
-    setIsDropdownOpen(false);
-    navigate("/login");
+  // Navigate based on authentication and current page
+  const handleLogoClick = () => {
+    if (isAuthenticated) {
+      if (location.pathname === "/userpage") {
+        // If the user is on /userpage, redirect to homepage
+        navigate("/");
+      } else {
+        // If the user is not on /userpage, redirect to /userpage
+        navigate("/userpage");
+      }
+    } else {
+      // If not authenticated, always go to the homepage
+      navigate("/");
+    }
   };
 
   // Toggle dropdown visibility
@@ -51,7 +62,7 @@ const NavBar = () => {
       }`}
     >
       <ul className="py-2">
-        {isAdmin ? (
+        {isAdmin && (
           <li>
             <Link
               to="/admin"
@@ -60,12 +71,12 @@ const NavBar = () => {
               Admin
             </Link>
           </li>
-        ) : null}
+        )}
         {isAuthenticated ? (
           <li>
             <button
               onClick={() => {
-                handleLogout(); // Call the logout function
+                handleLogout();
                 setIsDropdownOpen(false);
               }}
               className="block w-full text-left px-4 py-2 hover:bg-gray-300 transition-colors"
@@ -76,7 +87,10 @@ const NavBar = () => {
         ) : (
           <li>
             <button
-              onClick={handleLoginClick} // Redirect to login page
+              onClick={() => {
+                setIsDropdownOpen(false);
+                navigate("/login");
+              }}
               className="block w-full text-left px-4 py-2 hover:bg-gray-300 transition-colors"
             >
               Login
@@ -89,8 +103,11 @@ const NavBar = () => {
 
   return (
     <nav className="bg-blue-900 text-white p-4 flex justify-between items-center relative">
-      <div className="text-xl font-semibold">
-        <Link to="/">TRACKFIT</Link>
+      <div
+        className="text-xl font-semibold cursor-pointer"
+        onClick={handleLogoClick}
+      >
+        TRACKFIT
       </div>
       <div className="relative" ref={dropdownRef}>
         <button

@@ -59,26 +59,35 @@ const Register = () => {
       //if the request is successful, log the response and show a success alert
       console.log("Registration successful:", response.data);
 
-      localStorage.setItem("token", response.data.token); // Adjust the key according to your backend response
-      login(data.username); // set the authentication state in zustand store
+      // If registration is successful, store the token if provided
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
 
-      // Redirect the user to the user page after successful registration
-      navigate("/userpage");
+      // Log the user in after successful registration
+      const loginSuccess = await login(data.email, data.password);
 
-      //Stop the loading state when the process is complete
-      setLoading(false);
-      alert("registration successful!");
+      // If login succeeds, navigate to the user page
+      if (loginSuccess) {
+        alert("Registration successful");
+        navigate("/userpage");
+      } else {
+        throw new Error("Automatic login failed after registration.");
+      }
     } catch (error) {
       //if there is any error in registration, log it to the console
-      // Check if the error has a response from the backend and display the appropriate message
+
       console.error(
         "Registration error:",
         error.response ? error.response.data : error.message
       );
 
-      // Show an alert to the user with the error message from the backend, or a generic failure message
-      alert(error.response ? error.response.data.msg : "Registration failed");
-      //Stop the loading state even if there's an error
+      alert(
+        error.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
+    } finally {
+      // Stop the loading state
       setLoading(false);
     }
   };

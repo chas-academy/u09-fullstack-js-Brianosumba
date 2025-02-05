@@ -35,13 +35,13 @@ export const register = async (userData) => {
  * This function sends a POST request to the server to log in a user.
  *  It takes userData as an argument, which contains the login credentials.
  */
-export const loginWithCredentials = async (username, password) => {
+export const loginWithCredentials = async (email, password) => {
   try {
     // Sending a POST request to the /api/login endpoint with userData
     const response = await axios.post(
       `${API_URL}/login`,
       {
-        email: username,
+        email,
         password,
       },
       {

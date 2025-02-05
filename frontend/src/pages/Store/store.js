@@ -12,19 +12,19 @@ const useAuthStore = create((set) => ({
   userId: "",
 
   /**
-   * @param {string} username
+   * @param {string} email
    * @param {string} password
    * @desription Action to log in a user
    */
-  login: async (username, password) => {
-    console.log("Logging in user:", username);
+  login: async (email, password) => {
+    console.log("Logging in user:", email);
     try {
-      const { token, user } = await loginWithCredentials(username, password);
+      const { token, user } = await loginWithCredentials(email, password);
 
       if (token) {
         set({
           isAuthenticated: true,
-          username: user.username || "",
+          email: user.email || "",
           token,
           isAdmin: user.isAdmin || false,
           userId: user.id || "",
@@ -35,7 +35,7 @@ const useAuthStore = create((set) => ({
         localStorage.setItem("userId", user.id); //save userId for later use
         console.log("User logged in successfully:", {
           isAuthenticated: true,
-          username: user.username,
+          email: user.email,
         });
         return true;
       }
