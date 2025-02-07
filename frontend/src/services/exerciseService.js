@@ -12,6 +12,14 @@ const CACHE_KEY = "exercises_cache";
 const CACHE_EXPIRATION_KEY = "exercises_cache_expiration";
 const CACHE_DURATION_MS = 30 * 60 * 1000;
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+};
+
 // /**
 //  * Fetch exercises from the ExerciseDB API.
 //  * @param {number} limit - The maximum number of results to fetch.
@@ -53,9 +61,12 @@ export const fetchExercisesfromDB = async (limit = 10, offset = 0) => {
   }
 };
 
+//Fetch all recommendations (for admin)
 export const fetchAllRecommendations = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/recommendations`);
+    const response = await axios.get(`${BASE_URL}/recommendations`, {
+      headers: getAuthHeaders(),
+    });
     console.log("All recommendations fetched:", response.data);
     return response.data;
   } catch (error) {
@@ -64,90 +75,59 @@ export const fetchAllRecommendations = async () => {
   }
 };
 
+//fetch user-speciic recommendations
 export const fetchRecommendations = async (userId) => {
   try {
-    const response = await fetch(`${BASE_URL}/recommendations/${userId}`, {
-      method: "GET",
+    const response = await axios.get(`${BASE_URL}/recommendations/${userId}`, {
+      headers: getAuthHeaders(),
     });
 
-    if (!response.ok) {
-      const errorDetails = await response.json();
-      console.error("Error from backend:", errorDetails);
-      throw new Error(
-        errorDetails.message || "Failed to fetch recommendations."
-      );
-    }
-
-    const data = await response.json();
-
-    if (!Array.isArray(data)) {
-      console.error("Invalid recommendations data:", data);
+    if (!response.data || Array.isArray(response.data)) {
+      console.error("Invalid recommendations data:", response.data);
       throw new Error("Expected an array of recommendations.");
     }
 
-    return data;
+    return response.data;
   } catch (error) {
     console.error("Error fetching recommendations:", error.message || error);
     throw error;
   }
 };
 
+//Recommend an exercise
 export const recommendExercise = async (recommendationData) => {
   try {
     console.log("Payload being sent to backend:", recommendationData);
 
-    const response = await fetch(`${BASE_URL}/recommendations`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(recommendationData),
-    });
+    const response = await axios.post(
+      `${BASE_URL}/recommendations`,
+      recommendationData,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
 
-    if (!response.ok) {
-      const errorDetails = await response.json();
-      console.error("Error from backend:", errorDetails);
-      throw new Error(errorDetails.message || "Failed to recommend exercise.");
-    }
+    console.log("Backend Response Data:", response.data);
 
-    const data = await response.json();
-    console.log("Backend Response Data:", data);
-
-    if (!data?.data || !data.data._id) {
-      console.error("Invalid recommendation data:", data);
-      throw new Error("Invalid recommendation data from backend");
-    }
-
-    const reformatted = {
-      id: data.data._id,
-      ...data.data,
-    };
-
-    console.log("Reformatted Recommendation:", reformatted);
-    return reformatted;
+    return response.data.data;
   } catch (error) {
     console.error("Error recommending exercise:", error.message || error);
     throw error;
   }
 };
 
+//Edit and existing recommendation
 export const editRecommendation = async (recommendationId, updatedFields) => {
   try {
-    const response = await fetch(
+    const response = await axios.patch(
       `${BASE_URL}/recommendations/${recommendationId}`,
+      updatedFields,
       {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedFields),
+        headers: getAuthHeaders(),
       }
     );
 
-    if (!response.ok) {
-      const errorDetails = await response.json();
-      console.error("Error from backend:", errorDetails);
-      throw new Error(errorDetails.message || "Failed to edit recommendation.");
-    }
-
-    const data = await response.json();
-    return data;
+    return response.data;
   } catch (error) {
     console.error("Error editing recommendation:", error.message || error);
     throw error;
@@ -157,29 +137,14 @@ export const deleteRecommendation = async (recommendationId) => {
   try {
     console.log("Deleting recommendation with ID:", recommendationId);
 
-    const response = await fetch(
+    const response = await axios.delete(
       `${BASE_URL}/recommendations/${recommendationId}`,
       {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
       }
     );
 
-    const isJsonResponse = response.headers
-      .get("content-type")
-      ?.includes("application/json");
-
-    if (!response.ok) {
-      const errorDetails = isJsonResponse
-        ? await response.json()
-        : { message: await response.text() };
-      console.error("Error from backend:", errorDetails);
-      throw new Error(
-        errorDetails.message || "Failed to delete recommendation."
-      );
-    }
-
-    return isJsonResponse ? await response.json() : {};
+    return response.data;
   } catch (error) {
     console.error("Error deleting recommendation:", error.message || error);
     throw error;

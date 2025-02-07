@@ -28,6 +28,16 @@ const Admin = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecommendation, setEditingRecommendation] = useState(null);
 
+  const token = localStorage.getItem("token");
+
+  // redirect to login if no valid token is found
+  useEffect(() => {
+    if (!token) {
+      alert("Session expired. Please log in again");
+      window.location.href = "/login";
+    }
+  }, [token]);
+
   // Fetch users
   useEffect(() => {
     const loadData = async () => {
@@ -42,15 +52,13 @@ const Admin = () => {
     };
 
     loadData();
-  }, []);
+  }, [token]);
 
-  //Fetch recommendations
-
+  // Fetch recommendations and exercises
   useEffect(() => {
     const loadRecommendations = async () => {
       try {
         const recommendationData = await fetchAllRecommendations();
-        console.log("Fetched Recommendations:", recommendationData);
         setRecommendations(recommendationData);
       } catch (error) {
         console.error("Error fetching recommendations:", error.message);
@@ -59,29 +67,26 @@ const Admin = () => {
 
     const loadExercises = async () => {
       try {
-        const exerciseData = await fetchExercisesfromDB(10, 0);
-        console.log("Fetched Exercises:", exerciseData);
-
-        if (!Array.isArray(exerciseData)) {
-          throw new Error("Invalid exercises data format");
-        }
-
+        const exerciseData = await fetchExercisesfromDB();
         setExercises(exerciseData);
       } catch (error) {
-        console.error("Error fetchinf exercises:", error.message);
+        console.error("Error fetching exercises:", error.message);
       }
     };
 
     loadRecommendations();
     loadExercises();
-  }, []);
+  }, [token]);
 
   // Fetch completed workouts from the backend
   useEffect(() => {
     const fetchCompletedWorkouts = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:3000/api/exercises/completed"
+          "http://localhost:3000/api/exercises/completed",
+          {
+            headers: `Bearer ${token}`,
+          }
         );
         setExerciseCompletions(response.data);
       } catch (error) {
@@ -90,7 +95,7 @@ const Admin = () => {
     };
 
     fetchCompletedWorkouts();
-  }, []);
+  }, [token]);
 
   // Setup Socket.IO
   useEffect(() => {
@@ -120,25 +125,21 @@ const Admin = () => {
     setUsers(updatedUsers);
 
     try {
-      await updateUserStatus(userId);
-
+      await updateUserStatus(userId, token);
       addNotification("User status updated successfully", "success");
     } catch (err) {
-      console.error("Error updating status:", err);
-      const revertedUsers = users.map((user) =>
-        user._id == userId ? { ...user, isActive: !user.isActive } : user
+      console.error("Error updating user status:", err);
+      // Revert status on error
+      setUsers(
+        users.map((user) =>
+          user._id === userId ? { ...user, isActive: !user.isActive } : user
+        )
       );
-
-      setUsers(revertedUsers);
-
-      setError("Failed to update user status. Please try again");
-      addNotification(
-        "Failed to update user status. Please try again.",
-        "error"
-      );
+      setError("Failed to update user status. Please try again.");
     }
   };
 
+  // **Add a notification**
   const addNotification = (message, type) => {
     setNotifications((prevNotifications) => [
       ...prevNotifications,
@@ -147,6 +148,7 @@ const Admin = () => {
     setNotificationCount((prevCount) => prevCount + 1);
   };
 
+  // **Handle notifications click**
   const handleNotificationClick = () => {
     if (notifications.length > 0) {
       alert(notifications.map((n) => n.message).join("\n"));
@@ -165,30 +167,21 @@ const Admin = () => {
     }
 
     try {
-      const recommendation = await handleRecommendExercise(userId, exerciseId);
-      console.log(
-        "Recommendation Response from recommendExercise:",
-        recommendation
-      );
-
-      if (!recommendation || !recommendation.id) {
-        console.error("Invalid recommendation data:", recommendation);
-        throw new Error("Invalid recommendation data from backend");
-      }
-
+      await handleRecommendExercise(userId, exerciseId, token);
       addNotification("Exercise recommended successfully!", "success");
 
       // Update the recommendations state immediately
       setRecommendations((prevRecommendations) => [
         {
-          ...recommendation,
-          userId: userId, // Ensure userId is included in the recommendation
-          exerciseDetails: exercises.find((ex) => ex.id === exerciseId), // Add exercise details
+          userId,
+          exerciseId,
+          exerciseDetails: exercises.find((ex) => ex.id === exerciseId),
+          notes: "",
         },
         ...prevRecommendations,
       ]);
     } catch (error) {
-      console.error("Failed to recommend exercise:", error.message || error);
+      console.error("Failed to recommend exercise:", error.message);
       addNotification(
         "Failed to recommend exercise. Please try again.",
         "error"
@@ -213,22 +206,14 @@ const Admin = () => {
   };
 
   const handleSaveRecommendation = async (recommendationId, updatedFields) => {
-    if (!recommendationId) {
-      console.error("Cannot update: Recommendation ID is missing");
-      return;
-    }
-
-    if (!updatedFields || !updatedFields.exerciseId) {
-      console.error("Cannot update: Invalid updatedFields data", updatedFields);
+    if (!recommendationId || !updatedFields.exerciseId) {
+      console.error("invalid recommendation or updated data");
       return;
     }
 
     try {
       // send API request to update the recommendation
-      const updatedRecommendation = await handleUpdateRecommendation(
-        recommendationId,
-        updatedFields
-      );
+      await handleUpdateRecommendation(recommendationId, updatedFields, token);
 
       addNotification("Recommendation updated successfully", "success");
 
@@ -271,7 +256,7 @@ const Admin = () => {
     }
 
     try {
-      await handleDeleteRecommendation(recommendationId); // call API
+      await handleDeleteRecommendation(recommendationId, token); // call API
       addNotification("Recommendation deleted successfully!", "success");
 
       //Update recommendations state

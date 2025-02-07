@@ -24,7 +24,7 @@ const useAuthStore = create((set) => ({
       if (token) {
         set({
           isAuthenticated: true,
-          email: user.email || "",
+          username: user.username || "",
           token,
           isAdmin: user.isAdmin || false,
           userId: user.id || "",
@@ -32,10 +32,11 @@ const useAuthStore = create((set) => ({
 
         //store token and userId in localstorage for persistence
         localStorage.setItem("token", token);
-        localStorage.setItem("userId", user.id); //save userId for later use
+        localStorage.setItem("username", user.username);
+        localStorage.setItem("userId", user.id);
         console.log("User logged in successfully:", {
           isAuthenticated: true,
-          email: user.email,
+          username: user.username,
         });
         return true;
       }
@@ -58,26 +59,29 @@ const useAuthStore = create((set) => ({
 
     // Clear localStorage
     localStorage.removeItem("token");
-    localStorage.removeItem("userId");
+    localStorage.removeItem("username");
     console.log("User logged out:", { isAuthenticated: false, username: "" });
   },
 
   // Action to check if token exists (for auto-login)
   checkAuth: () => {
     const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
+    const username = localStorage.getItem("username");
 
     console.log(
       "Checking auth. Token found:",
       !!token,
       "User ID found:",
-      !!userId
+      !!username
     );
-    if (token && userId) {
-      set({ isAuthenticated: true, userId, token }); // Restore userId from localStorage
-      console.log("User is authenticated:", { isAuthenticated: true, userId }); // Optionally restore token if needed in other areas
+    if (token && username) {
+      set({ isAuthenticated: true, username, token }); // Restore username from localStorage
+      console.log("User session restored:", {
+        isAuthenticated: true,
+        username,
+      }); // Optionally restore token if needed in other areas
     } else {
-      console.log("User is not authenticated:", { isAuthenticated: false });
+      console.log("No active session found.");
     }
   },
 }));

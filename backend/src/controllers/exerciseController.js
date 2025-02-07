@@ -48,16 +48,21 @@ const getRecommendations = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    if (!userId) {
-      return res.status(400).json({ error: "User ID is required." });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid User ID." });
     }
+
+    console.log("fetching recommendations for userId:", userId);
 
     // Fetch recommendations from your database
     const recommendations = await RecommendedExercise.find({ userId });
 
     if (!recommendations.length) {
+      console.log("No recommendations found for userId:", userId);
       return res.status(404).json({ message: "No recommendations found." });
     }
+
+    console.log("Recommendations found:", recommendations);
 
     // Dynamically fetch exercise details from the ExerciseDB API
     const recommendationsWithDetails = await Promise.all(
@@ -80,9 +85,9 @@ const getRecommendations = async (req, res) => {
         } catch (error) {
           console.error(
             `Failed to fetch details for exerciseId: ${recommendation.exerciseId}`,
-            error
+            error.message
           );
-          return recommendation; // Return the recommendation without exercise details if fetch fails
+          return recommendation.toObject(); // Return the recommendation without exercise details if fetch fails
         }
       })
     );

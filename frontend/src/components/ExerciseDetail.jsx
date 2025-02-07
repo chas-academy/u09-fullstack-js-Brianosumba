@@ -21,10 +21,52 @@ const ExerciseDetail = () => {
     strengthProgress: 0,
   });
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      console.error("No token found! Redirecting to login...");
+      window.location.href = "/login";
+      return {};
+    }
+
+    console.log("Token being sent in headers:", token);
+
+    return {
+      Authorization: `Bearer ${token}`,
+      "Content-type": "application/json",
+    };
+  };
+
+  //Helper function to check if the token is expired
+  const isTokenExpired = (token) => {
+    try {
+      const payloadBase64 = token.split(".")[1];
+      const deacodedPayload = JSON.parse(atob(payloadBase64));
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      return deacodedPayload.exp && currentTime > deacodedPayload.exp;
+    } catch (error) {
+      console.error("Token decoding failed:", error);
+      return true;
+    }
+  };
+
+  useEffect(() => {
+    if (!userId || !token || isTokenExpired(token)) {
+      console.error("User not authenticated. Redirecting to login...");
+      window.location.href = "/login";
+      return;
+    }
+  }, [userId, token]);
+
   // Fetch Progress from Backend
   useEffect(() => {
     const fetchProgress = async () => {
-      if (!userId || !token) {
+      if (!userId || !token || isTokenExpired(token)) {
         console.error("User not authenticated. Reirecting to login...");
         window.location.href = "/login";
         return;
@@ -34,12 +76,17 @@ const ExerciseDetail = () => {
         const response = await axios.get(
           `http://localhost:3000/api/progress/${userId}`,
           {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: getAuthHeaders(),
           }
         );
+        console.log("Progress fetched successfully:", response.data);
         setProgress(response.data);
       } catch (error) {
         console.error("Failed to fetch progress:", error.message);
+        if (error.response?.status === 403) {
+          console.warn("Redirecting to login due to invalid or expired token");
+          window.location.href = "/login";
+        }
         alert("Could not load progress. Please try again later");
       }
     };
@@ -76,41 +123,35 @@ const ExerciseDetail = () => {
     fetchExerciseDetail();
   }, [exerciseId]);
 
-  // //Handle done click
-  // const handleDoneClick = async () => {
-  //   const updatedProgress = {
-  //     workoutsToday: Math.min(progress.workoutsToday + 1, 1),
-  //     workoutsThisWeek: Math.min(progress.workoutsThisWeek + 1, 3),
-  //     workoutsThisMonth: Math.min(progress.workoutsThisMonth + 1, 12),
-  //     strengthProgress: Math.min(progress.strengthProgress + 100 / 12, 100),
-  //   };
-  //   setProgress(updatedProgress);
-
-  //   try {
-  //     const payload = { ...updatedProgress };
-  //     await axios.put(`http://localhost:3000/api/progress/${userId}`, payload, {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     });
-  //     console.log("Progress updated successfully.");
-  //   } catch (error) {
-  //     console.error("Failed to update progress:", error.message);
-  //     alert("Could not update progress. Please try again later");
-  //   }
-  // };
-
   // Fetch recommended workouts
   useEffect(() => {
     const fetchRecommendations = async () => {
-      if (!userId) {
-        console.error("User ID not found. Redirecting...");
+      if (!userId || !token || isTokenExpired(token)) {
+        console.error(
+          "User not authenticated or token expired. Redirecting to login..."
+        );
         window.location.href = "/login";
         return;
       }
       try {
+        console.log("Fetching recommendations with headers:", getAuthHeaders());
+
+        //fetch recommendations from the backend
         const backendResponse = await axios.get(
-          `http://localhost:3000/api/recommendations/${userId}`
+          `http://localhost:3000/api/recommendations/${userId}`,
+          {
+            headers: getAuthHeaders(),
+          }
         );
+
+        console.log("Backend response:", backendResponse.data);
         const recommendations = backendResponse.data;
+
+        if (!recommendations.length) {
+          console.warn("No recommendations found.");
+          setLoading(false);
+          return;
+        }
 
         //Fetch exercise details for each recommendation
         const recommendationWithDetails = await Promise.all(
@@ -155,18 +196,28 @@ const ExerciseDetail = () => {
         setRecommendedWorkouts(recommendationWithDetails);
       } catch (error) {
         console.error("Failed to fetch recommended workouts:", error.message);
+        if (error.response?.status === 403) {
+          console.warn("Redirecting to login due to invalid or expired token");
+          window.location.href = "/login";
+        }
+        setError(
+          "Could not load recommended workouts. Please try again later."
+        );
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchRecommendations();
-  }, [userId]);
+  }, [userId, token]);
 
   // Handle workout completion
   const handleDoneComplete = async () => {
     // Verify that user and exercise details are available
-    if (!userId || !token || !exerciseId) {
+    if (!userId || !token || !exerciseId || isTokenExpired(token)) {
       console.error("Missing user authentication or exercise details.");
       alert("Unable to complete workout. Please try again.");
+      window.location.href = "/login";
       return;
     }
 
@@ -186,7 +237,7 @@ const ExerciseDetail = () => {
         `http://localhost:3000/api/progress/${userId}`,
         updatedProgress,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: getAuthHeaders(),
         }
       );
       console.log("Progress updated successfully.");
@@ -204,9 +255,7 @@ const ExerciseDetail = () => {
         "http://localhost:3000/api/exercises/complete",
         completionPayload,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: getAuthHeaders(),
         }
       );
 
@@ -219,12 +268,20 @@ const ExerciseDetail = () => {
         "Error updating progress or completing workout:",
         error.message
       );
+      if (error.response?.status === 403) {
+        console.warn("Redirecting to login due to invalid or expired token");
+        window.location.href = "/login";
+      }
       alert("Could not complete workout. Please try again.");
     }
   };
 
-  if (!exercise) {
+  if (loading || !exercise) {
     return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center">{error}</div>;
   }
 
   return (

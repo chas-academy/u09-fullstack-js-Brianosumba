@@ -10,7 +10,13 @@ const NavBar = () => {
   const location = useLocation(); // Get the current URL path
 
   // Zustand state
-  const { isAuthenticated, username, logout, isAdmin } = useAuthStore();
+  const { isAuthenticated, username, logout, isAdmin, checkAuth } =
+    useAuthStore();
+
+  // Check authentication state on component mount
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   // Handle user logout
   const handleLogout = () => {
