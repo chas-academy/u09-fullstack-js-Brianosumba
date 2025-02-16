@@ -1,5 +1,5 @@
 import Exercisepage from "../../components/ExercisePage";
-import Footer from "../../components/footer";
+import Footer from "../../components/Footer";
 import NavBar from "../../components/NavBar";
 import useAuthStore from "../Store/store";
 
