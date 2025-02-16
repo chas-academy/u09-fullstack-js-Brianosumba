@@ -1,6 +1,6 @@
 import NavBar from "./NavBar";
 import HomePage from "../pages/Homepage/homePage";
-import Footer from "./footer";
+import Footer from "./Footer";
 
 const AppComponent = () => {
   return (
