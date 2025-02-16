@@ -39,7 +39,7 @@ export const loginWithCredentials = async (email, password) => {
   try {
     // Sending a POST request to the /api/login endpoint with userData
     const response = await axios.post(
-      `${API_URL}/login`,
+      `${BASE_URL}/login`,
       {
         email,
         password,
