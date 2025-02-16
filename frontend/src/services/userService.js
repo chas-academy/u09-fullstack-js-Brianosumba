@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000/api";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 // Utility: Fetch token from localStorage
 const getToken = () => {
@@ -104,40 +104,3 @@ export const deleteUser = async (userId) => {
     throw error;
   }
 };
-
-// // Function to toggle user status
-// export const updateUserStatus = async (userId) => {
-//   const token = localStorage.getItem("token");
-
-//   if (!token) {
-//     alert("Session expired. Please log in again.");
-//     window.location.href = "/login";
-//     throw new Error("No token found. Please log in again");
-//   }
-
-//   try {
-//     const response = await fetch(
-//       `http://localhost:3000/api/users/${userId}/status`,
-//       {
-//         method: "PATCH",
-//         headers: {
-//           "Content-Type": "application/json",
-//           Authorization: `Bearer ${token},`,
-//         },
-//       }
-//     );
-
-//     if (!response.ok) {
-//       const errorDetails = await response.text(); // Get detailed error message
-//       console.error("Failed to update user status:", errorDetails);
-//       throw new Error(`Failed to update user status: ${response.status}`);
-//     }
-
-//     const updatedUser = await response.json();
-//     console.log("Updated user status:", updatedUser);
-
-//     return updatedUser;
-//   } catch (error) {
-//     console.error("Error in updateUserStatus", error);
-//   }
-// };

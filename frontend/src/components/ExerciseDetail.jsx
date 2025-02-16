@@ -7,6 +7,8 @@ import CircularProgressBar from "../components/CircularProgressBar"; // Import C
 import Box from "@mui/material/Box"; // Material-UI Box for layout
 import Typography from "@mui/material/Typography"; // Material-UI Typography for text
 
+const BASE_URL = import.meta.env.VITE_API_URL;
+
 const ExerciseDetail = () => {
   const { exerciseId } = useParams(); // Get exerciseId from the URL parameters
   const userId = localStorage.getItem("userId");
@@ -73,12 +75,10 @@ const ExerciseDetail = () => {
       }
 
       try {
-        const response = await axios.get(
-          `http://localhost:3000/api/progress/${userId}`,
-          {
-            headers: getAuthHeaders(),
-          }
-        );
+        const response = await axios.get(`${BASE_URL}/progress/${userId}`, {
+          headers: getAuthHeaders(),
+        });
+
         console.log("Progress fetched successfully:", response.data);
         setProgress(response.data);
       } catch (error) {
@@ -138,7 +138,7 @@ const ExerciseDetail = () => {
 
         //fetch recommendations from the backend
         const backendResponse = await axios.get(
-          `http://localhost:3000/api/recommendations/${userId}`,
+          `${BASE_URL}/recommendations/${userId}`,
           {
             headers: getAuthHeaders(),
           }
@@ -233,13 +233,10 @@ const ExerciseDetail = () => {
 
     try {
       // 2. Send progress update to the backend
-      await axios.put(
-        `http://localhost:3000/api/progress/${userId}`,
-        updatedProgress,
-        {
-          headers: getAuthHeaders(),
-        }
-      );
+      await axios.put(`${BASE_URL}/progress/${userId}`, updatedProgress, {
+        headers: getAuthHeaders(),
+      });
+
       console.log("Progress updated successfully.");
 
       // 3. Send workout completion event to admin (optional but required in your case)
@@ -251,8 +248,12 @@ const ExerciseDetail = () => {
         level: "Beginner",
       };
 
+      console.log("Sending POST request to:", `${BASE_URL}/exercises/complete`);
+      console.log("Payload:", completionPayload);
+      console.log("Headers:", getAuthHeaders());
+
       const response = await axios.post(
-        "http://localhost:3000/api/exercises/complete",
+        `${BASE_URL}/exercises/complete`,
         completionPayload,
         {
           headers: getAuthHeaders(),

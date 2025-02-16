@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:3000/api";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 const EXERCISE_DB_API = "https://exercisedb.p.rapidapi.com/exercises";
 const HEADERS = {

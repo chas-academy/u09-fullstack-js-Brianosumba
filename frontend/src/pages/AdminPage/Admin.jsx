@@ -17,6 +17,8 @@ import {
   fetchExercisesfromDB,
 } from "../../services/exerciseService";
 
+const BASE_URL = import.meta.env.VITE_API_URL;
+
 const Admin = () => {
   const [users, setUsers] = useState([]);
   const [exercises, setExercises] = useState([]);
@@ -82,12 +84,9 @@ const Admin = () => {
   useEffect(() => {
     const fetchCompletedWorkouts = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:3000/api/exercises/completed",
-          {
-            headers: `Bearer ${token}`,
-          }
-        );
+        const response = await axios.get(`${BASE_URL}/exercises/completed`, {
+          headers: `Bearer ${token}`,
+        });
         setExerciseCompletions(response.data);
       } catch (error) {
         console.error("Error fetching completed workouts:", error.message);
@@ -99,7 +98,7 @@ const Admin = () => {
 
   // Setup Socket.IO
   useEffect(() => {
-    const socket = io("http://localhost:3000", { withCredentials: true });
+    const socket = io(BASE_URL, { withCredentials: true });
 
     socket.on("connect", () => {
       console.log("Connected to server");

@@ -6,7 +6,7 @@
 import axios from "axios"; // Importing axios for making HTTP requests
 
 //Base URL for your backend
-const API_URL = "http://localhost:3000/api/auth";
+const API_URL = import.meta.env.VITE_API_URL + "/auth";
 
 // Register API call function
 // This function sends a POST request to the server to register a new user.
