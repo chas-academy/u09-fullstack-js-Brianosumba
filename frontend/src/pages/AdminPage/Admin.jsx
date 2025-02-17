@@ -85,7 +85,10 @@ const Admin = () => {
     const fetchCompletedWorkouts = async () => {
       try {
         const response = await axios.get(`${BASE_URL}/exercises/completed`, {
-          headers: `Bearer ${token}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
         setExerciseCompletions(response.data);
       } catch (error) {
@@ -413,8 +416,9 @@ const Admin = () => {
             <tbody>
               {recommendations.map((rec) => {
                 const user = users.find(
-                  (user) => String(user._id) === String(rec.userId)
+                  (user) => user && user._id === rec.userId
                 );
+
                 const exercise = rec.exerciseDetails;
 
                 return (
