@@ -4,17 +4,15 @@ const RecommendedExercise = require("../models/crud/RecommendExercise");
 const WorkoutCompletion = require("../models/WorkoutCompletion");
 const axios = require("axios");
 
-// Get all recommendations for all users
+// Get all recommendations for all users (Admin)
 const getAllRecommendations = async (req, res) => {
   try {
-    //Fetch all recommendations from the database
+    console.log("Fetching all recommendations...");
     const recommendations = await RecommendedExercise.find();
 
-    //Map over recommendations to fetch exercise details in parallel
     const recommendationsWithDetails = await Promise.all(
       recommendations.map(async (recommendation) => {
         try {
-          // Fetch exercise details from the external API
           const exerciseResponse = await axios.get(
             `https://exercisedb.p.rapidapi.com/exercises/exercise/${recommendation.exerciseId}`,
             {
@@ -24,50 +22,46 @@ const getAllRecommendations = async (req, res) => {
               },
             }
           );
-          // Return recommendation with exercise details
+
           return {
             ...recommendation.toObject(),
             exerciseDetails: exerciseResponse.data,
           };
         } catch (error) {
           console.error(
-            `Failed to fetch exercise details for ID: ${recommendation.exerciseId}`,
+            ` Failed to fetch exercise details for ID: ${recommendation.exerciseId}`,
             error.message
           );
-          //Return the recommendation without exercise details on failure
-          return recommendation.toObject();
+          return { ...recommendation.toObject(), exerciseDetails: null };
         }
       })
     );
-    //Send the response with all recommendations including details
+
     res.status(200).json(recommendationsWithDetails);
   } catch (error) {
-    console.error("Error fetching all recommendations:", error.message);
+    console.error(" Error fetching all recommendations:", error.message);
     res.status(500).json({ error: "Failed to fetch recommendations." });
   }
 };
-// Get all recommendations for a user
+
+// Get recommendations for a specific user
 const getRecommendations = async (req, res) => {
   try {
     const { userId } = req.params;
+    console.log(`Fetching recommendations for userId: ${userId}`);
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
+      console.error(" Invalid User ID:", userId);
       return res.status(400).json({ error: "Invalid User ID." });
     }
 
-    console.log("fetching recommendations for userId:", userId);
-
-    // Fetch recommendations from your database
     const recommendations = await RecommendedExercise.find({ userId });
 
     if (!recommendations.length) {
-      console.log("No recommendations found for userId:", userId);
-      return res.status(404).json({ message: "No recommendations found." });
+      console.warn(` No recommendations found for userId: ${userId}`);
+      return res.status(200).json([]); // Return empty array instead of 404
     }
 
-    console.log("Recommendations found:", recommendations);
-
-    // Dynamically fetch exercise details from the ExerciseDB API
     const recommendationsWithDetails = await Promise.all(
       recommendations.map(async (recommendation) => {
         try {
@@ -87,38 +81,33 @@ const getRecommendations = async (req, res) => {
           };
         } catch (error) {
           console.error(
-            `Failed to fetch details for exerciseId: ${recommendation.exerciseId}`,
+            ` Failed to fetch details for exerciseId: ${recommendation.exerciseId}`,
             error.message
           );
-          return recommendation.toObject(); // Return the recommendation without exercise details if fetch fails
+          return { ...recommendation.toObject(), exerciseDetails: null };
         }
       })
     );
 
     res.status(200).json(recommendationsWithDetails);
   } catch (error) {
-    console.error("Error fetching recommendations:", error.message);
+    console.error(" Error fetching recommendations:", error.message);
     res.status(500).json({ error: "Failed to fetch recommendations." });
   }
 };
 
-//Save Recommendation
+// Save a new recommendation
 const recommendExercise = async (req, res) => {
   try {
-    console.log("Request body:", req.body);
+    console.log("Request received to recommend an exercise:", req.body);
     const { userId, exerciseId, notes = "", tags = [] } = req.body;
 
-    if (!userId || !exerciseId) {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res
         .status(400)
-        .json({ success: false, error: "userId and exerciseId are required" });
+        .json({ success: false, error: "Invalid User ID." });
     }
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid User Id or Exercise ID.",
-      });
-    }
+
     const recommendation = new RecommendedExercise({
       userId,
       exerciseId,
@@ -127,22 +116,20 @@ const recommendExercise = async (req, res) => {
     });
 
     await recommendation.save();
-    console.log("Exercise recommended successfully:", recommendation);
+    console.log(" Exercise recommended successfully:", recommendation);
     res.status(201).json({
       success: true,
       message: "Exercise recommended successfully",
       data: recommendation,
     });
   } catch (error) {
-    console.error("Error recommending exercise:", error.message);
+    console.error(" Error recommending exercise:", error.message);
     res.status(500).json({ error: "Failed to recommend exercise." });
   }
 };
 
-//Delete a Recommendation
+// Delete a recommendation
 const deleteRecommendation = async (req, res) => {
-  console.log("DELETE request received for ID:", req.params);
-
   try {
     const { recommendationId } = req.params;
 
@@ -161,19 +148,19 @@ const deleteRecommendation = async (req, res) => {
         .json({ success: false, error: "Recommendation not found." });
     }
 
-    console.log("Successfully deleted:", recommendationId);
+    console.log(" Successfully deleted recommendation:", recommendationId);
     res
       .status(200)
       .json({ success: true, message: "Recommendation deleted successfully" });
   } catch (error) {
-    console.error("Error deleting recommendation:", error.message);
+    console.error(" Error deleting recommendation:", error.message);
     res
       .status(500)
       .json({ success: false, error: "Failed to delete recommendation" });
   }
 };
 
-//Edit a recommendation
+// Edit a recommendation
 const editRecommendation = async (req, res) => {
   try {
     const { recommendationId } = req.params;
@@ -190,6 +177,7 @@ const editRecommendation = async (req, res) => {
         .status(400)
         .json({ success: false, error: "Invalid Exercise ID." });
     }
+
     const updatedRecommendation = await RecommendedExercise.findByIdAndUpdate(
       recommendationId,
       {
@@ -206,84 +194,27 @@ const editRecommendation = async (req, res) => {
         .json({ success: false, error: "Recommendation not found." });
     }
 
-    console.log("Recommendation updated successfully:", updatedRecommendation);
-
+    console.log(" Recommendation updated successfully:", updatedRecommendation);
     res.status(200).json({
       success: true,
       message: "Recommendation updated successfully",
       data: updatedRecommendation,
     });
   } catch (error) {
-    console.error("Error editing recommendation:", error.message);
+    console.error(" Error editing recommendation:", error.message);
     res.status(500).json({ error: "Failed to update recommendation." });
   }
 };
 
-//Completed Exercise
-const completeExercise = async (req, res) => {
-  try {
-    const { userId, exerciseId, workoutType, target, level } = req.body;
-
-    if (!userId || !exerciseId) {
-      return res
-        .status(400)
-        .json({ error: "User ID and Exercise ID are required." });
-    }
-
-    // Save workout completion to the database
-    const completedWorkout = new WorkoutCompletion({
-      userId,
-      exerciseId,
-      workoutType,
-      target,
-      level,
-    });
-
-    await completedWorkout.save();
-
-    // Fetch the user's username for the notification
-    const user = await User.findById(userId).select("username");
-
-    // Emit a socket.io event to the admin dashboard
-    // Log the data being emitted
-    console.log("Emitting exerciseCompleted event with data:", {
-      username: user?.username || "Unknown User", // Ensure the username is included
-      workoutType,
-      target,
-      level,
-      completedAt: completedWorkout.completedAt,
-    });
-
-    await req.io.to("admins").emit("exerciseCompleted", {
-      username: user?.username || "Unknown User",
-      workoutType,
-      target,
-      level,
-      completedAt: completedWorkout.completedAt,
-    });
-
-    res.status(200).json({
-      success: true,
-      message: "Workout completion recorded!",
-      data: completedWorkout,
-    });
-  } catch (error) {
-    console.error("Error completing exercise:", error.message);
-    res.status(500).json({ error: "Failed to complete exercise." });
-  }
-};
-
-//fetch completed workouts
-
+// Fetch completed workouts
 const getCompletedWorkouts = async (req, res) => {
   try {
-    // Fetch completed workouts with associated user data
     const completedWorkouts = await WorkoutCompletion.find()
-      .populate("userId", "username") // Fetch username from User model
+      .populate("userId", "username")
       .exec();
 
     const formattedWorkouts = completedWorkouts.map((workout) => ({
-      username: workout.userId ? workout.userId.username : "Unknown User",
+      username: workout.userId?.username || "Unknown User",
       workoutType: workout.workoutType,
       target: workout.target,
       level: workout.level,
@@ -292,7 +223,7 @@ const getCompletedWorkouts = async (req, res) => {
 
     res.status(200).json(formattedWorkouts);
   } catch (error) {
-    console.error("Error fetching completed workouts:", error.message);
+    console.error(" Error fetching completed workouts:", error.message);
     res.status(500).json({ error: "Failed to fetch completed workouts." });
   }
 };
@@ -303,6 +234,5 @@ module.exports = {
   recommendExercise,
   deleteRecommendation,
   editRecommendation,
-  completeExercise,
   getCompletedWorkouts,
 };
