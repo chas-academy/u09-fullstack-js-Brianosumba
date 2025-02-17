@@ -133,10 +133,11 @@ const ExerciseDetail = () => {
         window.location.href = "/login";
         return;
       }
+
       try {
         console.log("Fetching recommendations with headers:", getAuthHeaders());
 
-        //fetch recommendations from the backend
+        // Fetch recommendations from backend
         const backendResponse = await axios.get(
           `${BASE_URL}/recommendations/${userId}`,
           {
@@ -153,7 +154,7 @@ const ExerciseDetail = () => {
           return;
         }
 
-        //Fetch exercise details for each recommendation
+        // Fetch exercise details for each recommendation
         const recommendationWithDetails = await Promise.all(
           recommendations.map(async (recommendation, index) => {
             try {
@@ -161,8 +162,8 @@ const ExerciseDetail = () => {
                 `https://exercisedb.p.rapidapi.com/exercises/exercise/${recommendation.exerciseId}`,
                 {
                   headers: {
-                    "X-RAPIDAPI-KEY": import.meta.env.VITE_RAPIDAPI_KEY,
-                    "X_RAPIDAPI-HOST": "exercisedb.p.rapidapi.com",
+                    "X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY,
+                    "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
                   },
                 }
               );
@@ -178,15 +179,16 @@ const ExerciseDetail = () => {
                 `Failed to fetch details for exerciseId: ${recommendation.exerciseId}`,
                 error
               );
+
               return {
                 ...recommendation,
                 uniqueKey:
                   recommendation.id || `${recommendation.exerciseId}-${index}`,
                 exerciseDetails: {
-                  name: "Unkown",
-                  bodyPart: "Unkown",
-                  target: "Unkown",
-                  giftUrl: null,
+                  name: "Unknown",
+                  bodyPart: "Unknown",
+                  target: "Unknown",
+                  gifUrl: null,
                 },
               };
             }
@@ -196,10 +198,24 @@ const ExerciseDetail = () => {
         setRecommendedWorkouts(recommendationWithDetails);
       } catch (error) {
         console.error("Failed to fetch recommended workouts:", error.message);
-        if (error.response?.status === 403) {
-          console.warn("Redirecting to login due to invalid or expired token");
-          window.location.href = "/login";
+
+        if (error.response) {
+          if (error.response.status === 403) {
+            console.warn(
+              "Redirecting to login due to invalid or expired token"
+            );
+            window.location.href = "/login";
+          } else if (error.response.status === 404) {
+            console.warn("No recommendations found for this user.");
+          } else {
+            console.error(
+              "Server error:",
+              error.response.status,
+              error.response.data
+            );
+          }
         }
+
         setError(
           "Could not load recommended workouts. Please try again later."
         );
