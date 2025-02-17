@@ -17,7 +17,7 @@ import {
   fetchExercisesfromDB,
 } from "../../services/exerciseService";
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const Admin = () => {
   const [users, setUsers] = useState([]);
