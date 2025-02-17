@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import NavBar from "../components/NavBar"; // Ensure NavBar is imported
-import Footer from "../components/Footer"; // Ensure Footer is imported
-import CircularProgressBar from "../components/CircularProgressBar"; // Import CircularProgressBar component
-import Box from "@mui/material/Box"; // Material-UI Box for layout
-import Typography from "@mui/material/Typography"; // Material-UI Typography for text
+import NavBar from "../components/NavBar";
+import Footer from "../components/Footer";
+import CircularProgressBar from "../components/CircularProgressBar";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
