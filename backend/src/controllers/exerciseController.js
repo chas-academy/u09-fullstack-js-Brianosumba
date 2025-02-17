@@ -18,7 +18,10 @@ const getAllRecommendations = async (req, res) => {
           const exerciseResponse = await axios.get(
             `https://exercisedb.p.rapidapi.com/exercises/exercise/${recommendation.exerciseId}`,
             {
-              headers: { "X-RAPIDAPI-KEY": process.env.RAPIDAPI_KEY },
+              headers: {
+                "X-RapidAPI-KEY": process.env.RAPIDAPI_KEY,
+                "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
+              },
             }
           );
           // Return recommendation with exercise details
@@ -72,8 +75,8 @@ const getRecommendations = async (req, res) => {
             `https://exercisedb.p.rapidapi.com/exercises/exercise/${recommendation.exerciseId}`,
             {
               headers: {
-                "X-RAPIDAPI-KEY": process.env.RAPIDAPI_KEY,
-                "X-RAPIDAPI-HOST": "exercisedb.p.rapidapi.com",
+                "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
+                "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
               },
             }
           );
@@ -142,11 +145,6 @@ const deleteRecommendation = async (req, res) => {
 
   try {
     const { recommendationId } = req.params;
-    if (!recommendationId) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Recommendation ID is required." });
-    }
 
     if (!mongoose.Types.ObjectId.isValid(recommendationId)) {
       return res
@@ -181,23 +179,13 @@ const editRecommendation = async (req, res) => {
     const { recommendationId } = req.params;
     const { exerciseId, notes = "", tags = [] } = req.body;
 
-    if (!recommendationId) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Recommendation ID is required." });
-    }
     if (!mongoose.Types.ObjectId.isValid(recommendationId)) {
       return res
         .status(400)
         .json({ success: false, error: "Invalid Recommendation ID." });
     }
 
-    if (!exerciseId) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Exercise ID is required." });
-    }
-    if (!mongoose.Types.ObjectId.isValid(recommendationId)) {
+    if (!mongoose.Types.ObjectId.isValid(exerciseId)) {
       return res
         .status(400)
         .json({ success: false, error: "Invalid Exercise ID." });
@@ -266,7 +254,7 @@ const completeExercise = async (req, res) => {
       completedAt: completedWorkout.completedAt,
     });
 
-    req.io.to("admins").emit("exerciseCompleted", {
+    await req.io.to("admins").emit("exerciseCompleted", {
       username: user?.username || "Unknown User",
       workoutType,
       target,
@@ -295,7 +283,7 @@ const getCompletedWorkouts = async (req, res) => {
       .exec();
 
     const formattedWorkouts = completedWorkouts.map((workout) => ({
-      username: workout.userId?.username || "Unknown User",
+      username: workout.userId ? workout.userId.username : "Unknown User",
       workoutType: workout.workoutType,
       target: workout.target,
       level: workout.level,
