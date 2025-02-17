@@ -7,7 +7,7 @@ import CircularProgressBar from "../components/CircularProgressBar"; // Import C
 import Box from "@mui/material/Box"; // Material-UI Box for layout
 import Typography from "@mui/material/Typography"; // Material-UI Typography for text
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const ExerciseDetail = () => {
   const { exerciseId } = useParams(); // Get exerciseId from the URL parameters
