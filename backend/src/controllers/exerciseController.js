@@ -175,6 +175,10 @@ const deleteRecommendation = async (req, res) => {
 
 //Edit a recommendation
 const editRecommendation = async (req, res) => {
+  console.log("Incoming PATCH request to edit recommendation");
+  console.log("Params:", req.params);
+  console.log("Body:", req.body);
+
   try {
     const { recommendationId } = req.params;
     const { exerciseId, notes = "", tags = [] } = req.body;
