@@ -334,5 +334,6 @@ module.exports = {
   editRecommendation,
   completeExercise,
   getCompletedWorkouts,
+  deleteCompletedWorkout,
 };
 //fix
