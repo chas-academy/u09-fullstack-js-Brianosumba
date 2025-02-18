@@ -512,6 +512,9 @@ const Admin = () => {
                 <th className="py-4 px-6 text-left font-semibold uppercase tracking-wide">
                   Completed At
                 </th>
+                <th className="py-4 px-6 text-left font-semibold uppercase tracking-wide">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -538,7 +541,7 @@ const Admin = () => {
                         ); // Debugging
                         onDeleteCompletedWorkout(completion._id);
                       }}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-700 transition duration-300"
+                      className="text-red-500 hover:underline ml-2"
                     >
                       Delete
                     </button>
