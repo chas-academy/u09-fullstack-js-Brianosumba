@@ -190,13 +190,14 @@ const editRecommendation = async (req, res) => {
         .status(400)
         .json({ success: false, error: "Invalid Exercise ID." });
     }
+    const updateData = {};
+    if (exerciseId) updateData.exerciseId = exerciseId;
+    if (notes !== undefined) updateData.notes = notes.trim();
+    if (tags) updateData.tags = Array.isArray(tags) ? tags : [];
+
     const updatedRecommendation = await RecommendedExercise.findByIdAndUpdate(
       recommendationId,
-      {
-        exerciseId,
-        notes: notes.trim(),
-        tags: Array.isArray(tags) ? tags : [],
-      },
+      updateData,
       { new: true }
     );
 
