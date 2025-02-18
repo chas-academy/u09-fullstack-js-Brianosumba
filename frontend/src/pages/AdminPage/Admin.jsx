@@ -277,6 +277,7 @@ const Admin = () => {
 
   const onDeleteCompletedWorkout = async (workoutId) => {
     console.log("Workout ID received by onDeleteCompletedWorkout:", workoutId);
+
     if (!workoutId) {
       alert("Workout ID is required.");
       return;
@@ -288,7 +289,7 @@ const Admin = () => {
     if (!confirmDelete) return;
 
     try {
-      await handleDeleteCompletedWorkout(workoutId, token);
+      await handleDeleteCompletedWorkout(workoutId);
       addNotification("Workout deleted successfully!", "success");
 
       setExerciseCompletions((prev) =>
@@ -532,7 +533,7 @@ const Admin = () => {
                     <button
                       onClick={() => {
                         console.log(
-                          "Deleting workout with ID:",
+                          "Workout ID being sent to delete:",
                           completion._id
                         ); // Debugging
                         onDeleteCompletedWorkout(completion._id);

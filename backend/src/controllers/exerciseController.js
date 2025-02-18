@@ -286,10 +286,12 @@ const getCompletedWorkouts = async (req, res) => {
   try {
     // Fetch completed workouts with associated user data
     const completedWorkouts = await WorkoutCompletion.find()
-      .populate("userId", "username") // Fetch username from User model
+      .populate("userId", "username")
+      .select("_id userId workoutType target level completedAt")
       .exec();
 
     const formattedWorkouts = completedWorkouts.map((workout) => ({
+      _id: workout._id,
       username: workout.userId ? workout.userId.username : "Unknown User",
       workoutType: workout.workoutType,
       target: workout.target,
