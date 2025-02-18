@@ -529,8 +529,14 @@ const Admin = () => {
                   </td>
                   <td className="py-4 px-6">
                     <button
-                      onClick={() => onDeleteCompletedWorkout(completion._id)}
-                      className="text-red-500 hover:underline"
+                      onClick={() => {
+                        console.log(
+                          "Deleting workout with ID:",
+                          completion._id
+                        ); // Debugging
+                        onDeleteCompletedWorkout(completion._id);
+                      }}
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-700 transition duration-300"
                     >
                       Delete
                     </button>
