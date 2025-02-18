@@ -189,15 +189,17 @@ const editRecommendation = async (req, res) => {
         .json({ success: false, error: "Invalid Recommendation ID." });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(exerciseId)) {
+    if (!exerciseId || typeof exerciseId !== "string") {
       return res
         .status(400)
-        .json({ success: false, error: "Invalid Exercise ID." });
+        .json({ success: false, error: "Invalid Exercise ID format." });
     }
     const updateData = {};
     if (exerciseId) updateData.exerciseId = exerciseId;
     if (notes !== undefined) updateData.notes = notes.trim();
     if (tags) updateData.tags = Array.isArray(tags) ? tags : [];
+
+    console.log("Updating recommendation with:", updateData);
 
     const updatedRecommendation = await RecommendedExercise.findByIdAndUpdate(
       recommendationId,

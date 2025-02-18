@@ -118,6 +118,8 @@ export const recommendExercise = async (recommendationData) => {
 
 //Edit and existing recommendation
 export const editRecommendation = async (recommendationId, updatedFields) => {
+  console.log("Updating recommendation with ID:", recommendationId);
+  console.log("Payload being sent:", updatedFields);
   try {
     const response = await axios.patch(
       `${BASE_URL}/recommendations/${recommendationId}`,
