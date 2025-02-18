@@ -304,6 +304,28 @@ const getCompletedWorkouts = async (req, res) => {
   }
 };
 
+//Delete a completed workout by ID
+const deleteCompletedWorkout = async (req, res) => {
+  try {
+    const { workoutId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(workoutId)) {
+      return res.status(400).json({ error: "Invalid workout ID." });
+    }
+
+    const deletedWorkout = await WorkoutCompletion.findByIdAndDelete(workoutId);
+
+    if (!deletedWorkout) {
+      return res.status(404).json({ error: "Workout not found." });
+    }
+
+    console.log("Workout deleted successfully:", workoutId);
+    res.status(200).json({ message: "workout deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting workout:", error.message);
+    res.status(500).json({ error: "Failed to delete workout." });
+  }
+};
+
 module.exports = {
   getRecommendations,
   getAllRecommendations,

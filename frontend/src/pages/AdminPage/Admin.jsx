@@ -15,6 +15,7 @@ import axios from "axios";
 import {
   fetchAllRecommendations,
   fetchExercisesfromDB,
+  handleDeleteCompletedWorkout,
 } from "../../services/exerciseService";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -258,7 +259,7 @@ const Admin = () => {
     }
 
     try {
-      await handleDeleteRecommendation(recommendationId, token); // call API
+      await handleDeleteRecommendation(recommendationId, token);
       addNotification("Recommendation deleted successfully!", "success");
 
       //Update recommendations state
@@ -271,6 +272,30 @@ const Admin = () => {
         "Failed to delete recommendation. Please try again.",
         "error"
       );
+    }
+  };
+
+  const onDeleteCompletedWorkout = async (workoutId) => {
+    if (!workoutId) {
+      alert("Workout ID is required.");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this workout?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await handleDeleteCompletedWorkout(workoutId, token);
+      addNotification("Workout deleted successfully!", "success");
+
+      setExerciseCompletions((prev) =>
+        prev.filter((workout) => workout._id !== workoutId)
+      );
+    } catch (error) {
+      console.error("Failed to delete workout:", error.message);
+      addNotification("Failed to delete workout. Please try again.", "error");
     }
   };
 
@@ -501,6 +526,14 @@ const Admin = () => {
                   <td className="py-4 px-6">{completion.level}</td>
                   <td className="py-4 px-6">
                     {new Date(completion.completedAt).toLocaleString()}
+                  </td>
+                  <td className="py-4 px-6">
+                    <button
+                      onClick={() => onDeleteCompletedWorkout(completion._id)}
+                      className="text-red-500 hover:underline"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}

@@ -152,3 +152,27 @@ export const deleteRecommendation = async (recommendationId) => {
     throw error;
   }
 };
+
+export const handleDeleteCompletedWorkout = async (workoutId) => {
+  if (!workoutId) {
+    throw new Error("Workout ID is required.");
+  }
+
+  try {
+    const response = await axios.delete(
+      `${BASE_URL}/exercises/completed/${workoutId}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    console.log("Workout deleted successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error deleting workout:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
