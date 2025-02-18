@@ -154,6 +154,7 @@ export const deleteRecommendation = async (recommendationId) => {
 };
 
 export const handleDeleteCompletedWorkout = async (workoutId) => {
+  console.log("API Request - Deleting workout with ID:", workoutId);
   if (!workoutId) {
     throw new Error("Workout ID is required.");
   }

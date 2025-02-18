@@ -276,6 +276,7 @@ const Admin = () => {
   };
 
   const onDeleteCompletedWorkout = async (workoutId) => {
+    console.log("Workout ID received by onDeleteCompletedWorkout:", workoutId);
     if (!workoutId) {
       alert("Workout ID is required.");
       return;
