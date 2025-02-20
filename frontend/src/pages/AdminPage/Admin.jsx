@@ -202,7 +202,7 @@ const Admin = () => {
     }
     setEditingRecommendation({
       id: data.recommendationId,
-      currentExerciseId: data.exerciseId,
+      currentExerciseId: data.exerciseId || "",
       notes: data.notes || "",
     });
     setIsModalOpen(true);

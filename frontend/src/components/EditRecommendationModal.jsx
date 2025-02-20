@@ -9,18 +9,20 @@ const EditRecommendationModal = ({
   recommendationId,
   currentNotes,
 }) => {
-  const [selectedExercise, setSelectedExercise] = useState(currentExerciseId);
+  const [selectedExercise, setSelectedExercise] = useState("");
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
+    setSelectedExercise(currentExerciseId || "");
     setNotes(currentNotes || "");
-  }, [currentNotes]);
+  }, [currentExerciseId, currentNotes]);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
-    if (!recommendationId) {
+    if (!recommendationId || !selectedExercise) {
       console.error("Recommendation ID is missing. Cannot save changes.");
+      alert("Error: Recommendation ID is missing");
       return;
     }
 
