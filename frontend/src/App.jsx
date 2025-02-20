@@ -9,7 +9,6 @@ import Login from "./pages/Loginpage/Login";
 import Register from "./pages/Loginpage/Register";
 import Admin from "./pages/AdminPage/Admin";
 import useAuthStore from "./pages/Store/store";
-//teest
 
 const App = () => {
   const { checkAuth } = useAuthStore(); // check if the user is already authenticated
