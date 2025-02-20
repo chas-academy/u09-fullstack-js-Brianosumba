@@ -170,19 +170,25 @@ const Admin = () => {
     }
 
     try {
-      await handleRecommendExercise(userId, exerciseId, token);
+      // Call API to recommend exercise
+      const newRecommendation = await handleRecommendExercise(
+        userId,
+        exerciseId,
+        token
+      );
+
+      if (!newRecommendation) {
+        console.error("Error: No recommendation received from API.");
+        return;
+      }
+
       addNotification("Exercise recommended successfully!", "success");
 
-      // Update the recommendations state immediately
-      setRecommendations((prevRecommendations) => [
-        {
-          userId,
-          exerciseId,
-          exerciseDetails: exercises.find((ex) => ex.id === exerciseId),
-          notes: "",
-        },
-        ...prevRecommendations,
-      ]);
+      //  Fetch latest recommendations to ensure everything (notes, exercise details) is up-to-date
+      const updatedRecommendations = await fetchAllRecommendations();
+
+      //  Update state with the latest data (this will trigger a UI update)
+      setRecommendations(updatedRecommendations);
     } catch (error) {
       console.error("Failed to recommend exercise:", error.message);
       addNotification(
