@@ -6,6 +6,8 @@ import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../Store/store";
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+
 //validation schema- defining rules for Signup form
 const schema = yup.object().shape({
   username: yup.string().required("Username is required"),
@@ -48,7 +50,7 @@ const Register = () => {
     try {
       // Send a post request to the backend api with the from data (username, email and password)
       const response = await axios.post(
-        "http://localhost:3000/api/auth/register", // The backend endpoint for user registration
+        `${BASE_URL}/auth/register`, // The backend endpoint for user registration
         {
           username: data.username, // Passing the username from the form data
           email: data.email, // Passing the email from the form data
