@@ -65,6 +65,12 @@ export const register = async (userData) => {
 
 // Login user and save session locally for offline access
 export const loginWithCredentials = async (email, password) => {
+  if (!navigator.onLine) {
+    console.warn("offline mode detected: Using stored data");
+    const offlineUser = getOfflineUser();
+    if (offlineUser) return offlineUser;
+    throw new Error("No offline user found. Please connect to the internet");
+  }
   try {
     // Sending a POST request to the /api/login endpoint with userData
     const response = await axios.post(
