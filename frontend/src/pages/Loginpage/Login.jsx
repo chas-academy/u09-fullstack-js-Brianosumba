@@ -5,7 +5,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import ForgotPasswordModal from "../../components/ForgotPaswordModal"; // Ensure path is correct
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../Store/store";
-import { loginWithCredentials, offlineLogin } from "../services/authService"; // Import offline login function
+import { loginWithCredentials, offlineLogin } from "../../services/authService";
 
 // Validation schema for form input
 const schema = yup.object().shape({

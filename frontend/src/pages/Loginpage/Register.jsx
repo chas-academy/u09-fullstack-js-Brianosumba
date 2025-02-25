@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
-import { register as registerUser } from "../services/authService"; // Import register function
+import { register as registerUser } from "../../services/authService";
 import useAuthStore from "../Store/store";
 
 // Validation schema for form input
