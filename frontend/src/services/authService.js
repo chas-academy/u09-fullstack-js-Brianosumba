@@ -25,14 +25,15 @@ export const getOfflineUser = () => {
 // Offline login function (returns stored user data if available)
 export const offlineLogin = async () => {
   const offlineUser = getOfflineUser();
-  if (!offlineUser) throw new Error("No offline user found");
+  if (!offlineUser)
+    throw new Error("No offline user found Please log in online first");
   return offlineUser;
 };
 
 // Register a new user, or queue it for later if offline
 export const register = async (userData) => {
   if (!navigator.onLine) {
-    console.warn("Offline mode: Saving registration for later");
+    console.warn("Offline mode: Saving registration for later...");
 
     // Save offline registration data in IndexedDB
     const offlineQueue = (await get("offline-registrations")) || [];
@@ -56,10 +57,12 @@ export const register = async (userData) => {
     return { token, user };
   } catch (error) {
     // Handle any errors that occur during the request
-    const errorMessage =
-      error.response?.data?.message || "Registration failed.";
-    console.error("Registration failed:", errorMessage);
-    throw new Error(errorMessage);
+
+    console.error(
+      "Registration failed:",
+      error.response?.data?.Message || error
+    );
+    throw new Error("Registration failed. please try again");
   }
 };
 
@@ -92,10 +95,9 @@ export const loginWithCredentials = async (email, password) => {
     return { token, user };
   } catch (error) {
     // Handle any errors that occur during the request
-    const errorMessage =
-      error.response?.data?.message || "Login failed. Please try again.";
-    console.error("Login failed:", errorMessage);
-    throw new Error(errorMessage);
+
+    console.error("Login failed:", error.response?.data?.message || error);
+    throw new Error("Login failed. Please check your credentials");
   }
 };
 

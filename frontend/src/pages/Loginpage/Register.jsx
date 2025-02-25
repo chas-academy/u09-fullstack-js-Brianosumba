@@ -1,14 +1,12 @@
-import axios from "axios";
-import { yupResolver } from "@hookform/resolvers/yup";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
+import { register as registerUser } from "../services/authService"; // Import register function
 import useAuthStore from "../Store/store";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-
-//validation schema- defining rules for Signup form
+// Validation schema for form input
 const schema = yup.object().shape({
   username: yup.string().required("Username is required"),
   email: yup
@@ -18,85 +16,50 @@ const schema = yup.object().shape({
   password: yup
     .string()
     .min(4, "Password must be at least 4 characters")
-    .required("password is required"),
+    .required("Password is required"),
   confirmPassword: yup
     .string()
     .oneOf([yup.ref("password"), null], "Passwords must match")
     .required("Please confirm your password"),
 });
 
-//state setup - remembering whats happening
 const Register = () => {
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  //Acess zustand store to get login function
   const { login } = useAuthStore();
 
-  //form management - handling input data
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({
-    resolver: yupResolver(schema),
-  });
+  } = useForm({ resolver: yupResolver(schema) });
 
-  //form submission handler - when submit has been clicked upon
   const onSubmit = async (data) => {
-    //start the loading state when form submission starts
     setLoading(true);
     try {
-      // Send a post request to the backend api with the from data (username, email and password)
-      const response = await axios.post(
-        `${BASE_URL}/auth/register`, // The backend endpoint for user registration
-        {
-          username: data.username, // Passing the username from the form data
-          email: data.email, // Passing the email from the form data
-          password: data.password, //Passing the password from the form data
-        }
-      );
+      let response;
 
-      //if the request is successful, log the response and show a success alert
-      console.log("Registration successful:", response.data);
-
-      // If registration is successful, store the token if provided
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-      }
-
-      // Log the user in after successful registration
-      const loginSuccess = await login(data.email, data.password);
-
-      // If login succeeds, navigate to the user page
-      if (loginSuccess) {
-        alert("Registration successful");
-        navigate("/userpage");
+      if (!navigator.onLine) {
+        console.warn(" Offline mode: Saving registration for later...");
+        response = await registerUser(data); // Save registration for later
       } else {
-        throw new Error("Automatic login failed after registration.");
+        console.log(" Online mode: Registering user...");
+        response = await registerUser(data); //  Normal registration when online
       }
+
+      console.log(" Registration successful:", response);
+      alert("Registration successful!");
+      navigate("/userpage");
     } catch (error) {
-      //if there is any error in registration, log it to the console
-
-      console.error(
-        "Registration error:",
-        error.response ? error.response.data : error.message
-      );
-
-      alert(
-        error.response?.data?.message ||
-          "Registration failed. Please try again."
-      );
+      console.error(" Registration error:", error.message);
+      alert(error.message);
     } finally {
-      // Stop the loading state
       setLoading(false);
     }
   };
 
-  // Rendering the Sign-Up form
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-900 ">
+    <div className="flex items-center justify-center h-screen bg-gray-900">
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4 text-black"
@@ -117,9 +80,7 @@ const Register = () => {
             type="text"
             id="username"
             {...register("username")}
-            className={`w-full p-2 border ${
-              errors.username ? "border-red-500" : "border-gray-300"
-            } rounded`}
+            className="w-full p-2 border border-gray-300 rounded"
           />
           {errors.username && (
             <p className="text-red-500 text-sm mt-1">
@@ -137,9 +98,7 @@ const Register = () => {
             type="email"
             id="email"
             {...register("email")}
-            className={`w-full p-2 border ${
-              errors.email ? "border-red-500" : "border-gray-300"
-            } rounded`}
+            className="w-full p-2 border border-gray-300 rounded"
           />
           {errors.email && (
             <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
@@ -154,23 +113,12 @@ const Register = () => {
           >
             Password
           </label>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              id="password"
-              {...register("password")}
-              className={`w-full p-2 border ${
-                errors.password ? "border-red-500" : "border-gray-300"
-              } rounded`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 px-3 py-2 text-gray-600 focus:outline-none"
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
-          </div>
+          <input
+            type="password"
+            id="password"
+            {...register("password")}
+            className="w-full p-2 border border-gray-300 rounded"
+          />
           {errors.password && (
             <p className="text-red-500 text-sm mt-1">
               {errors.password.message}
@@ -190,9 +138,7 @@ const Register = () => {
             type="password"
             id="confirmPassword"
             {...register("confirmPassword")}
-            className={`w-full p-2 border ${
-              errors.confirmPassword ? "border-red-500" : "border-gray-300"
-            } rounded`}
+            className="w-full p-2 border border-gray-300 rounded"
           />
           {errors.confirmPassword && (
             <p className="text-red-500 text-sm mt-1">
