@@ -27,6 +27,8 @@ export const getOfflineUser = async () => {
   let token = localStorage.getItem("token");
   let user = localStorage.getItem("user");
 
+  console.log("🛠 Checking localStorage for offline user:", { token, user });
+
   if (!token || !user) {
     console.warn("🔍 No session found in localStorage. Checking IndexedDB...");
     const offlineSession = await get("offline-user-session");
@@ -55,8 +57,20 @@ export const offlineLogin = async () => {
 };
 
 //  Check if user is already authenticated
-export const checkAuth = () => {
-  return getOfflineUser();
+export const checkAuth = async () => {
+  console.log(" Running checkAuth()...");
+  const offlineUser = await getOfflineUser(); // Retrieve user session
+
+  // 🛠 Debugging logs
+  console.log("🛠 Retrieved user:", offlineUser);
+
+  if (!offlineUser || !offlineUser.user) {
+    console.warn(" No authenticated user found. Returning null.");
+    return null;
+  }
+
+  console.log("User is authenticated:", offlineUser.user.username);
+  return offlineUser;
 };
 
 //  Register a user (offline support)
@@ -88,12 +102,15 @@ export const register = async (userData) => {
   }
 };
 
-// 🔹 Login user (offline support)
+//  Login user (offline support)
 export const loginWithCredentials = async (email, password) => {
   if (!navigator.onLine) {
     console.warn(" Offline mode detected: Using stored data...");
     const offlineUser = getOfflineUser();
-    if (offlineUser) return offlineUser;
+    if (offlineUser) {
+      console.log("Offline login successful:", offlineUser);
+      return offlineUser;
+    }
     throw new Error("No offline user found. Please connect to the internet.");
   }
 
@@ -107,6 +124,7 @@ export const loginWithCredentials = async (email, password) => {
     const { token, user } = response.data;
 
     saveUserSession(token, user); // Save user session for offline access
+
     console.log("Login successful. Session stored for offline access");
 
     return { token, user };
