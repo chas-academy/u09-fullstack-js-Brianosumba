@@ -22,7 +22,6 @@ export const saveUserSession = (token, user) => {
   console.log(" User session saved:", { token, user });
 };
 
-
 //  Retrieve stored user session for offline login
 export const getOfflineUser = async () => {
   let token = localStorage.getItem("token");
@@ -38,16 +37,14 @@ export const getOfflineUser = async () => {
     }
   }
 
-  return token && user ? { token, JSON.parse(user) } : null;
+  return token && user ? { token: token, user: JSON.parse(user) } : null;
 };
-
-
 
 //  Offline login function (returns stored user data if available)
 export const offlineLogin = async () => {
   console.warn(" Trying offline login...");
   const offlineUser = await getOfflineUser();
-  
+
   if (!offlineUser) {
     console.error(" No offline user found in localStorage or IndexedDB.");
     throw new Error("No offline user found. Please log in online first.");
@@ -56,7 +53,6 @@ export const offlineLogin = async () => {
   console.log(" Offline login successful:", offlineUser);
   return offlineUser;
 };
-
 
 //  Check if user is already authenticated
 export const checkAuth = () => {
@@ -141,4 +137,3 @@ export const syncRegistrations = async () => {
   // ✅ Keep failed registrations for later retries
   await set("offline-registrations", failedQueue);
 };
-
