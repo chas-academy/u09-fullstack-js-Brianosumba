@@ -106,7 +106,7 @@ export const register = async (userData) => {
 export const loginWithCredentials = async (email, password) => {
   if (!navigator.onLine) {
     console.warn(" Offline mode detected: Using stored data...");
-    const offlineUser = getOfflineUser();
+    const offlineUser = await getOfflineUser();
     if (offlineUser) {
       console.log("Offline login successful:", offlineUser);
       return offlineUser;
