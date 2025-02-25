@@ -16,28 +16,47 @@ export const saveUserSession = (token, user) => {
   localStorage.setItem("token", token);
   localStorage.setItem("user", JSON.stringify(user));
 
-  //  Ensure session is saved
+  // Backup session in IndexedDB (so offline login still works if localStorage is cleared)
+  set("offline-user-session", { token, user });
+
   console.log(" User session saved:", { token, user });
 };
 
+
 //  Retrieve stored user session for offline login
-export const getOfflineUser = () => {
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
-  return token && user ? { token, user } : null;
+export const getOfflineUser = async () => {
+  let token = localStorage.getItem("token");
+  let user = localStorage.getItem("user");
+
+  if (!token || !user) {
+    console.warn("🔍 No session found in localStorage. Checking IndexedDB...");
+    const offlineSession = await get("offline-user-session");
+    if (offlineSession) {
+      token = offlineSession.token;
+      user = JSON.stringify(offlineSession.user);
+      console.log(" Restored session from IndexedDB:", offlineSession);
+    }
+  }
+
+  return token && user ? { token, JSON.parse(user) } : null;
 };
+
+
 
 //  Offline login function (returns stored user data if available)
 export const offlineLogin = async () => {
-  console.warn("Trying offline login...");
-  const offlineUser = getOfflineUser();
+  console.warn(" Trying offline login...");
+  const offlineUser = await getOfflineUser();
+  
   if (!offlineUser) {
-    console.error("No offline user found. Make sure you log in online first");
+    console.error(" No offline user found in localStorage or IndexedDB.");
     throw new Error("No offline user found. Please log in online first.");
   }
+
   console.log(" Offline login successful:", offlineUser);
   return offlineUser;
 };
+
 
 //  Check if user is already authenticated
 export const checkAuth = () => {
@@ -106,15 +125,20 @@ export const syncRegistrations = async () => {
   const offlineQueue = (await get("offline-registrations")) || [];
   if (offlineQueue.length === 0) return;
 
-  console.log(` Syncing ${offlineQueue.length} offline registrations...`);
+  console.log(`🔄 Syncing ${offlineQueue.length} offline registrations...`);
+  const failedQueue = [];
+
   for (const userData of offlineQueue) {
     try {
       await register(userData);
+      console.log("✅ Successfully synced:", userData.email);
     } catch (error) {
-      console.error(" Failed to sync registration:", error);
+      console.error("❌ Failed to sync:", userData.email, error);
+      failedQueue.push(userData); // Keep failed registrations
     }
   }
-  await set("offline-registrations", []);
+
+  // ✅ Keep failed registrations for later retries
+  await set("offline-registrations", failedQueue);
 };
 
-window.addEventListener("online", syncRegistrations);
