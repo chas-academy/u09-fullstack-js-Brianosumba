@@ -1,23 +1,20 @@
 // services/authService.js
 
-// The services folder acts as the communication center for your app.
-// It manages how your frontend (React app) interacts with your backend (Node.js/Express) through HTTP requests.
-
 import axios from "axios"; // Importing axios for making HTTP requests
-import idbkeyval from "idb-keyval";
+import { get, set } from "idb-keyval";
 
 //Base URL for your backend
 const BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/auth`
   : "http://localhost:3000/api/auth";
 
-//Save user session data locally for offline login
+// Save user session data locally for offline login
 const saveUserSession = (token, user) => {
   localStorage.setItem("token", token);
   localStorage.setItem("user", JSON.stringify(user));
 };
 
-//Retrive stored user data for offline access
+// Retrieve stored user data for offline access
 export const getOfflineUser = () => {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
@@ -25,22 +22,22 @@ export const getOfflineUser = () => {
   return token && user ? { token, user } : null;
 };
 
-//offline login function (returns stored user data if available)
+// Offline login function (returns stored user data if available)
 export const offlineLogin = async () => {
   const offlineUser = getOfflineUser();
   if (!offlineUser) throw new Error("No offline user found");
   return offlineUser;
 };
 
-//Register a new user, or queue it for later if offline
+// Register a new user, or queue it for later if offline
 export const register = async (userData) => {
   if (!navigator.onLine) {
     console.warn("Offline mode: Saving registration for later");
 
-    //save offline registration data in IndexedDB
-    const offlineQueue = (await idbkeyval.get("offline-registrations")) || [];
+    // Save offline registration data in IndexedDB
+    const offlineQueue = (await get("offline-registrations")) || [];
     offlineQueue.push(userData);
-    await idbkeyval.set("offline-registrations", offlineQueue);
+    await set("offline-registrations", offlineQueue);
 
     return { message: "Registered offline. Will sync later" };
   }
@@ -66,6 +63,7 @@ export const register = async (userData) => {
   }
 };
 
+// Login user and save session locally for offline access
 export const loginWithCredentials = async (email, password) => {
   try {
     // Sending a POST request to the /api/login endpoint with userData
@@ -76,13 +74,13 @@ export const loginWithCredentials = async (email, password) => {
         password,
       },
       {
-        withCredentials: true, //Include cookies or jwt tokens in the request
+        withCredentials: true, // Include cookies or JWT tokens in the request
       }
     );
 
     const { token, user } = response.data;
 
-    // Savve session for offline login
+    // Save session for offline login
     saveUserSession(token, user);
 
     return { token, user };
@@ -97,7 +95,7 @@ export const loginWithCredentials = async (email, password) => {
 
 // Sync any queued offline registrations when back online
 export const syncRegistrations = async () => {
-  const offlineQueue = (await idbkeyval.get("offline-registrations")) || [];
+  const offlineQueue = (await get("offline-registrations")) || [];
 
   if (offlineQueue.length === 0) return;
 
@@ -111,7 +109,9 @@ export const syncRegistrations = async () => {
     }
   }
 
-  //Clear queue after syncing
-  await idbkeyval.set("offline-registrations", []);
+  // Clear queue after syncing
+  await set("offline-registrations", []);
 };
+
+// Listen for network connection and sync registrations
 window.addEventListener("online", syncRegistrations);
