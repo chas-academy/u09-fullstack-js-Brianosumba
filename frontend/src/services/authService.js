@@ -7,8 +7,17 @@ const BASE_URL = import.meta.env.VITE_API_URL
 
 //  Save user session in localStorage
 export const saveUserSession = (token, user) => {
+  if (!token || !user) {
+    console.warn(" Attempted to save an invalid session.");
+    return;
+  }
+
+  console.log(" Saving user session...");
   localStorage.setItem("token", token);
   localStorage.setItem("user", JSON.stringify(user));
+
+  //  Ensure session is saved
+  console.log(" User session saved:", { token, user });
 };
 
 //  Retrieve stored user session for offline login
@@ -20,9 +29,10 @@ export const getOfflineUser = () => {
 
 //  Offline login function (returns stored user data if available)
 export const offlineLogin = async () => {
-  console.warn("🔄 Trying offline login...");
+  console.warn("Trying offline login...");
   const offlineUser = getOfflineUser();
   if (!offlineUser) {
+    console.error("No offline user found. Make sure you log in online first");
     throw new Error("No offline user found. Please log in online first.");
   }
   console.log(" Offline login successful:", offlineUser);
@@ -82,6 +92,7 @@ export const loginWithCredentials = async (email, password) => {
     const { token, user } = response.data;
 
     saveUserSession(token, user); // Save user session for offline access
+    console.log("Login successful. Session stored for offline access");
 
     return { token, user };
   } catch (error) {
