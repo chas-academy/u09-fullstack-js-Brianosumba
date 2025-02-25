@@ -1,13 +1,13 @@
-// public/service-worker.js
 import { precacheAndRoute } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
 import { NetworkFirst, CacheFirst } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
+import { get, set } from "idb-keyval";
 
-// Precache static assets
+//  **Precache Static Assets**
 precacheAndRoute(self.__WB_MANIFEST || []);
 
-// Cache API calls - "NetworkFirst" ensures fresh data when online, fallback to cache when offline
+//  **Cache API Calls (NetworkFirst)**
 registerRoute(
   ({ url }) => url.pathname.startsWith("/api/"),
   new NetworkFirst({
@@ -21,7 +21,7 @@ registerRoute(
   })
 );
 
-// Cache images using "CacheFirst" strategy
+//  **Cache Images (CacheFirst)**
 registerRoute(
   ({ request }) => request.destination === "image",
   new CacheFirst({
@@ -35,26 +35,36 @@ registerRoute(
   })
 );
 
-// Listen for "sync" event to retry failed requests
+//  **Background Sync for Offline Registrations**
 self.addEventListener("sync", (event) => {
-  if (event.tag === "sync-requests") {
-    event.waitUntil(syncRequests());
+  if (event.tag === "sync-registrations") {
+    console.log("Sync event triggered: Syncing offline registrations...");
+    event.waitUntil(syncRegistrations());
   }
 });
 
-// Function to process queued requests
-async function syncRequests() {
-  const queue = (await idbKeyval.get("offline-requests")) || [];
-  while (queue.length > 0) {
-    const request = queue.shift();
+//  **Function to Sync Offline Registrations**
+async function syncRegistrations() {
+  const offlineQueue = (await get("offline-registrations")) || [];
+
+  if (offlineQueue.length === 0) return;
+
+  console.log(`Syncing ${offlineQueue.length} offline registrations...`);
+
+  for (const userData of offlineQueue) {
     try {
-      await fetch(request.url, request.options);
-    } catch (err) {
-      console.error("Sync failed:", err);
-      return;
+      await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      });
+    } catch (error) {
+      console.error("Failed to sync registration:", error);
+      return; // Stop processing if network is still unavailable
     }
   }
-  await idbKeyval.set("offline-requests", []);
+
+  await set("offline-registrations", []); // Clear queue after successful sync
 }
 
-console.log("Service worker registered successfully!");
+console.log(" Service Worker Registered Successfully!");
