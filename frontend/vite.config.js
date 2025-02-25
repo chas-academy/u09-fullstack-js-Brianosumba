@@ -12,6 +12,7 @@ export default defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         globPatterns: ["**/*.{js,css,html,ico,svg,png,jpg,jpeg,webp}"],
+        navigateFallback: "index.html",
         runtimeCaching: [
           {
             urlPattern: /.*\.(png|jpg|jpeg|svg|gif|webp)$/,
@@ -21,6 +22,18 @@ export default defineConfig({
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 7, // Cache images for 7 days
+              },
+            },
+          },
+          // 🌍 Cache API responses to work offline
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
+            handler: "NetworkFirst", // Tries the network first, falls back to cache
+            options: {
+              cacheName: "api-cache",
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24, // Cache for 1 day
               },
             },
           },

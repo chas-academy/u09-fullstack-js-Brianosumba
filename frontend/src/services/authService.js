@@ -15,17 +15,23 @@ const BASE_URL = import.meta.env.VITE_API_URL
 // It takes userData as an argument, which contains the registration information.
 export const register = async (userData) => {
   try {
-    // Sending a POST request to the /api/register endpoint with userData
+    // Sending a POST request to register a new user
     const response = await axios.post(`${BASE_URL}/register`, userData, {
-      withCredentials: true, //Include credentials in the request if needed for authentication
+      withCredentials: true, // Include credentials for authentication
     });
-    // Returning the response data from the server (usually user info or a success message)
-    return response.data;
+
+    const { token, user } = response.data;
+
+    // Save login data locally so users stay logged in after registration
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+
+    return { token, user };
   } catch (error) {
     // Handle any errors that occur during the request
     const errorMessage =
       error.response?.data?.message || "Registration failed.";
-    console.error("Refistration failed:", errorMessage);
+    console.error("Registration failed:", errorMessage);
     throw new Error(errorMessage);
   }
 };
@@ -55,6 +61,8 @@ export const loginWithCredentials = async (email, password) => {
 
     // Savve token locally for persistance
     localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+
     return { token, user };
   } catch (error) {
     // Handle any errors that occur during the request
@@ -62,5 +70,17 @@ export const loginWithCredentials = async (email, password) => {
       error.response?.data?.message || "Login failed. Please try again.";
     console.error("Login failed:", errorMessage);
     throw new Error(errorMessage);
+  }
+};
+
+//Function to check if the user is logged in offline
+export const getOfflineUser = () => {
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  if (token && user) {
+    return { token, user };
+  } else {
+    return null;
   }
 };
