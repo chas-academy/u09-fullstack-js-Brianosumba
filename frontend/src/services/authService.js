@@ -6,7 +6,7 @@ const BASE_URL = import.meta.env.VITE_API_URL
   : "http://localhost:3000/api/auth";
 
 //  Save user session in localStorage
-export const saveUserSession = (token, user) => {
+export const saveUserSession = async (token, user) => {
   if (!token || !user) {
     console.warn(" Attempted to save an invalid session.");
     return;
@@ -16,8 +16,8 @@ export const saveUserSession = (token, user) => {
   localStorage.setItem("token", token);
   localStorage.setItem("user", JSON.stringify(user));
 
-  // Backup session in IndexedDB (so offline login still works if localStorage is cleared)
-  set("offline-user-session", { token, user });
+  //  'await' now works inside this function
+  await set("offline-user-session", { token, user });
 
   console.log(" User session saved:", { token, user });
 };
@@ -30,16 +30,21 @@ export const getOfflineUser = async () => {
   console.log("🛠 Checking localStorage for offline user:", { token, user });
 
   if (!token || !user) {
-    console.warn("🔍 No session found in localStorage. Checking IndexedDB...");
-    const offlineSession = await get("offline-user-session");
+    console.warn(" No session found in localStorage. Checking IndexedDB...");
+    const offlineSession = await get("offline-user-session"); // IndexedDB backup
     if (offlineSession) {
       token = offlineSession.token;
       user = JSON.stringify(offlineSession.user);
-      console.log(" Restored session from IndexedDB:", offlineSession);
+      console.log(" Restored user session from IndexedDB:", offlineSession);
     }
   }
 
-  return token && user ? { token: token, user: JSON.parse(user) } : null;
+  if (!token || !user) {
+    console.warn(" No valid user session found.");
+    return { token: null, user: null }; //  Return a valid object instead of `null`
+  }
+
+  return { token, user: JSON.parse(user) };
 };
 
 //  Offline login function (returns stored user data if available)
@@ -59,18 +64,17 @@ export const offlineLogin = async () => {
 //  Check if user is already authenticated
 export const checkAuth = async () => {
   console.log(" Running checkAuth()...");
-  const offlineUser = await getOfflineUser(); // Retrieve user session
+  const offlineUser = await getOfflineUser();
 
-  // 🛠 Debugging logs
-  console.log("🛠 Retrieved user:", offlineUser);
+  console.log(" Retrieved user:", offlineUser);
 
   if (!offlineUser || !offlineUser.user) {
-    console.warn(" No authenticated user found. Returning null.");
-    return null;
+    console.warn(" No authenticated user found.");
+    return { token: null, user: null }; //  Return a valid object instead of `null`
   }
 
-  console.log("User is authenticated:", offlineUser.user.username);
-  return offlineUser;
+  console.log(" User is authenticated:", offlineUser.user.username);
+  return offlineUser; //  Only return if `user` exists
 };
 
 //  Register a user (offline support)
