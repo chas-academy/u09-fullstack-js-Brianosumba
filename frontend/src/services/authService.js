@@ -66,15 +66,22 @@ export const checkAuth = async () => {
   console.log(" Running checkAuth()...");
   const offlineUser = await getOfflineUser();
 
-  console.log(" Retrieved user:", offlineUser);
+  console.log("🛠 Retrieved user:", offlineUser);
 
-  if (!offlineUser || !offlineUser.user) {
+  if (
+    !offlineUser ||
+    !offlineUser.user ||
+    Object.keys(offlineUser.user).length === 0
+  ) {
     console.warn(" No authenticated user found.");
-    return { token: null, user: null }; //  Return a valid object instead of `null`
+    return { token: null, user: {} }; // Always return an empty object for `user`
   }
 
-  console.log(" User is authenticated:", offlineUser.user.username);
-  return offlineUser; //  Only return if `user` exists
+  console.log(
+    " User is authenticated:",
+    offlineUser.user?.username || "No Username Found"
+  );
+  return offlineUser; //  Safe return
 };
 
 //  Register a user (offline support)
@@ -156,6 +163,7 @@ export const syncRegistrations = async () => {
     }
   }
 
-  // ✅ Keep failed registrations for later retries
   await set("offline-registrations", failedQueue);
 };
+
+window.addEventListener("online", syncRegistrations);
