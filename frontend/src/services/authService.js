@@ -87,28 +87,29 @@ export const checkAuth = async () => {
 //  Register a user (offline support)
 export const register = async (userData) => {
   if (!navigator.onLine) {
-    console.warn("Offline mode: Saving registration for later...");
+    console.warn(" Offline mode detected. Saving registration for later...");
+
     const offlineQueue = (await get("offline-registrations")) || [];
     offlineQueue.push(userData);
     await set("offline-registrations", offlineQueue);
-    return { message: "Registered offline. Will sync later." };
+
+    console.log(" Registration saved for offline sync.");
+    return { message: "Registered offline. Will sync when online." };
   }
 
   try {
-    console.log("Online mode: Registering user...");
+    console.log(" Online mode: Registering user...");
     const response = await axios.post(`${BASE_URL}/register`, userData, {
       withCredentials: true,
     });
 
     const { token, user } = response.data;
-    saveUserSession(token, user); //  Save user session for offline access
+    await saveUserSession(token, user);
 
+    console.log(" Registration successful.");
     return { token, user };
   } catch (error) {
-    console.error(
-      " Registration failed:",
-      error.response?.data?.message || error
-    );
+    console.error(" Registration failed:", error.message || error);
     throw new Error("Registration failed. Please try again.");
   }
 };
@@ -148,17 +149,21 @@ export const loginWithCredentials = async (email, password) => {
 //  Sync any offline registrations when back online
 export const syncRegistrations = async () => {
   const offlineQueue = (await get("offline-registrations")) || [];
-  if (offlineQueue.length === 0) return;
 
-  console.log(`🔄 Syncing ${offlineQueue.length} offline registrations...`);
+  if (offlineQueue.length === 0) {
+    console.log(" No offline registrations to sync.");
+    return;
+  }
+
+  console.log(` Syncing ${offlineQueue.length} offline registrations...`);
   const failedQueue = [];
 
   for (const userData of offlineQueue) {
     try {
       await register(userData);
-      console.log("✅ Successfully synced:", userData.email);
+      console.log(" Successfully synced:", userData.email);
     } catch (error) {
-      console.error("❌ Failed to sync:", userData.email, error);
+      console.error(" Failed to sync:", userData.email, error);
       failedQueue.push(userData); // Keep failed registrations
     }
   }

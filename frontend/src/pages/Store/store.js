@@ -59,7 +59,7 @@ const useAuthStore = create((set) => ({
     console.log(" Checking authentication...");
 
     try {
-      const session = await checkAuth(); //  Make sure to await this!
+      const session = await checkAuth();
 
       if (session && session.user) {
         set({
