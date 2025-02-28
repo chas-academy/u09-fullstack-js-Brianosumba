@@ -5,12 +5,18 @@ const getProgress = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    //Fetch progress from the database
+    // Fetch progress from the database
     let progress = await Progress.findOne({ userId });
 
     if (!progress) {
-      //Create a new progress record if not found
-      progress = new Progress({ userId });
+      // Create a new progress record if not found with default values
+      progress = new Progress({
+        userId,
+        workoutsToday: 0,
+        workoutsThisWeek: 0,
+        workoutsThisMonth: 0,
+        strengthProgress: 0,
+      });
       await progress.save();
     }
 
@@ -31,19 +37,34 @@ const updateProgress = async (req, res) => {
       workoutsThisMonth,
       strengthProgress,
     } = req.body;
-    //Update progress in the database
-    const updatedProgress = await Progress.findOneAndUpdate(
-      { userId },
-      {
-        workoutsToday,
-        workoutsThisWeek,
-        workoutsThisMonth,
-        strengthProgress,
-        updatedAt: Date.now(),
-      },
-      { new: true, upsert: true }
-    );
-    res.status(200).json(updatedProgress);
+
+    // Ensure progress exists or create a new one
+    let progress = await Progress.findOne({ userId });
+
+    if (!progress) {
+      // If no progress found, create a new one with default values
+      progress = new Progress({
+        userId,
+        workoutsToday: workoutsToday || 0,
+        workoutsThisWeek: workoutsThisWeek || 0,
+        workoutsThisMonth: workoutsThisMonth || 0,
+        strengthProgress: strengthProgress || 0,
+      });
+    } else {
+      // Update only fields that were provided
+      if (workoutsToday !== undefined) progress.workoutsToday = workoutsToday;
+      if (workoutsThisWeek !== undefined)
+        progress.workoutsThisWeek = workoutsThisWeek;
+      if (workoutsThisMonth !== undefined)
+        progress.workoutsThisMonth = workoutsThisMonth;
+      if (strengthProgress !== undefined)
+        progress.strengthProgress = strengthProgress;
+    }
+
+    // Save the updated progress
+    await progress.save();
+
+    res.status(200).json(progress);
   } catch (error) {
     console.error("Error updating progress:", error.message);
     res.status(500).json({ error: "Failed to update progress." });
