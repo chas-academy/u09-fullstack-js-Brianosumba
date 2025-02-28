@@ -6,6 +6,9 @@ import Footer from "../components/Footer";
 import CircularProgressBar from "../components/CircularProgressBar";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { io } from "socket.io-client";
+
+const socket = io(BASE_URL, { withCredentials: true });
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
