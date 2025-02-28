@@ -4,10 +4,13 @@ import {
   recommendExercise,
   deleteRecommendation,
   editRecommendation,
+  syncRecommendations,
+  syncOfflineEdits,
+  syncOfflineDeletes,
 } from "../../services/exerciseService";
 
 /**
- *Fetch and set exercises
+ * Fetch and set exercises (Handles offline caching)
  */
 export const getExercises = async () => {
   try {
@@ -90,24 +93,34 @@ export const handleDeleteRecommendation = async (recommendationId) => {
 /**
  *Fetch recommendations for the given user ID
  */
-export const fetchUserRecommendations = async (userId, setRecommendations) => {
-  try {
-    // Ensure the user ID is provided
-    if (!userId) {
-      throw new Error("User ID is required to fetch recommendations");
-    }
+// export const fetchUserRecommendations = async (userId, setRecommendations) => {
+//   try {
+//     // Ensure the user ID is provided
+//     if (!userId) {
+//       throw new Error("User ID is required to fetch recommendations");
+//     }
 
-    const recommendations = await fetchRecommendations(userId);
-    console.log(`Fetched recommendations for user ${userId}:`, recommendations);
+//     const recommendations = await fetchRecommendations(userId);
+//     console.log(`Fetched recommendations for user ${userId}:`, recommendations);
 
-    // Update state with fetched recommendations
-    setRecommendations(recommendations);
-  } catch (error) {
-    // Handle and log errors during fetching recommendations
-    console.error(
-      `Error fetching recommendations for user ID ${userId}:`,
-      error.message || error
-    );
-    alert("Failed to load recommendations. Please try again.");
-  }
-};
+//     // Update state with fetched recommendations
+//     setRecommendations(recommendations);
+//   } catch (error) {
+//     // Handle and log errors during fetching recommendations
+//     console.error(
+//       `Error fetching recommendations for user ID ${userId}:`,
+//       error.message || error
+//     );
+//     alert("Failed to load recommendations. Please try again.");
+//   }
+// };
+
+/**
+ * Sync offline actions when back online
+ */
+window.addEventListener("online", async () => {
+  console.log("🔄 Online detected! Syncing offline data...");
+  await syncRecommendations();
+  await syncOfflineEdits();
+  await syncOfflineDeletes();
+});
