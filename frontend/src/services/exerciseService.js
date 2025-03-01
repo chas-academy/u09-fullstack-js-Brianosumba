@@ -192,6 +192,49 @@ export const recommendExercise = async (recommendationData) => {
 };
 
 /**
+ *  Edit an Existing Recommendation
+ */
+export const editRecommendation = async (recommendationId, updatedFields) => {
+  if (!recommendationId || !updatedFields) {
+    throw new Error("Recommendation ID and updated fields are required.");
+  }
+
+  try {
+    if (!navigator.onLine) {
+      console.warn("Offline mode: Queuing recommendation edit...");
+      const offlineEdits = (await get(OFFLINE_EDIT_QUEUE)) || [];
+      offlineEdits.push({ recommendationId, updatedFields });
+      await set(OFFLINE_EDIT_QUEUE, offlineEdits);
+      return {
+        success: false,
+        message: "Edit saved offline, will sync later.",
+      };
+    }
+
+    console.log(`Editing recommendation ${recommendationId}...`);
+    const response = await axios.put(
+      `${BASE_URL}/recommendations/${recommendationId}`,
+      updatedFields,
+      { headers: getAuthHeaders() }
+    );
+
+    console.log("Recommendation updated successfully:", response.data);
+
+    // Update cache
+    const cachedData = (await get(CACHE_RECOMMENDATIONS)) || [];
+    const updatedCache = cachedData.map((rec) =>
+      rec.id === recommendationId ? { ...rec, ...updatedFields } : rec
+    );
+    await set(CACHE_RECOMMENDATIONS, updatedCache);
+
+    return response.data;
+  } catch (error) {
+    console.error("Error editing recommendation:", error.message);
+    throw error;
+  }
+};
+
+/**
  *  Delete Completed Workout
  */
 export const handleDeleteCompletedWorkout = async (workoutId) => {
