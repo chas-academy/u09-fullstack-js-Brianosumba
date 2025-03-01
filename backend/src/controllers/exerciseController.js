@@ -226,7 +226,7 @@ const editRecommendation = async (req, res) => {
   }
 };
 
-//Completed Exercise
+//  Completed Exercise
 const completeExercise = async (req, res) => {
   try {
     const { userId, exerciseId, workoutType, target, level } = req.body;
@@ -235,6 +235,10 @@ const completeExercise = async (req, res) => {
       return res
         .status(400)
         .json({ error: "User ID and Exercise ID are required." });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid User ID." });
     }
 
     // Save workout completion to the database
@@ -248,26 +252,30 @@ const completeExercise = async (req, res) => {
 
     await completedWorkout.save();
 
-    // Fetch the user's username for the notification
+    // Fetch the user's username for notification
     const user = await User.findById(userId).select("username");
 
-    // Emit a socket.io event to the admin dashboard
-    // Log the data being emitted
-    console.log("Emitting exerciseCompleted event with data:", {
-      username: user?.username || "Unknown User", // Ensure the username is included
-      workoutType,
-      target,
-      level,
-      completedAt: completedWorkout.completedAt,
-    });
+    // Emit WebSocket event
+    const io = req.app.get("io"); //  Correct way to get io instance
+    if (io) {
+      console.log("Emitting exerciseCompleted event with data:", {
+        username: user?.username || "Unknown User",
+        workoutType,
+        target,
+        level,
+        completedAt: completedWorkout.completedAt,
+      });
 
-    await req.io.to("admins").emit("exerciseCompleted", {
-      username: user?.username || "Unknown User",
-      workoutType,
-      target,
-      level,
-      completedAt: completedWorkout.completedAt,
-    });
+      io.to("admins").emit("exerciseCompleted", {
+        username: user?.username || "Unknown User",
+        workoutType,
+        target,
+        level,
+        completedAt: completedWorkout.completedAt,
+      });
+    } else {
+      console.warn("WebSocket (io) is not available. Skipping event emission.");
+    }
 
     res.status(200).json({
       success: true,
@@ -280,12 +288,20 @@ const completeExercise = async (req, res) => {
   }
 };
 
-//fetch completed workouts
-
+// Fetch completed workouts (Admins see all, users see their own)
 const getCompletedWorkouts = async (req, res) => {
   try {
-    // Fetch completed workouts with associated user data
-    const completedWorkouts = await WorkoutCompletion.find()
+    const { userId } = req.query; // Allow fetching workouts for a specific user (optional)
+
+    let filter = {};
+    if (userId) {
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ error: "Invalid User ID." });
+      }
+      filter.userId = userId; //  Users can only fetch their own workouts
+    }
+
+    const completedWorkouts = await WorkoutCompletion.find(filter)
       .populate("userId", "username")
       .select("_id userId workoutType target level completedAt")
       .exec();
@@ -306,22 +322,39 @@ const getCompletedWorkouts = async (req, res) => {
   }
 };
 
-//Delete a completed workout by ID
+//  Delete a completed workout (Users can delete their own, Admins can delete any)
 const deleteCompletedWorkout = async (req, res) => {
   try {
     const { workoutId } = req.params;
+    const requestUserId = req.user.id; // Extracted from `verifyToken`
+    const requestUserRole = req.user.role; // Assuming role is stored in JWT
+
     if (!mongoose.Types.ObjectId.isValid(workoutId)) {
       return res.status(400).json({ error: "Invalid workout ID." });
     }
 
-    const deletedWorkout = await WorkoutCompletion.findByIdAndDelete(workoutId);
+    const workout = await WorkoutCompletion.findById(workoutId);
 
-    if (!deletedWorkout) {
+    if (!workout) {
       return res.status(404).json({ error: "Workout not found." });
     }
 
+    // Allow only admins OR the user who completed the workout to delete it
+    if (
+      requestUserRole !== "admin" &&
+      workout.userId.toString() !== requestUserId
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Unauthorized to delete this workout." });
+    }
+
+    await WorkoutCompletion.findByIdAndDelete(workoutId);
     console.log("Workout deleted successfully:", workoutId);
-    res.status(200).json({ message: "workout deleted successfully." });
+
+    res
+      .status(200)
+      .json({ success: true, message: "Workout deleted successfully." });
   } catch (error) {
     console.error("Error deleting workout:", error.message);
     res.status(500).json({ error: "Failed to delete workout." });
