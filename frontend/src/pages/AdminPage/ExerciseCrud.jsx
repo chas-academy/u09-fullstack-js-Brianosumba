@@ -4,9 +4,6 @@ import {
   recommendExercise,
   deleteRecommendation,
   editRecommendation,
-  syncRecommendations,
-  syncOfflineEdits,
-  syncOfflineDeletes,
 } from "../../services/exerciseService";
 
 /**
