@@ -295,15 +295,27 @@ const Admin = () => {
     if (!confirmDelete) return;
 
     try {
-      await handleDeleteCompletedWorkout(workoutId);
+      await axios.delete(`${BASE_URL}/exercises/completed/${workoutId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`, //  Ensure token is sent
+          "Content-Type": "application/json",
+        },
+      });
+
       addNotification("Workout deleted successfully!", "success");
 
       setExerciseCompletions((prev) =>
         prev.filter((workout) => workout._id !== workoutId)
       );
     } catch (error) {
-      console.error("Failed to delete workout:", error.message);
-      addNotification("Failed to delete workout. Please try again.", "error");
+      console.error(
+        "Failed to delete workout:",
+        error.response?.data || error.message
+      );
+      alert(
+        "Failed to delete workout: " +
+          (error.response?.data?.error || "Please try again.")
+      );
     }
   };
 
