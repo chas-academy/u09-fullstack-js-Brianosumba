@@ -26,7 +26,6 @@ const schema = yup.object().shape({
 const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuthStore();
 
   const {
     register,
@@ -37,21 +36,14 @@ const Register = () => {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      let response;
+      console.log("Registering user...");
+      const response = await registerUser(data);
 
-      if (!navigator.onLine) {
-        console.warn(" Offline mode: Saving registration for later...");
-        response = await registerUser(data); // Save registration for later
-      } else {
-        console.log(" Online mode: Registering user...");
-        response = await registerUser(data); //  Normal registration when online
-      }
-
-      console.log(" Registration successful:", response);
+      console.log("Registration successful:", response);
       alert("Registration successful!");
       navigate("/userpage");
     } catch (error) {
-      console.error(" Registration error:", error.message);
+      console.error("Registration error:", error.message);
       alert(error.message);
     } finally {
       setLoading(false);

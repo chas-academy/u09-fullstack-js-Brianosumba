@@ -5,7 +5,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import ForgotPasswordModal from "../../components/ForgotPaswordModal"; // Ensure path is correct
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../Store/store";
-import { loginWithCredentials, offlineLogin } from "../../services/authService";
+import { loginWithCredentials } from "../../services/authService";
 
 // Validation schema for form input
 const schema = yup.object().shape({
@@ -43,21 +43,14 @@ const Login = () => {
     setError("");
 
     try {
-      let userData;
+      console.log("Online mode: Sending login request...");
+      const userData = await loginWithCredentials(data.email, data.password);
 
-      if (!navigator.onLine) {
-        console.warn(" Offline mode detected: Trying offline login...");
-        userData = await offlineLogin(); //  Use offline login if offline
-      } else {
-        console.log("Online mode: Sending login request...");
-        userData = await loginWithCredentials(data.email, data.password); //  Normal login when online
-      }
-
-      console.log(" Login successful:", userData);
+      console.log("Login successful:", userData);
       alert("Login successful!");
       navigate("/userpage");
     } catch (err) {
-      console.error(" Login error:", err.message);
+      console.error("Login error:", err.message);
       setError(err.message);
     } finally {
       setLoading(false);
