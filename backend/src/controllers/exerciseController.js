@@ -322,12 +322,12 @@ const getCompletedWorkouts = async (req, res) => {
   }
 };
 
-//  Delete a completed workout (Users can delete their own, Admins can delete any)
+//Delete Completed Workouts
 const deleteCompletedWorkout = async (req, res) => {
   try {
     const { workoutId } = req.params;
     const requestUserId = req.user.id; // Extracted from `verifyToken`
-    const requestUserRole = req.user.role; // Assuming role is stored in JWT
+    const requestUserRole = req.user.role; // Extracted from `verifyToken`
 
     if (!mongoose.Types.ObjectId.isValid(workoutId)) {
       return res.status(400).json({ error: "Invalid workout ID." });
@@ -339,7 +339,7 @@ const deleteCompletedWorkout = async (req, res) => {
       return res.status(404).json({ error: "Workout not found." });
     }
 
-    // Allow only admins OR the user who completed the workout to delete it
+    //  Allow only the workout owner OR an admin to delete it
     if (
       requestUserRole !== "admin" &&
       workout.userId.toString() !== requestUserId

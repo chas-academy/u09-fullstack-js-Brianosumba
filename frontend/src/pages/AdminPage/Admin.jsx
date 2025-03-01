@@ -282,7 +282,7 @@ const Admin = () => {
   };
 
   const onDeleteCompletedWorkout = async (workoutId) => {
-    console.log("Workout ID received by onDeleteCompletedWorkout:", workoutId);
+    console.log("Workout ID being deleted:", workoutId);
 
     if (!workoutId) {
       alert("Workout ID is required.");
@@ -295,15 +295,22 @@ const Admin = () => {
     if (!confirmDelete) return;
 
     try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("No authentication token found. Please log in again.");
+        window.location.href = "/login";
+        return;
+      }
+
       await axios.delete(`${BASE_URL}/exercises/completed/${workoutId}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`, //  Ensure token is sent
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
-      addNotification("Workout deleted successfully!", "success");
-
+      alert("Workout deleted successfully!");
       setExerciseCompletions((prev) =>
         prev.filter((workout) => workout._id !== workoutId)
       );
