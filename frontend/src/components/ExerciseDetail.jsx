@@ -232,7 +232,6 @@ const ExerciseDetail = () => {
 
   // Handle workout completion
   const handleDoneComplete = async () => {
-    // Verify that user and exercise details are available
     if (!userId || !token || !exerciseId || isTokenExpired(token)) {
       console.error("Missing user authentication or exercise details.");
       alert("Unable to complete workout. Please try again.");
@@ -240,7 +239,6 @@ const ExerciseDetail = () => {
       return;
     }
 
-    // 1 Prepare updated progress
     const updatedProgress = {
       workoutsToday: Math.min(progress.workoutsToday + 1, 1),
       workoutsThisWeek: Math.min(progress.workoutsThisWeek + 1, 3),
@@ -249,14 +247,14 @@ const ExerciseDetail = () => {
     };
 
     try {
-      // 2️ Send progress update to the backend
+      // 1️ Update progress in the backend
       await axios.put(`${BASE_URL}/progress/${userId}`, updatedProgress, {
         headers: getAuthHeaders(),
       });
 
       console.log("Progress updated successfully.");
 
-      // 3️ Fetch updated progress from backend to ensure UI is in sync
+      // 2️ Fetch updated progress from backend to ensure UI is in sync
       const refreshedProgress = await axios.get(
         `${BASE_URL}/progress/${userId}`,
         {
@@ -266,7 +264,7 @@ const ExerciseDetail = () => {
 
       setProgress(refreshedProgress.data);
 
-      // 4️ Prepare workout completion payload
+      // 3️ Prepare workout completion payload
       const completionPayload = {
         userId,
         exerciseId,
@@ -279,7 +277,7 @@ const ExerciseDetail = () => {
       console.log("Payload:", completionPayload);
       console.log("Headers:", getAuthHeaders());
 
-      // 5️ Notify backend that workout is completed
+      // 4️ Notify backend that workout is completed
       const response = await axios.post(
         `${BASE_URL}/exercises/complete`,
         completionPayload,
@@ -290,7 +288,7 @@ const ExerciseDetail = () => {
 
       console.log("Workout completion sent to server:", response.data);
 
-      // 6️ Emit WebSocket event to notify the admin
+      // 5️ Emit WebSocket event to notify the admin (if WebSocket is initialized)
       if (socket) {
         console.log("Emitting event: exerciseCompleted");
         socket.emit("exerciseCompleted", completionPayload);
@@ -298,7 +296,7 @@ const ExerciseDetail = () => {
         console.error("Socket is not initialized");
       }
 
-      // 7️ Show success message
+      // 6️ Show success message
       alert("Workout marked as complete!");
     } catch (error) {
       console.error(
