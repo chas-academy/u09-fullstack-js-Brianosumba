@@ -62,7 +62,24 @@ const Admin = () => {
     const loadRecommendations = async () => {
       try {
         const recommendationData = await fetchAllRecommendations();
-        setRecommendations(recommendationData);
+        console.log("Fetched Recommendations:", recommendationData);
+
+        if (!Array.isArray(recommendationData)) {
+          console.error("Invalid recommendations format:", recommendationData);
+          return;
+        }
+
+        const exerciseData = await fetchExercisesfromDB();
+        const recommendationsWithDetails = recommendationData.map((rec) => ({
+          ...rec,
+          exerciseDetails: exerciseData.find((ex) => ex.id === rec.exerciseId),
+        }));
+
+        console.log(
+          "Processed Recommendations with Exercise Details:",
+          recommendationsWithDetails
+        );
+        setRecommendations(recommendationsWithDetails);
       } catch (error) {
         console.error("Error fetching recommendations:", error.message);
       }
@@ -71,6 +88,7 @@ const Admin = () => {
     const loadExercises = async () => {
       try {
         const exerciseData = await fetchExercisesfromDB();
+        console.log("Fetched Exercises:", exerciseData);
         setExercises(exerciseData);
       } catch (error) {
         console.error("Error fetching exercises:", error.message);
@@ -79,7 +97,7 @@ const Admin = () => {
 
     loadRecommendations();
     loadExercises();
-  }, [token]);
+  }, [setRecommendations, setExercises]);
 
   // Fetch completed workouts from the backend
   useEffect(() => {
@@ -177,20 +195,30 @@ const Admin = () => {
         token
       );
 
-      if (!newRecommendation) {
+      if (!newRecommendation || !newRecommendation._id) {
         console.error("Error: No recommendation received from API.");
         return;
       }
 
       addNotification("Exercise recommended successfully!", "success");
 
-      //  Fetch latest recommendations to ensure everything (notes, exercise details) is up-to-date
-      const updatedRecommendations = await fetchAllRecommendations();
+      // Directly update the state
+      setRecommendations((prev) => [
+        ...prev,
+        {
+          ...newRecommendation,
+          exerciseDetails: exercises.find(
+            (ex) => ex.id === newRecommendation.exerciseId
+          ),
+        },
+      ]);
 
-      //  Update state with the latest data (this will trigger a UI update)
-      setRecommendations(updatedRecommendations);
+      console.log("Updated Recommendations:", newRecommendation);
     } catch (error) {
-      console.error("Failed to recommend exercise:", error.message);
+      console.error(
+        "Failed to recommend exercise:",
+        error.response?.data || error.message
+      );
       addNotification(
         "Failed to recommend exercise. Please try again.",
         "error"
@@ -199,36 +227,56 @@ const Admin = () => {
   };
 
   const openEditModal = async (data) => {
-    console.log("user data passed to openEditModal:", data);
+    console.log("User data passed to openEditModal:", data);
 
     if (!data || !data.recommendationId || !data.exerciseId) {
       console.error("Invalid recommendation data:", data);
-      alert("The selected user does not have a valid recommendation to edit");
+      alert("The selected user does not have a valid recommendation to edit.");
       return;
     }
+
     setEditingRecommendation({
       id: data.recommendationId,
       currentExerciseId: data.exerciseId || "",
       notes: data.notes || "",
     });
+
+    console.log("Editing recommendation:", {
+      id: data.recommendationId,
+      currentExerciseId: data.exerciseId || "",
+      notes: data.notes || "",
+    });
+
     setIsModalOpen(true);
   };
 
   const handleSaveRecommendation = async (recommendationId, updatedFields) => {
     if (!recommendationId || !updatedFields.exerciseId) {
-      console.error("invalid recommendation or updated data");
+      console.error("Invalid recommendation or updated data:", {
+        recommendationId,
+        updatedFields,
+      });
       return;
     }
 
     try {
-      // send API request to update the recommendation
-      await handleUpdateRecommendation(recommendationId, updatedFields, token);
+      // Send API request to update the recommendation
+      const updatedRecommendation = await handleUpdateRecommendation(
+        recommendationId,
+        updatedFields,
+        token
+      );
+
+      if (!updatedRecommendation || !updatedRecommendation._id) {
+        console.error("Error: No updated recommendation received from API.");
+        return;
+      }
 
       addNotification("Recommendation updated successfully", "success");
 
-      //Update the recommendations state
-      setRecommendations((prevRecommendations) =>
-        prevRecommendations.map((rec) =>
+      // Update the recommendations state
+      setRecommendations((prev) =>
+        prev.map((rec) =>
           rec._id === recommendationId
             ? {
                 ...rec,
@@ -242,17 +290,18 @@ const Admin = () => {
         )
       );
 
-      //Close modal
+      console.log("Updated recommendation:", updatedRecommendation);
+
+      // Close modal
       setEditingRecommendation(null);
       setIsModalOpen(false);
     } catch (error) {
       console.error(
         "Failed to update recommendation:",
-        error?.response?.data || error.message || error
+        error.response?.data || error.message
       );
       addNotification(
-        error?.response?.data?.message ||
-          "Failed to update recommendation. Please try again.",
+        "Failed to update recommendation. Please try again.",
         "error"
       );
     }
@@ -265,15 +314,22 @@ const Admin = () => {
     }
 
     try {
+      console.log("Deleting recommendation ID:", recommendationId);
+
       await handleDeleteRecommendation(recommendationId, token);
       addNotification("Recommendation deleted successfully!", "success");
 
-      //Update recommendations state
+      // Remove deleted recommendation from state
       setRecommendations((prev) =>
         prev.filter((rec) => rec._id !== recommendationId)
       );
+
+      console.log("Updated recommendations after deletion");
     } catch (error) {
-      console.error("Failed to delete recommendation:", error);
+      console.error(
+        "Failed to delete recommendation:",
+        error.response?.data || error.message
+      );
       addNotification(
         "Failed to delete recommendation. Please try again.",
         "error"
@@ -295,21 +351,24 @@ const Admin = () => {
     if (!confirmDelete) return;
 
     try {
+      console.log("Sending delete request for workout:", workoutId);
+
       await handleDeleteCompletedWorkout(workoutId);
 
       alert("Workout deleted successfully!");
+
+      // Update state to remove deleted workout
       setExerciseCompletions((prev) =>
         prev.filter((workout) => workout._id !== workoutId)
       );
+
+      console.log("Updated workout completions after deletion.");
     } catch (error) {
       console.error(
         "Failed to delete workout:",
         error.response?.data || error.message
       );
-      alert(
-        "Failed to delete workout: " +
-          (error.response?.data?.error || "Please try again.")
-      );
+      alert("Failed to delete workout. Please try again.");
     }
   };
 
