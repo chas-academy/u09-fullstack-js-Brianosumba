@@ -295,20 +295,7 @@ const Admin = () => {
     if (!confirmDelete) return;
 
     try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        alert("No authentication token found. Please log in again.");
-        window.location.href = "/login";
-        return;
-      }
-
-      await axios.delete(`${BASE_URL}/exercises/completed/${workoutId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      await handleDeleteCompletedWorkout(workoutId);
 
       alert("Workout deleted successfully!");
       setExerciseCompletions((prev) =>
