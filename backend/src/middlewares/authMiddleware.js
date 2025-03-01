@@ -25,42 +25,7 @@ const verifyToken = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log("Decoded token:", decoded);
 
-    const jwt = require("jsonwebtoken");
-
-    const verifyToken = (req, res, next) => {
-      const authHeader = req.headers.authorization;
-
-      console.log("Authorization header Received:", authHeader);
-
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        console.error("Authorization header missing or invalid format");
-        return res
-          .status(401)
-          .json({ error: "No token provided or invalid format" });
-      }
-
-      const token = authHeader.split(" ")[1];
-
-      try {
-        if (!process.env.JWT_SECRET) {
-          throw new Error("JWT_SECRET is not defined");
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("Decoded token:", decoded);
-
-        req.user = {
-          id: decoded.id,
-          role: decoded.role,
-        };
-
-        next();
-      } catch (error) {
-        console.error("Token verification failed:", error.message);
-        return res.status(403).json({ error: "Invalid or expired token" });
-      }
-    };
-
+    req.user = decoded;
     next();
   } catch (error) {
     console.error("Token verification failed:", error.message);
