@@ -6,13 +6,16 @@ import {
   editRecommendation,
 } from "../../services/exerciseService";
 
+import { io } from "socket.io-client";
+const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
+
 /**
  * Fetch and set exercises (Handles offline caching)
  */
 export const getExercises = async () => {
   try {
     const exercises = await fetchExercisesfromDB();
-    console.log(" fetched exercises :", exercises);
+    console.log("Fetched exercises:", exercises);
 
     if (!Array.isArray(exercises)) {
       throw new Error("Invalid data format: Exercises should be an array.");
@@ -22,12 +25,12 @@ export const getExercises = async () => {
   } catch (error) {
     console.error("Error fetching exercises:", error.message || error);
     alert("Failed to load exercises. Please try again.");
-    return []; // Return an empty array in case of error
+    return [];
   }
 };
 
 /**
- *  Handle recommending an exercise
+ * Handle recommending an exercise
  */
 export const handleRecommendExercise = async (userId, exerciseId) => {
   try {
@@ -48,6 +51,9 @@ export const handleRecommendExercise = async (userId, exerciseId) => {
     console.log("Recommendation Response:", response);
     alert("Exercise recommended successfully!");
 
+    // Emit event to notify ExerciseDetail.jsx
+    socket.emit("recommendationUpdated", { userId });
+
     return response;
   } catch (error) {
     console.error("Error recommending exercise:", error.message || error);
@@ -59,14 +65,20 @@ export const handleRecommendExercise = async (userId, exerciseId) => {
 /**
  * Handle Updating a recommendation
  */
-
 export const handleUpdateRecommendation = async (
   recommendationId,
   updatedFields
 ) => {
   try {
     const response = await editRecommendation(recommendationId, updatedFields);
-    return response.data;
+
+    console.log("Recommendation updated:", response);
+
+    // Emit event to notify ExerciseDetail.jsx
+    socket.emit("recommendationUpdated", { userId: response.userId });
+
+    alert("Recommendation updated successfully!");
+    return response;
   } catch (error) {
     console.error("Error updating recommendation:", error.message || error);
     alert("Failed to update recommendation. Please try again.");
@@ -74,12 +86,17 @@ export const handleUpdateRecommendation = async (
 };
 
 /**
- *  Handle deleting a recommendation
+ * Handle deleting a recommendation
  */
 export const handleDeleteRecommendation = async (recommendationId) => {
   try {
-    await deleteRecommendation(recommendationId);
+    const response = await deleteRecommendation(recommendationId);
+
     console.log(`Deleted recommendation with ID ${recommendationId}`);
+
+    // Emit event to notify ExerciseDetail.jsx
+    socket.emit("recommendationUpdated", { userId: response.userId });
+
     alert("Recommendation deleted successfully!");
   } catch (error) {
     console.error("Error deleting recommendation:", error.message || error);
@@ -88,11 +105,10 @@ export const handleDeleteRecommendation = async (recommendationId) => {
 };
 
 /**
- *Fetch recommendations for the given user ID
+ * Fetch recommendations for the given user ID
  */
 export const fetchUserRecommendations = async (userId, setRecommendations) => {
   try {
-    // Ensure the user ID is provided
     if (!userId) {
       throw new Error("User ID is required to fetch recommendations");
     }
@@ -100,10 +116,8 @@ export const fetchUserRecommendations = async (userId, setRecommendations) => {
     const recommendations = await fetchRecommendations(userId);
     console.log(`Fetched recommendations for user ${userId}:`, recommendations);
 
-    // Update state with fetched recommendations
     setRecommendations(recommendations);
   } catch (error) {
-    // Handle and log errors during fetching recommendations
     console.error(
       `Error fetching recommendations for user ID ${userId}:`,
       error.message || error
@@ -111,13 +125,3 @@ export const fetchUserRecommendations = async (userId, setRecommendations) => {
     alert("Failed to load recommendations. Please try again.");
   }
 };
-
-/**
- * Sync offline actions when back online
- */
-window.addEventListener("online", async () => {
-  console.log("🔄 Online detected! Syncing offline data...");
-  await syncRecommendations();
-  await syncOfflineEdits();
-  await syncOfflineDeletes();
-});

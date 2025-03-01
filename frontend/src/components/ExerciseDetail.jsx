@@ -230,11 +230,9 @@ const ExerciseDetail = () => {
     fetchRecommendations();
   }, [userId, token]);
 
-  // Handle workout completion
   const handleDoneComplete = async () => {
     if (!userId || !token || !exerciseId || isTokenExpired(token)) {
-      console.error("Missing user authentication or exercise details.");
-      alert("Unable to complete workout. Please try again.");
+      alert("Unable to complete workout. Please log in again.");
       window.location.href = "/login";
       return;
     }
@@ -247,70 +245,27 @@ const ExerciseDetail = () => {
     };
 
     try {
-      // 1️ Update progress in the backend
       await axios.put(`${BASE_URL}/progress/${userId}`, updatedProgress, {
         headers: getAuthHeaders(),
       });
 
-      console.log("Progress updated successfully.");
-
-      // 2️ Fetch updated progress from backend to ensure UI is in sync
-      const refreshedProgress = await axios.get(
-        `${BASE_URL}/progress/${userId}`,
-        {
-          headers: getAuthHeaders(),
-        }
-      );
-
-      setProgress(refreshedProgress.data);
-
-      // 3️ Prepare workout completion payload
-      const completionPayload = {
+      // Notify the admin that this workout is completed
+      const completionData = {
         userId,
+        username: localStorage.getItem("username"),
         exerciseId,
         workoutType: exercise?.bodyPart || "N/A",
         target: exercise?.target || "N/A",
         level: "Beginner",
+        completedAt: new Date().toISOString(),
       };
 
-      console.log("Sending POST request to:", `${BASE_URL}/exercises/complete`);
-      console.log("Payload:", completionPayload);
-      console.log("Headers:", getAuthHeaders());
+      socket.emit("exerciseCompleted", completionData);
+      console.log("Workout completion sent to admin:", completionData);
 
-      // 4️ Notify backend that workout is completed
-      const response = await axios.post(
-        `${BASE_URL}/exercises/complete`,
-        completionPayload,
-        {
-          headers: getAuthHeaders(),
-        }
-      );
-
-      console.log("Workout completion sent to server:", response.data);
-
-      // 5️ Emit WebSocket event to notify the admin (if WebSocket is initialized)
-      if (socket) {
-        console.log("Emitting event: exerciseCompleted");
-        socket.emit("exerciseCompleted", completionPayload);
-      } else {
-        console.error("Socket is not initialized");
-      }
-
-      // 6️ Show success message
       alert("Workout marked as complete!");
     } catch (error) {
-      console.error(
-        "Error updating progress or completing workout:",
-        error.message
-      );
-
-      // Handle authentication errors
-      if (error.response?.status === 403) {
-        console.warn("Redirecting to login due to invalid or expired token");
-        window.location.href = "/login";
-      }
-
-      // Show error message
+      console.error("Error updating progress:", error.message);
       alert("Could not complete workout. Please try again.");
     }
   };
