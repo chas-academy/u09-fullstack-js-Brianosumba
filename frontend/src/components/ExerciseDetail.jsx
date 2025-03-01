@@ -240,7 +240,7 @@ const ExerciseDetail = () => {
       return;
     }
 
-    // Update progress locally
+    // 1 Prepare updated progress
     const updatedProgress = {
       workoutsToday: Math.min(progress.workoutsToday + 1, 1),
       workoutsThisWeek: Math.min(progress.workoutsThisWeek + 1, 3),
@@ -248,17 +248,25 @@ const ExerciseDetail = () => {
       strengthProgress: Math.min(progress.strengthProgress + 100 / 12, 100),
     };
 
-    setProgress(updatedProgress);
-
     try {
-      // 2. Send progress update to the backend
+      // 2️ Send progress update to the backend
       await axios.put(`${BASE_URL}/progress/${userId}`, updatedProgress, {
         headers: getAuthHeaders(),
       });
 
       console.log("Progress updated successfully.");
 
-      // 3. Send workout completion event to admin (optional but required in your case)
+      // 3️ Fetch updated progress from backend to ensure UI is in sync
+      const refreshedProgress = await axios.get(
+        `${BASE_URL}/progress/${userId}`,
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+
+      setProgress(refreshedProgress.data);
+
+      // 4️ Prepare workout completion payload
       const completionPayload = {
         userId,
         exerciseId,
@@ -271,6 +279,7 @@ const ExerciseDetail = () => {
       console.log("Payload:", completionPayload);
       console.log("Headers:", getAuthHeaders());
 
+      // 5️ Notify backend that workout is completed
       const response = await axios.post(
         `${BASE_URL}/exercises/complete`,
         completionPayload,
@@ -281,23 +290,29 @@ const ExerciseDetail = () => {
 
       console.log("Workout completion sent to server:", response.data);
 
-      if (!socket) {
-        console.error(" Socket is not initialized");
-      } else {
-        console.log(" Emitting event: exerciseCompleted");
+      // 6️ Emit WebSocket event to notify the admin
+      if (socket) {
+        console.log("Emitting event: exerciseCompleted");
         socket.emit("exerciseCompleted", completionPayload);
+      } else {
+        console.error("Socket is not initialized");
       }
 
+      // 7️ Show success message
       alert("Workout marked as complete!");
     } catch (error) {
       console.error(
         "Error updating progress or completing workout:",
         error.message
       );
+
+      // Handle authentication errors
       if (error.response?.status === 403) {
         console.warn("Redirecting to login due to invalid or expired token");
         window.location.href = "/login";
       }
+
+      // Show error message
       alert("Could not complete workout. Please try again.");
     }
   };
