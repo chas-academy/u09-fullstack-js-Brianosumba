@@ -262,39 +262,45 @@ const Admin = () => {
     }
 
     try {
-      // Send API request to update the recommendation
-      const updatedRecommendation = await handleUpdateRecommendation(
+      //  Use `getAuthHeaders()` to always send a valid token
+      const headers = getAuthHeaders();
+
+      //  Send API request to update the recommendation
+      const response = await handleUpdateRecommendation(
         recommendationId,
         updatedFields,
-        token
+        headers
       );
 
-      if (!updatedRecommendation || !updatedRecommendation._id) {
+      //  Ensure API response contains updated data
+      if (!response || !response.data || !response.data.data) {
         console.error("Error: No updated recommendation received from API.");
         return;
       }
 
+      const updatedRecommendation = response.data.data;
+      console.log("Updated recommendation received:", updatedRecommendation);
+
       addNotification("Recommendation updated successfully", "success");
 
-      // Update the recommendations state
+      //  Update the recommendations state
       setRecommendations((prev) =>
         prev.map((rec) =>
           rec._id === recommendationId
             ? {
                 ...rec,
-                exerciseId: updatedFields.exerciseId,
-                notes: updatedFields.notes || rec.notes,
-                exerciseDetails: exercises.find(
-                  (ex) => ex.id === updatedFields.exerciseId
-                ),
+                exerciseId: updatedRecommendation.exerciseId, //  Ensure we use the updated exerciseId
+                notes: updatedRecommendation.notes, //  Ensure we use the updated notes
+                exerciseDetails:
+                  exercises.find(
+                    (ex) => ex.id === updatedRecommendation.exerciseId
+                  ) || rec.exerciseDetails, //  Fallback to existing details if not found
               }
             : rec
         )
       );
 
-      console.log("Updated recommendation:", updatedRecommendation);
-
-      // Close modal
+      //  Close modal
       setEditingRecommendation(null);
       setIsModalOpen(false);
     } catch (error) {
@@ -302,6 +308,7 @@ const Admin = () => {
         "Failed to update recommendation:",
         error.response?.data || error.message
       );
+
       addNotification(
         "Failed to update recommendation. Please try again.",
         "error"

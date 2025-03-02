@@ -194,10 +194,11 @@ const editRecommendation = async (req, res) => {
         .status(400)
         .json({ success: false, error: "Invalid Exercise ID format." });
     }
-    const updateData = {};
-    if (exerciseId) updateData.exerciseId = exerciseId;
-    if (notes !== undefined) updateData.notes = notes.trim();
-    if (tags) updateData.tags = Array.isArray(tags) ? tags : [];
+    const updateData = {
+      exerciseId,
+      notes: notes.trim(),
+      tags: Array.isArray(tags) ? tags : [],
+    };
 
     console.log("Updating recommendation with:", updateData);
 
@@ -315,36 +316,60 @@ const getCompletedWorkouts = async (req, res) => {
   }
 };
 
-//Delete Completed Workouts
+//Delete Complete Workouts
 const deleteCompletedWorkout = async (req, res) => {
   try {
     const { workoutId } = req.params;
+
+    //  Ensure `req.user` is available
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ error: "Unauthorized: No valid user session." });
+    }
+
     const requestUserId = req.user.id; // Extracted from `verifyToken`
     const requestUserRole = req.user.role; // Extracted from `verifyToken`
 
+    //  Validate Workout ID
     if (!mongoose.Types.ObjectId.isValid(workoutId)) {
       return res.status(400).json({ error: "Invalid workout ID." });
     }
 
     const workout = await WorkoutCompletion.findById(workoutId);
 
+    //  Ensure Workout Exists
     if (!workout) {
       return res.status(404).json({ error: "Workout not found." });
     }
 
-    //  Allow only the workout owner OR an admin to delete it
+    console.log("Deleting workout:", {
+      workoutId,
+      userId: requestUserId,
+      userRole: requestUserRole,
+    });
+
+    // Allow only Admins OR Workout Owner to delete
     if (
       requestUserRole !== "admin" &&
       workout.userId.toString() !== requestUserId
     ) {
+      console.warn(`Unauthorized deletion attempt by user ${requestUserId}`);
       return res
         .status(403)
         .json({ error: "Unauthorized to delete this workout." });
     }
 
-    await WorkoutCompletion.findByIdAndDelete(workoutId);
-    console.log("Workout deleted successfully:", workoutId);
+    //  Perform Deletion
+    const deletedWorkout = await WorkoutCompletion.findByIdAndDelete(workoutId);
 
+    if (!deletedWorkout) {
+      return res
+        .status(500)
+        .json({ error: "Failed to delete workout. Try again later." });
+    }
+
+    console.log("Workout deleted successfully:", workoutId);
     res
       .status(200)
       .json({ success: true, message: "Workout deleted successfully." });
