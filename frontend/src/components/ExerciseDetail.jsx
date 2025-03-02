@@ -7,6 +7,8 @@ import CircularProgressBar from "../components/CircularProgressBar";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { io } from "socket.io-client";
+import { isTokenExpired } from "../services/authService";
+import { getAuthHeaders } from "../services/exerciseService";
 
 const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
 
@@ -28,37 +30,6 @@ const ExerciseDetail = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      console.error("No token found! Redirecting to login...");
-      window.location.href = "/login";
-      return {};
-    }
-
-    console.log("Token being sent in headers:", token);
-
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-type": "application/json",
-    };
-  };
-
-  //Helper function to check if the token is expired
-  const isTokenExpired = (token) => {
-    try {
-      const payloadBase64 = token.split(".")[1];
-      const deacodedPayload = JSON.parse(atob(payloadBase64));
-      const currentTime = Math.floor(Date.now() / 1000);
-
-      return deacodedPayload.exp && currentTime > deacodedPayload.exp;
-    } catch (error) {
-      console.error("Token decoding failed:", error);
-      return true;
-    }
-  };
 
   useEffect(() => {
     if (!userId || !token || isTokenExpired(token)) {

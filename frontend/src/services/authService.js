@@ -4,7 +4,21 @@ const BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/auth`
   : "http://localhost:3000/api/auth";
 
-// Save user session in localStorage
+//  Check for token expiration
+export const isTokenExpired = (token) => {
+  try {
+    const payloadBase64 = token.split(".")[1]; // Extract JWT payload
+    const decodedPayload = JSON.parse(atob(payloadBase64)); // Decode it
+    const currentTime = Math.floor(Date.now() / 1000); // Get current time in seconds
+
+    return decodedPayload.exp && currentTime > decodedPayload.exp; // Check expiration
+  } catch (error) {
+    console.error("Token decoding failed:", error);
+    return true; // Assume expired if decoding fails
+  }
+};
+
+//  Save user session in localStorage
 export const saveUserSession = (token, user) => {
   if (!token || !user) {
     console.warn("Attempted to save an invalid session.");
@@ -18,7 +32,7 @@ export const saveUserSession = (token, user) => {
   console.log("User session saved:", { token, user });
 };
 
-// Retrieve stored user session
+//  Retrieve stored user session
 export const getStoredUser = () => {
   const token = localStorage.getItem("token");
   const user = localStorage.getItem("user");
@@ -30,10 +44,18 @@ export const getStoredUser = () => {
     return { token: null, user: null };
   }
 
+  //  If the token is expired, remove it and return null
+  if (isTokenExpired(token)) {
+    console.warn("Stored token is expired! Logging out user...");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    return { token: null, user: null };
+  }
+
   return { token, user: JSON.parse(user) };
 };
 
-// Check if user is authenticated
+//  Check if user is authenticated
 export const checkAuth = () => {
   console.log("Running checkAuth()...");
   const storedUser = getStoredUser();
@@ -75,7 +97,7 @@ export const register = async (userData) => {
   }
 };
 
-// Login user
+//  Login user
 export const loginWithCredentials = async (email, password) => {
   try {
     console.log("Logging in...");

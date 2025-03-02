@@ -16,6 +16,7 @@ import {
   fetchAllRecommendations,
   fetchExercisesfromDB,
   handleDeleteCompletedWorkout,
+  getAuthHeaders,
 } from "../../services/exerciseService";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -104,10 +105,7 @@ const Admin = () => {
     const fetchCompletedWorkouts = async () => {
       try {
         const response = await axios.get(`${BASE_URL}/exercises/completed`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
         });
         setExerciseCompletions(response.data);
       } catch (error) {
@@ -536,6 +534,7 @@ const Admin = () => {
                     <td className="py-4 px-6">
                       {user?.username || `User not found (ID: ${rec.userId})`}
                     </td>
+
                     <td className="py-4 px-6">
                       {exercise?.name || "Exercise details not available"}
                     </td>
