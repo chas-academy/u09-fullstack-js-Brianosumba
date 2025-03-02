@@ -10,6 +10,20 @@ const HEADERS = {
   "x-rapidapi-key": import.meta.env.VITE_RAPIDAPI_KEY,
 };
 
+//Check for token expirtaion
+const isTokenExpired = (token) => {
+  try {
+    const payloadBase64 = token.split(".")[1]; // Extract payload from JWT
+    const decodedPayload = JSON.parse(atob(payloadBase64)); // Decode it
+    const currentTime = Math.floor(Date.now() / 1000); // Get current time in seconds
+
+    return decodedPayload.exp && currentTime > decodedPayload.exp; // Check expiration
+  } catch (error) {
+    console.error("Token decoding failed:", error);
+    return true; // Assume expired if decoding fails
+  }
+};
+
 /**
  * Get Authorization Headers
  */
