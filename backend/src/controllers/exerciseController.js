@@ -258,23 +258,16 @@ const completeExercise = async (req, res) => {
     // Emit WebSocket event
     const io = req.app.get("io"); //  Correct way to get io instance
     if (io) {
-      console.log("Emitting exerciseCompleted event with data:", {
-        username: user?.username || "Unknown User",
-        workoutType,
-        target,
-        level,
-        completedAt: completedWorkout.completedAt,
-      });
-
+      console.log("Emitting exerciseCompleted event...");
       io.to("admins").emit("exerciseCompleted", {
-        username: user?.username || "Unknown User",
+        username: user?.username || "Unkown User",
         workoutType,
         target,
         level,
         completedAt: completedWorkout.completedAt,
       });
     } else {
-      console.warn("WebSocket (io) is not available. Skipping event emission.");
+      console.warn("Websocket not available");
     }
 
     res.status(200).json({

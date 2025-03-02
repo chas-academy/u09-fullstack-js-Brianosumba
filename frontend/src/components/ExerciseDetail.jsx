@@ -237,29 +237,33 @@ const ExerciseDetail = () => {
       return;
     }
 
-    const updatedProgress = {
-      workoutsToday: Math.min(progress.workoutsToday + 1, 1),
-      workoutsThisWeek: Math.min(progress.workoutsThisWeek + 1, 3),
-      workoutsThisMonth: Math.min(progress.workoutsThisMonth + 1, 12),
-      strengthProgress: Math.min(progress.strengthProgress + 100 / 12, 100),
-    };
-
     try {
-      await axios.put(`${BASE_URL}/progress/${userId}`, updatedProgress, {
-        headers: getAuthHeaders(),
-      });
-
-      // Notify the admin that this workout is completed
       const completionData = {
         userId,
-        username: localStorage.getItem("username"),
         exerciseId,
         workoutType: exercise?.bodyPart || "N/A",
         target: exercise?.target || "N/A",
         level: "Beginner",
-        completedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(), // Ensure completion time is included
       };
 
+      // Save completion to the backend
+      await axios.post(`${BASE_URL}/exercises/complete`, completionData, {
+        headers: getAuthHeaders(),
+      });
+
+      // Update progress **immediately in state**
+      setProgress((prevProgress) => ({
+        workoutsToday: Math.min(prevProgress.workoutsToday + 1, 1),
+        workoutsThisWeek: Math.min(prevProgress.workoutsThisWeek + 1, 3),
+        workoutsThisMonth: Math.min(prevProgress.workoutsThisMonth + 1, 12),
+        strengthProgress: Math.min(
+          prevProgress.strengthProgress + 100 / 12,
+          100
+        ),
+      }));
+
+      // Emit event to WebSocket so the admin sees the update in real-time
       socket.emit("exerciseCompleted", completionData);
       console.log("Workout completion sent to admin:", completionData);
 

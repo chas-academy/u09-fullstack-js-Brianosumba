@@ -13,11 +13,23 @@ const HEADERS = {
 /**
  * Get Authorization Headers
  */
+
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
+
+  if (!token || isTokenExpired(token)) {
+    console.warn("No token found or token expired! Redirecting to login...");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login"; // Redirect user to login
+    return {};
+  }
+
+  console.log("Token being sent in headers:", token);
+
   return {
+    Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
   };
 };
 

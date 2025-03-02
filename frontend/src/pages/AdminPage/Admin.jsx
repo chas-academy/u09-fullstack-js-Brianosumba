@@ -127,10 +127,12 @@ const Admin = () => {
       socket.emit("joinAdminRoom");
     });
 
-    // Listen for exerciseCompleted event
+    // Listen for workout completion updates
     socket.on("exerciseCompleted", (data) => {
-      console.log("Received exercise completion:", data);
-      setExerciseCompletions((prev) => [data, ...prev]); // Add new completion to the list
+      console.log("Received workout completion:", data);
+
+      // Update admin’s workout completion table in real-time
+      setExerciseCompletions((prevCompletions) => [data, ...prevCompletions]);
     });
 
     return () => {

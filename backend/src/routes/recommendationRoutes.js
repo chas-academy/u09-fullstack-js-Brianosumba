@@ -20,11 +20,6 @@ router.delete(
   verifyAdmin,
   deleteRecommendation
 ); // Delete a recommendation(Admin only)
-router.patch(
-  "/:recommendationId",
-  verifyToken,
-  verifyAdmin,
-  editRecommendation
-); // Update a recommendation(Admin only)
+router.put("/:recommendationId", verifyToken, verifyAdmin, editRecommendation); // Update a recommendation(Admin only)
 
 module.exports = router;
