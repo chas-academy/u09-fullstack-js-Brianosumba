@@ -18,7 +18,7 @@ import {
   handleDeleteCompletedWorkout,
   getAuthHeaders,
 } from "../../services/exerciseService";
-import useAuthStore from "../../store/auth/useAuthStore";
+import useAuthStore from "../Store/store";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
