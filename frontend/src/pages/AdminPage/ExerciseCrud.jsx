@@ -33,6 +33,12 @@ export const getExercises = async () => {
  * Handle recommending an exercise
  */
 export const handleRecommendExercise = async (userId, exerciseId) => {
+  if (!userId || !exerciseId) {
+    console.error("Missing userId or exerciseId:", { userId, exerciseId });
+    alert("Invalid user or exercise selection.");
+    return;
+  }
+
   try {
     const recommendationPayload = {
       userId,
@@ -69,13 +75,25 @@ export const handleUpdateRecommendation = async (
   recommendationId,
   updatedFields
 ) => {
+  if (!recommendationId || !updatedFields.exerciseId) {
+    console.error("Missing recommendationId or updatedFields:", {
+      recommendationId,
+      updatedFields,
+    });
+    alert("Invalid recommendation update request.");
+    return;
+  }
+
   try {
     const response = await editRecommendation(recommendationId, updatedFields);
 
     console.log("Recommendation updated:", response);
 
-    // Emit event to notify ExerciseDetail.jsx
-    socket.emit("recommendationUpdated", { userId: response.userId });
+    // Ensure response contains userId before emitting socket event
+    const userId = response?.data?.userId || updatedFields.userId;
+    if (userId) {
+      socket.emit("recommendationUpdated", { userId });
+    }
 
     alert("Recommendation updated successfully!");
     return response;
@@ -89,15 +107,24 @@ export const handleUpdateRecommendation = async (
  * Handle deleting a recommendation
  */
 export const handleDeleteRecommendation = async (recommendationId) => {
+  if (!recommendationId) {
+    console.error("Missing recommendationId for deletion.");
+    alert("Invalid recommendation deletion request.");
+    return;
+  }
+
   try {
     const response = await deleteRecommendation(recommendationId);
-
     console.log(`Deleted recommendation with ID ${recommendationId}`);
 
-    // Emit event to notify ExerciseDetail.jsx
-    socket.emit("recommendationUpdated", { userId: response.userId });
+    // Ensure response contains userId before emitting socket event
+    const userId = response?.data?.userId;
+    if (userId) {
+      socket.emit("recommendationUpdated", { userId });
+    }
 
     alert("Recommendation deleted successfully!");
+    return response; // ✅ Return response to confirm successful deletion
   } catch (error) {
     console.error("Error deleting recommendation:", error.message || error);
     alert("Failed to delete recommendation. Please try again.");
@@ -108,11 +135,13 @@ export const handleDeleteRecommendation = async (recommendationId) => {
  * Fetch recommendations for the given user ID
  */
 export const fetchUserRecommendations = async (userId, setRecommendations) => {
-  try {
-    if (!userId) {
-      throw new Error("User ID is required to fetch recommendations");
-    }
+  if (!userId) {
+    console.error("User ID is required to fetch recommendations.");
+    alert("Invalid user ID.");
+    return;
+  }
 
+  try {
     const recommendations = await fetchRecommendations(userId);
     console.log(`Fetched recommendations for user ${userId}:`, recommendations);
 

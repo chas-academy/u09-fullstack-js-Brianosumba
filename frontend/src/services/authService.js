@@ -56,7 +56,7 @@ export const getStoredUser = () => {
 };
 
 //  Check if user is authenticated
-export const checkAuth = () => {
+export const checkAuth = async () => {
   console.log("Running checkAuth()...");
   const storedUser = getStoredUser();
 

@@ -8,7 +8,10 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { io } from "socket.io-client";
 import { isTokenExpired } from "../services/authService";
-import { getAuthHeaders } from "../services/exerciseService";
+import {
+  getAuthHeaders,
+  fetchRecommendations,
+} from "../services/exerciseService";
 
 const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
 
@@ -69,10 +72,12 @@ const ExerciseDetail = () => {
 
   // Save progress to locally
   useEffect(() => {
-    localStorage.setItem("workoutsToday", progress.workoutsToday);
-    localStorage.setItem("workoutsThisWeek", progress.workoutsThisWeek);
-    localStorage.setItem("workoutsThisMonth", progress.workoutsThisMonth);
-    localStorage.setItem("strengthProgress", progress.strengthProgress);
+    if (progress) {
+      localStorage.setItem("workoutsToday", progress.workoutsToday);
+      localStorage.setItem("workoutsThisWeek", progress.workoutsThisWeek);
+      localStorage.setItem("workoutsThisMonth", progress.workoutsThisMonth);
+      localStorage.setItem("strengthProgress", progress.strengthProgress);
+    }
   }, [progress]);
 
   // Fetch exercise details
@@ -89,116 +94,45 @@ const ExerciseDetail = () => {
           }
         );
         setExercise(response.data);
+        setError(null);
       } catch (error) {
         console.error("Failed to fetch exercise details:", error);
+        setError("Failed to load exercise details. Please try again.");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchExerciseDetail();
   }, [exerciseId]);
 
-  // Fetch recommended workouts
+  //Fetch recommended exercises
   useEffect(() => {
-    const fetchRecommendations = async () => {
-      if (!userId || !token || isTokenExpired(token)) {
-        console.error(
-          "User not authenticated or token expired. Redirecting to login..."
-        );
-        window.location.href = "/login";
-        return;
-      }
+    if (!userId || !token || isTokenExpired(token)) {
+      console.error(
+        "User not authenticated or token expired. Redirecting to login..."
+      );
+      window.location.href = "/login";
+      return;
+    }
 
-      try {
-        console.log("Fetching recommendations with headers:", getAuthHeaders());
+    // ✅ Call fetchRecommendations from exerciseService.js
+    fetchRecommendations(userId, setRecommendedWorkouts);
 
-        // Fetch recommendations from backend
-        const backendResponse = await axios.get(
-          `${BASE_URL}/recommendations/${userId}`,
-          {
-            headers: getAuthHeaders(),
-          }
-        );
-
-        console.log("Backend response:", backendResponse.data);
-        const recommendations = backendResponse.data;
-
-        if (!recommendations.length) {
-          console.warn("No recommendations found.");
-          setLoading(false);
-          return;
-        }
-
-        // Fetch exercise details for each recommendation
-        const recommendationWithDetails = await Promise.all(
-          recommendations.map(async (recommendation, index) => {
-            try {
-              const exerciseResponse = await axios.get(
-                `https://exercisedb.p.rapidapi.com/exercises/exercise/${recommendation.exerciseId}`,
-                {
-                  headers: {
-                    "X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY,
-                    "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
-                  },
-                }
-              );
-
-              return {
-                ...recommendation,
-                uniqueKey:
-                  recommendation.id || `${recommendation.exerciseId}-${index}`,
-                exerciseDetails: exerciseResponse.data,
-              };
-            } catch (error) {
-              console.error(
-                `Failed to fetch details for exerciseId: ${recommendation.exerciseId}`,
-                error
-              );
-
-              return {
-                ...recommendation,
-                uniqueKey:
-                  recommendation.id || `${recommendation.exerciseId}-${index}`,
-                exerciseDetails: {
-                  name: "Unknown",
-                  bodyPart: "Unknown",
-                  target: "Unknown",
-                  gifUrl: null,
-                },
-              };
-            }
-          })
-        );
-
-        setRecommendedWorkouts(recommendationWithDetails);
-      } catch (error) {
-        console.error("Failed to fetch recommended workouts:", error.message);
-
-        if (error.response) {
-          if (error.response.status === 403) {
-            console.warn(
-              "Redirecting to login due to invalid or expired token"
-            );
-            window.location.href = "/login";
-          } else if (error.response.status === 404) {
-            console.warn("No recommendations found for this user.");
-          } else {
-            console.error(
-              "Server error:",
-              error.response.status,
-              error.response.data
-            );
-          }
-        }
-
-        setError(
-          "Could not load recommended workouts. Please try again later."
-        );
-      } finally {
-        setLoading(false);
-      }
+    const handleRecommendationUpdate = (updatedRecommendations) => {
+      console.log(
+        "Live recommendation update received:",
+        updatedRecommendations
+      );
+      setRecommendedWorkouts(updatedRecommendations);
     };
 
-    fetchRecommendations();
+    socket.on("recommendationUpdated", handleRecommendationUpdate);
+
+    return () => {
+      console.log("Cleaning up WebSocket listener for recommendationUpdated");
+      socket.off("recommendationUpdated"); // Cleanup WebSocket listener on unmount
+    };
   }, [userId, token]);
 
   const handleDoneComplete = async () => {

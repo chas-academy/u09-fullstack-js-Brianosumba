@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import axios from "axios";
+import React, { useState, useEffect, useRef } from "react";
 import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import AdminCard from "../../components/AdminCard";
 import { FaBell } from "react-icons/fa";
-import io from "socket.io-client";
+import { socket } from "../../services/exerciseService";
 import {
   handleRecommendExercise,
   handleUpdateRecommendation,
@@ -11,17 +12,20 @@ import {
 } from "./ExerciseCrud";
 import { fetchUsers, updateUserStatus } from "../../services/userService";
 import EditRecommendationModal from "../../components/EditRecommendationModal";
-import axios from "axios";
 import {
   fetchAllRecommendations,
   fetchExercisesfromDB,
   handleDeleteCompletedWorkout,
   getAuthHeaders,
 } from "../../services/exerciseService";
+import useAuthStore from "../../store/auth/useAuthStore";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const Admin = () => {
+  const { isAuthenticated, token, logout } = useAuthStore();
+  const socketListenerAdded = useRef(false);
+
   const [users, setUsers] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -32,76 +36,51 @@ const Admin = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecommendation, setEditingRecommendation] = useState(null);
 
-  const token = localStorage.getItem("token");
-
-  // redirect to login if no valid token is found
+  //  Redirect to login if not authenticated
   useEffect(() => {
-    if (!token) {
-      alert("Session expired. Please log in again");
+    if (!isAuthenticated || !token) {
+      alert("Session expired. Please log in again.");
+      logout();
       window.location.href = "/login";
     }
-  }, [token]);
+  }, [isAuthenticated, token, logout]);
 
-  // Fetch users
+  // ✅ Fetch All Admin Data at Once (Users, Exercises, Recommendations)
   useEffect(() => {
-    const loadData = async () => {
+    if (!token) return;
+
+    const loadAdminData = async () => {
       try {
-        const usersData = await fetchUsers();
-        setUsers(usersData);
-        console.log("Fetched users:", usersData);
-      } catch (err) {
-        console.error("Error loading data:", err);
-        setError("Failed to load data. Please try again later");
-      }
-    };
-
-    loadData();
-  }, [token]);
-
-  // Fetch recommendations and exercises
-  useEffect(() => {
-    const loadRecommendations = async () => {
-      try {
-        const recommendationData = await fetchAllRecommendations();
-        console.log("Fetched Recommendations:", recommendationData);
-
-        if (!Array.isArray(recommendationData)) {
-          console.error("Invalid recommendations format:", recommendationData);
-          return;
-        }
-
-        const exerciseData = await fetchExercisesfromDB();
-        const recommendationsWithDetails = recommendationData.map((rec) => ({
-          ...rec,
-          exerciseDetails: exerciseData.find((ex) => ex.id === rec.exerciseId),
-        }));
-
-        console.log(
-          "Processed Recommendations with Exercise Details:",
-          recommendationsWithDetails
+        const [usersData, exerciseData, recommendationData] = await Promise.all(
+          [fetchUsers(), fetchExercisesfromDB(), fetchAllRecommendations()]
         );
-        setRecommendations(recommendationsWithDetails);
-      } catch (error) {
-        console.error("Error fetching recommendations:", error.message);
-      }
-    };
 
-    const loadExercises = async () => {
-      try {
-        const exerciseData = await fetchExercisesfromDB();
-        console.log("Fetched Exercises:", exerciseData);
+        setUsers(usersData);
         setExercises(exerciseData);
-      } catch (error) {
-        console.error("Error fetching exercises:", error.message);
+
+        // Map recommendations to include exercise details
+        setRecommendations(
+          recommendationData.map((rec) => ({
+            ...rec,
+            exerciseDetails:
+              exerciseData.find((ex) => ex._id === rec.exerciseId) || null, // ✅ Uses `_id` for accurate matching
+          }))
+        );
+
+        console.log("Admin Data Loaded Successfully");
+      } catch (err) {
+        console.error("Error loading admin data:", err);
+        setError("Failed to load admin data. Please try again later.");
       }
     };
 
-    loadRecommendations();
-    loadExercises();
-  }, [setRecommendations, setExercises]);
+    loadAdminData();
+  }, [token]);
 
-  // Fetch completed workouts from the backend
+  // ✅ Fetch Completed Workouts
   useEffect(() => {
+    if (!token || exerciseCompletions.length > 0) return;
+
     const fetchCompletedWorkouts = async () => {
       try {
         const response = await axios.get(`${BASE_URL}/exercises/completed`, {
@@ -114,67 +93,62 @@ const Admin = () => {
     };
 
     fetchCompletedWorkouts();
-  }, [token]);
+  }, [token, exerciseCompletions]);
 
-  // Setup Socket.IO
+  // ✅ WebSocket Setup for Real-Time Updates
   useEffect(() => {
-    const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
+    if (socketListenerAdded.current) return; // Prevent multiple listeners
 
-    socket.on("connect", () => {
-      console.log("Connected to server");
-      socket.emit("joinAdminRoom");
-    });
-
-    // Listen for workout completion updates
     socket.on("exerciseCompleted", (data) => {
-      console.log("Received workout completion:", data);
-
-      // Update admin’s workout completion table in real-time
-      setExerciseCompletions((prevCompletions) => [data, ...prevCompletions]);
+      console.log("📡 Live update - Exercise Completed:", data);
+      setExerciseCompletions((prev) => [data, ...prev]);
     });
+
+    socket.on("recommendationUpdated", (updatedRecommendations) => {
+      console.log(
+        "📡 Live update - Recommendations Updated:",
+        updatedRecommendations
+      );
+      setRecommendations(updatedRecommendations);
+    });
+
+    socketListenerAdded.current = true; // ✅ Ensures it runs only once
 
     return () => {
-      socket.disconnect();
+      socket.off("exerciseCompleted");
+      socket.off("recommendationUpdated");
+      socketListenerAdded.current = false; // ✅ Properly reset when component unmounts
     };
   }, []);
 
   const toggleStatus = async (userId) => {
-    const updatedUsers = users.map((user) =>
-      user._id === userId ? { ...user, isActive: !user.isActive } : user
-    );
-
-    setUsers(updatedUsers);
-
     try {
       await updateUserStatus(userId, token);
-      addNotification("User status updated successfully", "success");
-    } catch (err) {
-      console.error("Error updating user status:", err);
-      // Revert status on error
-      setUsers(
-        users.map((user) =>
+
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
           user._id === userId ? { ...user, isActive: !user.isActive } : user
         )
       );
+
+      addNotification("User status updated successfully", "success");
+    } catch (err) {
+      console.error("Error updating user status:", err);
       setError("Failed to update user status. Please try again.");
     }
   };
 
-  // **Add a notification**
+  // ✅ Notifications Handling
   const addNotification = (message, type) => {
-    setNotifications((prevNotifications) => [
-      ...prevNotifications,
-      { message, type },
-    ]);
-    setNotificationCount((prevCount) => prevCount + 1);
+    setNotifications((prev) => [...prev, { message, type }]);
+    setNotificationCount((prev) => prev + 1);
   };
 
-  // **Handle notifications click**
   const handleNotificationClick = () => {
     if (notifications.length > 0) {
       alert(notifications.map((n) => n.message).join("\n"));
-      setNotifications([]);
-      setNotificationCount(0);
+      setNotifications([]); // ✅ Clears notifications
+      setNotificationCount(0); // ✅ Ensures notification count resets properly
     } else {
       alert("No new notifications");
     }
@@ -345,37 +319,18 @@ const Admin = () => {
   };
 
   const onDeleteCompletedWorkout = async (workoutId) => {
-    console.log("Workout ID being deleted:", workoutId);
-
-    if (!workoutId) {
-      alert("Workout ID is required.");
-      return;
-    }
-
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this workout?"
     );
     if (!confirmDelete) return;
 
     try {
-      console.log("Sending delete request for workout:", workoutId);
-
       await handleDeleteCompletedWorkout(workoutId);
-
-      alert("Workout deleted successfully!");
-
-      // Update state to remove deleted workout
-      setExerciseCompletions((prev) =>
-        prev.filter((workout) => workout._id !== workoutId)
-      );
-
-      console.log("Updated workout completions after deletion.");
+      setExerciseCompletions((prev) => prev.filter((w) => w._id !== workoutId));
+      addNotification("Workout deleted successfully!", "success");
     } catch (error) {
-      console.error(
-        "Failed to delete workout:",
-        error.response?.data || error.message
-      );
-      alert("Failed to delete workout. Please try again.");
+      console.error("Failed to delete workout:", error.message);
+      addNotification("Failed to delete workout. Please try again.", "error");
     }
   };
 

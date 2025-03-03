@@ -4,10 +4,9 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import ForgotPasswordModal from "../../components/ForgotPaswordModal"; // Ensure path is correct
 import { useNavigate } from "react-router-dom";
-import useAuthStore from "../Store/store";
-import { loginWithCredentials } from "../../services/authService";
+import useAuthStore from "../../store/auth/useAuthStore"; // ✅ Correct Zustand store import
 
-// Validation schema for form input
+// ✅ Validation Schema
 const schema = yup.object().shape({
   email: yup
     .string()
@@ -20,15 +19,16 @@ const schema = yup.object().shape({
 });
 
 const Login = () => {
-  const { login } = useAuthStore(); // Zustand's login action
-  const [showPassword, setShowPassword] = useState(false); // Toggle for password visibility
-  const [loading, setLoading] = useState(false); // Loading state during form submission
-  const [rememberMe, setRememberMe] = useState(false); // Checkbox for "Remember Me"
-  const [showModal, setShowModal] = useState(false); // State for Forgot Password modal
-  const [error, setError] = useState(""); // State for login error message
-  const navigate = useNavigate(); // Navigation hook
+  const { login } = useAuthStore(); // ✅ Zustand's login action
+  const navigate = useNavigate(); // ✅ Navigation Hook
 
-  // Form management with react-hook-form
+  const [showPassword, setShowPassword] = useState(false); // ✅ Toggle Password Visibility
+  const [loading, setLoading] = useState(false); // ✅ Loading State
+  const [rememberMe, setRememberMe] = useState(false); // ✅ Remember Me Checkbox
+  const [showModal, setShowModal] = useState(false); // ✅ Forgot Password Modal State
+  const [error, setError] = useState(""); // ✅ Error Message State
+
+  // ✅ Form management with `react-hook-form`
   const {
     register,
     handleSubmit,
@@ -37,21 +37,33 @@ const Login = () => {
     resolver: yupResolver(schema),
   });
 
-  // Form submission handler with offline support
+  // ✅ Login Submission Handler
   const onSubmit = async (data) => {
     setLoading(true);
     setError("");
 
     try {
-      console.log("Online mode: Sending login request...");
-      const userData = await loginWithCredentials(data.email, data.password);
+      console.log("🟢 Sending login request...");
 
-      console.log("Login successful:", userData);
-      alert("Login successful!");
-      navigate("/userpage");
+      // ✅ Call Zustand's `login` action
+      const response = await login(data.email, data.password);
+
+      if (!response.success) {
+        setError(response.message || "Login failed. Please try again.");
+        return;
+      }
+
+      console.log("✅ Login successful:", response);
+
+      // ✅ Redirect based on user role
+      if (response.isAdmin) {
+        navigate("/admin-dashboard"); // Redirect Admin
+      } else {
+        navigate("/userpage"); // Redirect Normal User
+      }
     } catch (err) {
-      console.error("Login error:", err.message);
-      setError(err.message);
+      console.error("❌ Login error:", err.message || err);
+      setError(err.message || "An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -65,7 +77,7 @@ const Login = () => {
       >
         <h2 className="text-2xl font-bold mb-5 text-center text-navy">Login</h2>
 
-        {/* Email Input */}
+        {/* ✅ Email Input */}
         <div className="mb-4">
           <label htmlFor="email" className="block text-gray-700 font-bold mb-2">
             Email
@@ -84,7 +96,7 @@ const Login = () => {
           )}
         </div>
 
-        {/* Password Input */}
+        {/* ✅ Password Input */}
         <div className="mb-4">
           <label
             htmlFor="password"
@@ -117,7 +129,7 @@ const Login = () => {
           )}
         </div>
 
-        {/* Remember Me Checkbox */}
+        {/* ✅ Remember Me Checkbox */}
         <div className="mb-4">
           <label className="flex items-center">
             <input
@@ -130,7 +142,7 @@ const Login = () => {
           </label>
         </div>
 
-        {/* Forgot Password Link */}
+        {/* ✅ Forgot Password Link */}
         <div className="mb-4 text-right">
           <button
             type="button"
@@ -141,7 +153,7 @@ const Login = () => {
           </button>
         </div>
 
-        {/* Submit Button */}
+        {/* ✅ Submit Button */}
         <button
           type="submit"
           className={`w-full py-2 rounded ${
@@ -152,10 +164,10 @@ const Login = () => {
           {loading ? "Logging in..." : "Login"}
         </button>
 
-        {/* Error Message */}
+        {/* ✅ Error Message */}
         {error && <p className="text-red-500 text-sm mt-2">❌ {error}</p>}
 
-        {/* Sign Up Link */}
+        {/* ✅ Sign Up Link */}
         <div className="mt-4 text-center">
           <p className="text-gray-700">
             Don&#39;t have an account yet?
@@ -166,7 +178,7 @@ const Login = () => {
         </div>
       </form>
 
-      {/* Forgot Password Modal */}
+      {/* ✅ Forgot Password Modal */}
       <ForgotPasswordModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
