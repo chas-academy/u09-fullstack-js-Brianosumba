@@ -5,7 +5,10 @@ import { isTokenExpired } from "./authService";
 // Base URLs
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 const EXERCISE_DB_API = "https://exercisedb.p.rapidapi.com/exercises";
-const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
+
+export const socket = io(import.meta.env.VITE_API_URL, {
+  withCredentials: true,
+});
 
 let socketListenerAdded = false;
 
