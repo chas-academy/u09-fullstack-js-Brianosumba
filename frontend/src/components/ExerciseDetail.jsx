@@ -85,7 +85,7 @@ const ExerciseDetail = () => {
     const fetchExerciseDetail = async () => {
       try {
         const response = await axios.get(
-          `https://exercisedb.p.rapidapi.com/exercises/exercise/${exerciseId}`,
+          `https://exercisedb.p.rapidapi.com/exercises/${exerciseId}`,
           {
             headers: {
               "X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY,
