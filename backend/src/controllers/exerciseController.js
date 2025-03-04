@@ -3,7 +3,6 @@ const User = require("../models/User");
 const RecommendedExercise = require("../models/crud/RecommendExercise");
 const WorkoutCompletion = require("../models/WorkoutCompletion");
 const axios = require("axios");
-const io = require("../socket");
 
 // Get all recommendations for all users
 const getAllRecommendations = async (req, res) => {

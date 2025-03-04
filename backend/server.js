@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 const http = require("http");
-const socketIo = require("socket.io");
+const { Server } = require("socket.io"); //  Use `Server` from `socket.io`
 
 const app = express();
 
@@ -28,96 +28,109 @@ app.use(
   })
 );
 
-// HTTP server and Socket.IO
+//  Create HTTP server & WebSocket instance
 const server = http.createServer(app);
-const io = socketIo(server, {
+const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "https://fitnesstracker-app.netlify.app"],
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },
 });
 
-// Socket.IO logic
+//  Attach `io` globally so controllers can access it
+app.set("io", io);
+
+//  WebSocket Events
 io.on("connection", (socket) => {
-  console.log("A client is connected:", socket.id);
+  console.log("🔥 A client connected:", socket.id);
 
   socket.on("joinAdminRoom", () => {
     socket.join("admins");
-    console.log("A client joined the admins room");
+    console.log("🔹 Client joined the admins room");
+  });
+
+  //  WebSocket event for real-time recommendation updates
+  socket.on("recommendationUpdated", (data) => {
+    console.log("📡 Sending real-time recommendation update:", data);
+    io.emit("recommendationUpdated", data);
+  });
+
+  //  WebSocket event for workout deletions
+  socket.on("workoutDeleted", (data) => {
+    console.log("📡 Workout deleted, notifying users:", data);
+    io.emit("workoutDeleted", data);
   });
 
   socket.on("disconnect", () => {
-    console.log("A client disconnected:", socket.id);
+    console.log(" A client disconnected:", socket.id);
   });
 });
 
-// Attach io to req
+//  Middleware to attach `io` to requests (if needed in routes)
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// Routes
+//  Routes
 app.use("/api/users", require("./src/routes/user"));
 app.use("/api/auth", require("./src/routes/auth"));
 app.use("/api/recommendations", require("./src/routes/recommendationRoutes"));
 app.use("/api/exercises", require("./src/routes/exerciseRoutes"));
 app.use("/api/progress", require("./src/routes/progressRoutes"));
 
-// Check if MongoDB URI is set
+//  Check MongoDB connection
 if (!process.env.MONGODB_URI) {
   console.error(
-    "MONGODB_URI is not set. Please check your environment variables."
+    " MONGODB_URI is not set. Please check your environment variables."
   );
-  process.exit(1); // Exit the process if URI is not set
+  process.exit(1);
 }
 
-// Connect to MongoDB
+//  Connect to MongoDB
 mongoose
   .connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true, // Recommended for better parsing
-    useUnifiedTopology: true, // Recommended for modern connection management
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
   })
-  .then(() => {
-    console.log("Connected to MongoDB successfully.");
-  })
+  .then(() => console.log(" MongoDB Connected Successfully"))
   .catch((err) => {
-    console.error("Failed to connect to MongoDB:", err.message);
-    process.exit(1); // Exit the process if connection fails
+    console.error(" MongoDB Connection Error:", err.message);
+    process.exit(1);
   });
 
-// Monitor MongoDB connection events
+//  Monitor MongoDB connection
 mongoose.connection.on("connected", () => {
-  console.log("MongoDB connection established.");
+  console.log("✅ MongoDB connection established.");
 });
 
 mongoose.connection.on("error", (err) => {
-  console.error("MongoDB connection error:", err.message);
+  console.error(" MongoDB connection error:", err.message);
 });
 
 mongoose.connection.on("disconnected", () => {
-  console.warn("MongoDB connection lost.");
+  console.warn("⚠️ MongoDB connection lost.");
 });
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
-  console.log("Shutting down...");
+  console.log("⚠️ Shutting down...");
   try {
     await mongoose.disconnect();
-    console.log("Disconnected from MongoDB.");
+    console.log(" Disconnected from MongoDB.");
     server.close(() => {
-      console.log("Server closed.");
+      console.log(" Server closed.");
       process.exit(0);
     });
   } catch (err) {
-    console.error("Error during shutdown:", err.message);
+    console.error(" Error during shutdown:", err.message);
     process.exit(1);
   }
 });
 
-// Start the server
+//  Start the server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(` Server running on port ${PORT}`);
 });
