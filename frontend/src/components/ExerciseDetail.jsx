@@ -116,24 +116,33 @@ const ExerciseDetail = () => {
       return;
     }
 
-    // ✅ Call fetchRecommendations from exerciseService.js
+    // fetch recommendations
     fetchRecommendations(userId, setRecommendedWorkouts);
 
-    const handleRecommendationUpdate = (updatedRecommendations) => {
-      console.log(
-        "Live recommendation update received:",
-        updatedRecommendations
-      );
-      setRecommendedWorkouts(updatedRecommendations);
-    };
+    //Ensure websocket listner is added only once
+    if (!socketListnerAdded.current) {
+      const handleRecommendationUpdate = (updatedRecommendations) => {
+        console.log(
+          "Live recommendation update received:",
+          updatedRecommendations
+        );
+        setRecommendedWorkouts(updatedRecommendations);
+      };
 
-    socket.on("recommendationUpdated", handleRecommendationUpdate);
+      socket.on("recommendationUpdated", handleRecommendationUpdate);
+      socketListnerAdded.current = true;
 
-    return () => {
-      console.log("Cleaning up WebSocket listener for recommendationUpdated");
-      socket.off("recommendationUpdated"); // Cleanup WebSocket listener on unmount
-    };
+      //Cleanup function
+      return () => {
+        console.log("Cleaning up Websocket listener for recommendationUpdated");
+        socket.off("recommendationUpdated", handleRecommendationUpdate);
+      };
+    }
   }, [userId, token]);
+
+  useEffect(() => {
+    console.log("updated recommended workouts:", recommendedWorkouts);
+  }, [recommendedWorkouts]);
 
   const handleDoneComplete = async () => {
     if (!userId || !token || !exerciseId || isTokenExpired(token)) {

@@ -84,6 +84,7 @@ export const fetchAllRecommendations = async () => {
 /**
  * Fetch User-Specific Recommendations
  */
+
 export const fetchRecommendations = async (userId, setRecommendedWorkouts) => {
   if (!userId) {
     throw new Error("User ID is required to fetch recommendations.");
@@ -91,6 +92,7 @@ export const fetchRecommendations = async (userId, setRecommendedWorkouts) => {
 
   try {
     console.log(`Fetching recommendations for user ${userId}...`);
+
     const response = await axios.get(`${BASE_URL}/recommendations/${userId}`, {
       headers: getAuthHeaders(),
     });
@@ -100,104 +102,20 @@ export const fetchRecommendations = async (userId, setRecommendedWorkouts) => {
 
     if (!recommendations.length) {
       console.warn("No recommendations found.");
-      setRecommendedWorkouts([]);
+      setRecommendedWorkouts([]); // Ensure empty state update
       return;
     }
 
-    // Fetch exercise details for each recommendation
-    const recommendationWithDetails = await Promise.all(
-      recommendations.map(async (recommendation, index) => {
-        try {
-          const exerciseResponse = await axios.get(
-            `${EXERCISE_DB_API}/${recommendation.exerciseId}`,
-            {
-              headers: HEADERS,
-            }
-          );
-
-          return {
-            ...recommendation,
-            uniqueKey:
-              recommendation.id || `${recommendation.exerciseId}-${index}`,
-            exerciseDetails: exerciseResponse.data,
-          };
-        } catch (error) {
-          console.error(
-            `Failed to fetch details for exerciseId: ${recommendation.exerciseId}`,
-            error
-          );
-
-          return {
-            ...recommendation,
-            uniqueKey:
-              recommendation.id || `${recommendation.exerciseId}-${index}`,
-            exerciseDetails: {
-              name: "Unknown",
-              bodyPart: "Unknown",
-              target: "Unknown",
-              gifUrl: null,
-            },
-          };
-        }
+    // ✅ Use `exerciseDetails` directly from backend
+    const recommendationsWithDetails = recommendations.map(
+      (recommendation, index) => ({
+        ...recommendation,
+        uniqueKey:
+          recommendation._id || `${recommendation.exerciseId}-${index}`,
       })
     );
 
-    setRecommendedWorkouts(recommendationWithDetails);
-
-    // ✅ Prevent multiple WebSocket listeners
-    if (!socketListenerAdded) {
-      socket.on("recommendationUpdated", async (updatedRecommendations) => {
-        console.log(
-          "Live recommendation update received:",
-          updatedRecommendations
-        );
-
-        // Fetch updated exercise details for real-time updates
-        const updatedRecommendationsWithDetails = await Promise.all(
-          updatedRecommendations.map(async (recommendation, index) => {
-            try {
-              const exerciseResponse = await axios.get(
-                `${EXERCISE_DB_API}/exercise/${recommendation.exerciseId}`,
-                {
-                  headers: {
-                    "X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY,
-                    "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
-                  },
-                }
-              );
-
-              return {
-                ...recommendation,
-                uniqueKey:
-                  recommendation.id || `${recommendation.exerciseId}-${index}`,
-                exerciseDetails: exerciseResponse.data,
-              };
-            } catch (error) {
-              console.error(
-                `Failed to fetch details for exerciseId: ${recommendation.exerciseId}`,
-                error
-              );
-
-              return {
-                ...recommendation,
-                uniqueKey:
-                  recommendation.id || `${recommendation.exerciseId}-${index}`,
-                exerciseDetails: {
-                  name: "Unknown",
-                  bodyPart: "Unknown",
-                  target: "Unknown",
-                  gifUrl: null,
-                },
-              };
-            }
-          })
-        );
-
-        setRecommendedWorkouts(updatedRecommendationsWithDetails);
-      });
-
-      socketListenerAdded = true;
-    }
+    setRecommendedWorkouts(recommendationsWithDetails);
   } catch (error) {
     console.error(
       "Error fetching user-specific recommendations:",
