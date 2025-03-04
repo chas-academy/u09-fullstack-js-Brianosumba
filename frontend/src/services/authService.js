@@ -81,19 +81,22 @@ export const checkAuth = async () => {
 // Register a user
 export const registerUser = async (userData) => {
   try {
-    console.log("Registering user...");
+    console.log(" Registering user with data:", userData);
+
     const response = await axios.post(`${BASE_URL}/register`, userData, {
       withCredentials: true,
     });
 
+    console.log(" Registration response:", response.data);
     const { token, user } = response.data;
     saveUserSession(token, user);
 
-    console.log("Registration successful.");
     return { token, user };
   } catch (error) {
-    console.error("Registration failed:", error.message || error);
-    throw new Error("Registration failed. Please try again.");
+    console.error(" Registration failed:", error.response?.data || error);
+    throw new Error(
+      error.response?.data?.message || "Registration failed. Please try again."
+    );
   }
 };
 

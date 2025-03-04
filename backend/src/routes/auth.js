@@ -58,11 +58,16 @@ router.post("/register", async (req, res) => {
     // Save the new user to the database
     await newUser.save();
 
+    //Generate a token after succesful login
+    const token = generateToken(newUser);
+
     // Send a success response
     res.status(201).json({
       message: isAdmin
         ? "Admin registered successfully"
         : "User registered successfully",
+      token,
+      user: { id: newUser._id, username, email, isAdmin },
     });
   } catch (error) {
     // Handle any errors that occur during registration
