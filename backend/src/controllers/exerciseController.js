@@ -132,6 +132,7 @@ const recommendExercise = async (req, res) => {
     console.log(" Exercise recommended successfully:", recommendation);
 
     //  Emit WebSocket Event
+    const io = req.app.get("io");
     io.emit("recommendationUpdated", { userId });
 
     res.status(201).json({
@@ -172,6 +173,7 @@ const deleteRecommendation = async (req, res) => {
     console.log(" Successfully deleted:", recommendationId);
 
     //  Emit WebSocket event to update the user in real-time
+    const io = req.app.get("io");
     io.emit("recommendationUpdated", { userId: deletedRecommendation.userId });
 
     res
@@ -230,6 +232,7 @@ const editRecommendation = async (req, res) => {
     console.log(" Recommendation updated successfully:", updatedRecommendation);
 
     //  Emit WebSocket Event
+    const io = req.app.get("io");
     io.emit("recommendationUpdated", { userId: updatedRecommendation.userId });
 
     res.status(200).json({
@@ -273,7 +276,7 @@ const completeExercise = async (req, res) => {
     const user = await User.findById(userId).select("username");
 
     // Emit WebSocket event
-    const io = req.app.get("io"); //  Correct way to get io instance
+    const io = req.app.get("io");
     if (io) {
       console.log("Emitting exerciseCompleted event...");
       io.to("admins").emit("exerciseCompleted", {
