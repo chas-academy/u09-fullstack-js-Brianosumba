@@ -79,7 +79,7 @@ export const checkAuth = async () => {
 };
 
 // Register a user
-export const register = async (userData) => {
+export const registerUser = async (userData) => {
   try {
     console.log("Registering user...");
     const response = await axios.post(`${BASE_URL}/register`, userData, {

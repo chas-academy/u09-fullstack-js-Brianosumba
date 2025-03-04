@@ -1,5 +1,9 @@
 import { create } from "zustand";
-import { loginWithCredentials, checkAuth } from "../../services/authService";
+import {
+  loginWithCredentials,
+  registerUser,
+  checkAuth,
+} from "../../services/authService";
 import { socket } from "../../services/exerciseService";
 
 const useAuthStore = create((set) => ({
@@ -8,6 +12,40 @@ const useAuthStore = create((set) => ({
   isAdmin: false,
   token: "",
   userId: "",
+
+  // ✅ Register Function
+  register: async ({ username, email, password }) => {
+    console.log("🔹 Registering user...");
+    try {
+      const { token, user } = await registerUser({ username, email, password });
+
+      if (!token || !user) {
+        console.error(" Registration failed: No token/user returned.");
+        return { success: false, message: "Registration failed." };
+      }
+
+      //  Store Token & User Info in Local Storage
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      set({
+        isAuthenticated: true,
+        username: user.username,
+        token,
+        isAdmin: user.isAdmin || false,
+        userId: user.id,
+      });
+
+      console.log(" Registration successful:", user);
+      return { success: true, user };
+    } catch (error) {
+      console.error(" Registration error:", error.message || error);
+      return {
+        success: false,
+        message: error.message || "Registration failed.",
+      };
+    }
+  },
 
   //  Login Function
   login: async (email, password) => {
