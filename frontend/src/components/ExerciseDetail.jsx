@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import NavBar from "../components/NavBar";
@@ -12,6 +12,8 @@ import {
   getAuthHeaders,
   fetchRecommendations,
 } from "../services/exerciseService";
+
+const socketListenerAdded = useRef(false);
 
 const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
 
@@ -120,7 +122,7 @@ const ExerciseDetail = () => {
     fetchRecommendations(userId, setRecommendedWorkouts);
 
     //Ensure websocket listner is added only once
-    if (!socketListnerAdded.current) {
+    if (!socketListenerAdded.current) {
       const handleRecommendationUpdate = (updatedRecommendations) => {
         console.log(
           "Live recommendation update received:",
@@ -130,7 +132,7 @@ const ExerciseDetail = () => {
       };
 
       socket.on("recommendationUpdated", handleRecommendationUpdate);
-      socketListnerAdded.current = true;
+      socketListenerAdded.current = true;
 
       //Cleanup function
       return () => {
