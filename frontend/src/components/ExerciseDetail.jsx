@@ -107,7 +107,7 @@ const ExerciseDetail = () => {
     fetchExerciseDetail();
   }, [exerciseId]);
 
-  //Fetch recommended exercises
+  //  Ensure socket listener is added only once
   useEffect(() => {
     if (!userId || !token || isTokenExpired(token)) {
       console.error(
@@ -117,32 +117,33 @@ const ExerciseDetail = () => {
       return;
     }
 
-    // fetch recommendations
+    //  Fetch initial recommendations
     fetchRecommendations(userId, setRecommendedWorkouts);
 
-    //Ensure websocket listner is added only once
-    if (!socketListenerAdded.current) {
-      const handleRecommendationUpdate = (updatedRecommendations) => {
-        console.log(
-          "Live recommendation update received:",
-          updatedRecommendations
-        );
-        setRecommendedWorkouts(updatedRecommendations);
-      };
+    const handleRecommendationUpdate = (updatedRecommendations) => {
+      console.log(
+        " Live recommendation update received:",
+        updatedRecommendations
+      );
+      setRecommendedWorkouts(updatedRecommendations);
+    };
 
+    //  Only add WebSocket listener once
+    if (!socketListenerAdded.current) {
       socket.on("recommendationUpdated", handleRecommendationUpdate);
       socketListenerAdded.current = true;
-
-      //Cleanup function
-      return () => {
-        console.log("Cleaning up Websocket listener for recommendationUpdated");
-        socket.off("recommendationUpdated", handleRecommendationUpdate);
-      };
     }
+
+    //  Cleanup WebSocket listener properly
+    return () => {
+      console.log(" Cleaning up WebSocket listener for recommendationUpdated");
+      socket.off("recommendationUpdated", handleRecommendationUpdate);
+    };
   }, [userId, token]);
 
+  //  Debugging: Log when recommendations are updated
   useEffect(() => {
-    console.log("updated recommended workouts:", recommendedWorkouts);
+    console.log(" Updated recommended workouts:", recommendedWorkouts);
   }, [recommendedWorkouts]);
 
   const handleDoneComplete = async () => {

@@ -3,6 +3,7 @@ const User = require("../models/User");
 const RecommendedExercise = require("../models/crud/RecommendExercise");
 const WorkoutCompletion = require("../models/WorkoutCompletion");
 const axios = require("axios");
+const io = require("../socket");
 
 // Get all recommendations for all users
 const getAllRecommendations = async (req, res) => {
@@ -113,12 +114,14 @@ const recommendExercise = async (req, res) => {
         .status(400)
         .json({ success: false, error: "userId and exerciseId are required" });
     }
+
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
         error: "Invalid User Id or Exercise ID.",
       });
     }
+
     const recommendation = new RecommendedExercise({
       userId,
       exerciseId,
@@ -127,14 +130,18 @@ const recommendExercise = async (req, res) => {
     });
 
     await recommendation.save();
-    console.log("Exercise recommended successfully:", recommendation);
+    console.log(" Exercise recommended successfully:", recommendation);
+
+    //  Emit WebSocket Event
+    io.emit("recommendationUpdated", { userId });
+
     res.status(201).json({
       success: true,
       message: "Exercise recommended successfully",
       data: recommendation,
     });
   } catch (error) {
-    console.error("Error recommending exercise:", error.message);
+    console.error(" Error recommending exercise:", error.message);
     res.status(500).json({ error: "Failed to recommend exercise." });
   }
 };
@@ -152,21 +159,27 @@ const deleteRecommendation = async (req, res) => {
         .json({ success: false, error: "Invalid Recommendation ID." });
     }
 
+    //  Find and delete recommendation
     const deletedRecommendation = await RecommendedExercise.findByIdAndDelete(
       recommendationId
     );
+
     if (!deletedRecommendation) {
       return res
         .status(404)
         .json({ success: false, error: "Recommendation not found." });
     }
 
-    console.log("Successfully deleted:", recommendationId);
+    console.log(" Successfully deleted:", recommendationId);
+
+    //  Emit WebSocket event to update the user in real-time
+    io.emit("recommendationUpdated", { userId: deletedRecommendation.userId });
+
     res
       .status(200)
       .json({ success: true, message: "Recommendation deleted successfully" });
   } catch (error) {
-    console.error("Error deleting recommendation:", error.message);
+    console.error(" Error deleting recommendation:", error.message);
     res
       .status(500)
       .json({ success: false, error: "Failed to delete recommendation" });
@@ -194,6 +207,7 @@ const editRecommendation = async (req, res) => {
         .status(400)
         .json({ success: false, error: "Invalid Exercise ID format." });
     }
+
     const updateData = {
       exerciseId,
       notes: notes.trim(),
@@ -214,7 +228,10 @@ const editRecommendation = async (req, res) => {
         .json({ success: false, error: "Recommendation not found." });
     }
 
-    console.log("Recommendation updated successfully:", updatedRecommendation);
+    console.log(" Recommendation updated successfully:", updatedRecommendation);
+
+    //  Emit WebSocket Event
+    io.emit("recommendationUpdated", { userId: updatedRecommendation.userId });
 
     res.status(200).json({
       success: true,
@@ -222,7 +239,7 @@ const editRecommendation = async (req, res) => {
       data: updatedRecommendation,
     });
   } catch (error) {
-    console.error("Error editing recommendation:", error.message);
+    console.error(" Error editing recommendation:", error.message);
     res.status(500).json({ error: "Failed to update recommendation." });
   }
 };
