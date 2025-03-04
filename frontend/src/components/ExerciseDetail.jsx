@@ -107,7 +107,7 @@ const ExerciseDetail = () => {
     fetchExerciseDetail();
   }, [exerciseId]);
 
-  //  Ensure socket listener is added only once
+  //  Fetch initial recommendations and set up real-time updates
   useEffect(() => {
     if (!userId || !token || isTokenExpired(token)) {
       console.error(
@@ -117,15 +117,18 @@ const ExerciseDetail = () => {
       return;
     }
 
-    //  Fetch initial recommendations
+    //  Fetch recommendations when the component mounts
     fetchRecommendations(userId, setRecommendedWorkouts);
 
-    const handleRecommendationUpdate = (updatedRecommendations) => {
-      console.log(
-        " Live recommendation update received:",
-        updatedRecommendations
-      );
-      setRecommendedWorkouts(updatedRecommendations);
+    //handle websockets event for real-time updates
+    const handleRecommendationUpdate = (data) => {
+      if (data.userId === userId) {
+        console.log(
+          " Live recommendation update received:",
+          updatedRecommendations
+        );
+        setRecommendedWorkouts(updatedRecommendations);
+      }
     };
 
     //  Only add WebSocket listener once

@@ -131,9 +131,15 @@ const recommendExercise = async (req, res) => {
     await recommendation.save();
     console.log(" Exercise recommended successfully:", recommendation);
 
+    //Fetch updated recommendations
+    const updatedRecommendations = await RecommendedExercise.find({ userId });
+
     //  Emit WebSocket Event
     const io = req.app.get("io");
-    io.emit("recommendationUpdated", { userId });
+    io.emit("recommendationUpdated", {
+      userId,
+      recommendations: updatedRecommendations, //Send updated recommendations
+    });
 
     res.status(201).json({
       success: true,
@@ -172,9 +178,17 @@ const deleteRecommendation = async (req, res) => {
 
     console.log(" Successfully deleted:", recommendationId);
 
+    //fetch updated recommendations
+    const updatedRecommendations = await RecommendedExercise.find({
+      userId: deleteRecommendation.userId,
+    });
+
     //  Emit WebSocket event to update the user in real-time
     const io = req.app.get("io");
-    io.emit("recommendationUpdated", { userId: deletedRecommendation.userId });
+    io.emit("recommendationUpdated", {
+      userId: deletedRecommendation.userId,
+      recommendations: updatedRecommendations,
+    });
 
     res
       .status(200)
@@ -231,9 +245,17 @@ const editRecommendation = async (req, res) => {
 
     console.log(" Recommendation updated successfully:", updatedRecommendation);
 
+    //Fetch updated recommendations
+    const updatedRecommendations = await RecommendedExercise.find({
+      userId: updatedRecommendation.userId,
+    });
+
     //  Emit WebSocket Event
     const io = req.app.get("io");
-    io.emit("recommendationUpdated", { userId: updatedRecommendation.userId });
+    io.emit("recommendationUpdated", {
+      userId: updatedRecommendation.userId,
+      recommendations: updatedRecommendations,
+    });
 
     res.status(200).json({
       success: true,
