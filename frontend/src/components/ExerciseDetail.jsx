@@ -124,18 +124,17 @@ const ExerciseDetail = () => {
     const handleRecommendationUpdate = (data) => {
       if (data.userId === userId) {
         console.log(
-          " Live recommendation update received:",
-          updatedRecommendations
+          " Live recommendation update received! Fetching fresh recommendations"
         );
-        setRecommendedWorkouts(data.recommendations);
+
+        fetchRecommendations(userId, setRecommendedWorkouts);
       }
     };
 
     const handleRecommendationDeleted = (recommendationId) => {
       console.log("Live update - Recommendation Deleted:", recommendationId);
-      setRecommendedWorkouts((prev) =>
-        prev.filter((rec) => rec._id !== recommendationId)
-      );
+
+      fetchRecommendations(userId, setRecommendedWorkouts);
     };
 
     //  Only add WebSocket listener once
@@ -152,7 +151,7 @@ const ExerciseDetail = () => {
       socket.off("recommendationDeleted", handleRecommendationDeleted);
       socketListenerAdded.current = false;
     };
-  }, [userId, token]);
+  }, [userId]);
 
   //  Debugging: Log when recommendations are updated
   useEffect(() => {
