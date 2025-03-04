@@ -13,8 +13,6 @@ import {
   fetchRecommendations,
 } from "../services/exerciseService";
 
-const socketListenerAdded = useRef(false);
-
 const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -32,6 +30,7 @@ const ExerciseDetail = () => {
     workoutsThisMonth: 0,
     strengthProgress: 0,
   });
+  const socketListenerAdded = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
