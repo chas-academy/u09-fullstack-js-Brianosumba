@@ -127,13 +127,21 @@ const ExerciseDetail = () => {
           " Live recommendation update received:",
           updatedRecommendations
         );
-        setRecommendedWorkouts(updatedRecommendations);
+        setRecommendedWorkouts(data.recommendations);
       }
+    };
+
+    const handleRecommendationDeleted = (recommendationId) => {
+      console.log("Live update - Recommendation Deleted:", recommendationId);
+      setRecommendedWorkouts((prev) =>
+        prev.filter((rec) => rec._id !== recommendationId)
+      );
     };
 
     //  Only add WebSocket listener once
     if (!socketListenerAdded.current) {
       socket.on("recommendationUpdated", handleRecommendationUpdate);
+      socket.on("recommendationDeleted", handleRecommendationDeleted);
       socketListenerAdded.current = true;
     }
 
@@ -141,6 +149,8 @@ const ExerciseDetail = () => {
     return () => {
       console.log(" Cleaning up WebSocket listener for recommendationUpdated");
       socket.off("recommendationUpdated", handleRecommendationUpdate);
+      socket.off("recommendationDeleted", handleRecommendationDeleted);
+      socketListenerAdded.current = false;
     };
   }, [userId, token]);
 

@@ -95,7 +95,6 @@ const Admin = () => {
     fetchCompletedWorkouts();
   }, [token, exerciseCompletions]);
 
-  // ✅ WebSocket Setup for Real-Time Updates
   useEffect(() => {
     if (socketListenerAdded.current) return; // Prevent multiple listeners
 
@@ -104,20 +103,22 @@ const Admin = () => {
       setExerciseCompletions((prev) => [data, ...prev]);
     });
 
-    socket.on("recommendationUpdated", (updatedRecommendations) => {
-      console.log(
-        "📡 Live update - Recommendations Updated:",
-        updatedRecommendations
-      );
-      setRecommendations(updatedRecommendations);
+    socket.on("recommendationUpdated", (data) => {
+      console.log(" Live update - Recommendations Updated:", data);
+      setRecommendations((prevRecommendations) => {
+        const updatedUserRecommendations = data.recommendations;
+        return prevRecommendations.map((rec) =>
+          rec.userId === data.userId ? updatedUserRecommendations : rec
+        );
+      });
     });
 
-    socketListenerAdded.current = true; // ✅ Ensures it runs only once
+    socketListenerAdded.current = true; //  Ensures it runs only once
 
     return () => {
       socket.off("exerciseCompleted");
       socket.off("recommendationUpdated");
-      socketListenerAdded.current = false; // ✅ Properly reset when component unmounts
+      socketListenerAdded.current = false; //  Properly reset when component unmounts
     };
   }, []);
 
@@ -138,7 +139,7 @@ const Admin = () => {
     }
   };
 
-  // ✅ Notifications Handling
+  //  Notifications Handling
   const addNotification = (message, type) => {
     setNotifications((prev) => [...prev, { message, type }]);
     setNotificationCount((prev) => prev + 1);
@@ -147,8 +148,8 @@ const Admin = () => {
   const handleNotificationClick = () => {
     if (notifications.length > 0) {
       alert(notifications.map((n) => n.message).join("\n"));
-      setNotifications([]); // ✅ Clears notifications
-      setNotificationCount(0); // ✅ Ensures notification count resets properly
+      setNotifications([]); //  Clears notifications
+      setNotificationCount(0); //  Ensures notification count resets properly
     } else {
       alert("No new notifications");
     }
@@ -299,6 +300,9 @@ const Admin = () => {
 
       await handleDeleteRecommendation(recommendationId, token);
       addNotification("Recommendation deleted successfully!", "success");
+
+      //Notify users via webSocket that a recommendation was deleted
+      socket.emit("recommendationsDeleted", recommendationId);
 
       // Remove deleted recommendation from state
       setRecommendations((prev) =>
