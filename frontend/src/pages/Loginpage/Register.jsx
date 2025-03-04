@@ -23,7 +23,7 @@ const schema = yup.object().shape({
 });
 
 const Register = () => {
-  const { register: registerUser } = useAuthStore(); //  Zustand's register action
+  const registerUser = useAuthStore((state) => state.register);
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);

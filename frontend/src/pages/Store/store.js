@@ -9,18 +9,18 @@ const useAuthStore = create((set) => ({
   token: "",
   userId: "",
 
-  // ✅ Improved Login Function
+  //  Login Function
   login: async (email, password) => {
-    console.log("🔑 Logging in user:", email);
+    console.log(" Logging in user:", email);
     try {
       const { token, user } = await loginWithCredentials(email, password);
 
       if (!token || !user) {
-        console.error("❌ Login failed: Invalid credentials.");
+        console.error(" Login failed: Invalid credentials.");
         return { success: false, message: "Invalid email or password." };
       }
 
-      // ✅ Store Token & User Info in Local Storage
+      // Store Token & User Info in Local Storage
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
@@ -32,14 +32,14 @@ const useAuthStore = create((set) => ({
         userId: user.id || "",
       });
 
-      console.log("✅ User logged in successfully:", {
+      console.log(" User logged in successfully:", {
         username: user.username,
         isAdmin: user.isAdmin,
       });
 
       return { success: true };
     } catch (error) {
-      console.error("❌ Login failed:", error.message || error);
+      console.error(" Login failed:", error.message || error);
       return {
         success: false,
         message:
@@ -48,9 +48,9 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  // ✅ Improved Logout Function
+  // Logout Function
   logout: () => {
-    console.log("🚪 Logging out user...");
+    console.log(" Logging out user...");
 
     // Remove WebSocket event listeners
     socket.off("recommendationUpdated");
@@ -68,19 +68,19 @@ const useAuthStore = create((set) => ({
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
-    console.log("✅ User logged out successfully.");
+    console.log(" User logged out successfully.");
   },
 
-  // ✅ Auto-login if session exists
+  // Auto-login if session exists
   checkAuth: async () => {
-    console.log("🔍 Checking authentication...");
+    console.log(" Checking authentication...");
 
     try {
       const storedToken = localStorage.getItem("token");
       const storedUser = localStorage.getItem("user");
 
       if (!storedToken || !storedUser) {
-        console.warn("⚠️ No active session found.");
+        console.warn(" No active session found.");
         set({
           isAuthenticated: false,
           username: "",
@@ -102,12 +102,12 @@ const useAuthStore = create((set) => ({
           isAdmin: session.user.isAdmin || false,
         });
 
-        console.log("✅ User session restored:", {
+        console.log(" User session restored:", {
           isAuthenticated: true,
           username: session.user.username,
         });
       } else {
-        console.warn("⚠️ Session invalid or expired.");
+        console.warn(" Session invalid or expired.");
         set({
           isAuthenticated: false,
           username: "",
@@ -119,7 +119,7 @@ const useAuthStore = create((set) => ({
         localStorage.removeItem("user");
       }
     } catch (error) {
-      console.error("❌ Error checking auth:", error.message || error);
+      console.error(" Error checking auth:", error.message || error);
       set({
         isAuthenticated: false,
         username: "",
