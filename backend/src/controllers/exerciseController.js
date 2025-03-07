@@ -7,39 +7,19 @@ const axios = require("axios");
 // Get all recommendations for all users
 const getAllRecommendations = async (req, res) => {
   try {
-    //Fetch all recommendations from the database
     const recommendations = await RecommendedExercise.find();
 
-    //Map over recommendations to fetch exercise details in parallel
-    const recommendationsWithDetails = await Promise.all(
-      recommendations.map(async (recommendation) => {
-        try {
-          // Fetch exercise details from the external API
-          const exerciseResponse = await axios.get(
-            `https://exercisedb.p.rapidapi.com/exercises/exercise/${recommendation.exerciseId}`,
-            {
-              headers: {
-                "X-RapidAPI-KEY": process.env.RAPIDAPI_KEY,
-                "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
-              },
-            }
-          );
-          // Return recommendation with exercise details
-          return {
-            ...recommendation.toObject(),
-            exerciseDetails: exerciseResponse.data,
-          };
-        } catch (error) {
-          console.error(
-            `Failed to fetch exercise details for ID: ${recommendation.exerciseId}`,
-            error.message
-          );
-          //Return the recommendation without exercise details on failure
-          return recommendation.toObject();
-        }
+    if (!recommendations.length) {
+      return res.status(200).json([]);
+    }
+
+    const recommendationsWithDetails = recommendations.map(
+      (recommendation) => ({
+        ...recommendation.toObject(),
+        exerciseDetails: recommendation.exerciseDetails,
       })
     );
-    //Send the response with all recommendations including details
+
     res.status(200).json(recommendationsWithDetails);
   } catch (error) {
     console.error("Error fetching all recommendations:", error.message);
@@ -57,7 +37,6 @@ const getRecommendations = async (req, res) => {
       return res.status(400).json({ error: "Invalid User ID." });
     }
 
-    // Fetch recommendations from your database
     const recommendations = await RecommendedExercise.find({ userId });
 
     if (!recommendations.length) {
@@ -67,31 +46,11 @@ const getRecommendations = async (req, res) => {
 
     console.log("Recommendations found:", recommendations);
 
-    // Dynamically fetch exercise details from the ExerciseDB API
-    const recommendationsWithDetails = await Promise.all(
-      recommendations.map(async (recommendation) => {
-        try {
-          const exerciseResponse = await axios.get(
-            `https://exercisedb.p.rapidapi.com/exercises/exercise/${recommendation.exerciseId}`,
-            {
-              headers: {
-                "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
-                "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
-              },
-            }
-          );
-
-          return {
-            ...recommendation.toObject(),
-            exerciseDetails: exerciseResponse.data,
-          };
-        } catch (error) {
-          console.error(
-            `Failed to fetch details for exerciseId: ${recommendation.exerciseId}`,
-            error.message
-          );
-          return recommendation.toObject(); // Return the recommendation without exercise details if fetch fails
-        }
+    //  Directly return the stored exercise details instead of re-fetching
+    const recommendationsWithDetails = recommendations.map(
+      (recommendation) => ({
+        ...recommendation.toObject(),
+        exerciseDetails: recommendation.exerciseDetails,
       })
     );
 
@@ -121,30 +80,47 @@ const recommendExercise = async (req, res) => {
       });
     }
 
-    const recommendation = new RecommendedExercise({
+    let exerciseDetails;
+    try {
+      const exerciseResponse = await axios.get(
+        `https://exercisedb.p.rapidapi.com/exercises/exercise/${exerciseId}`,
+        {
+          headers: {
+            "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
+            "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
+          },
+        }
+      );
+      exerciseDetails = exerciseResponse.data;
+    } catch (error) {
+      console.error("Error fetching exercise details:", error.message);
+      return res
+        .status(400)
+        .json({ error: "Invalid exercise ID or API issue." });
+    }
+
+    const recommendedExercise = new RecommendedExercise({
       userId,
       exerciseId,
       notes: notes.trim(),
       tags: Array.isArray(tags) ? tags : [],
+      exerciseDetails,
     });
 
-    await recommendation.save();
-    console.log(" Exercise recommended successfully:", recommendation);
+    await recommendedExercise.save();
+    console.log(" Exercise recommended successfully:", recommendedExercise);
 
-    //Fetch updated recommendations
-    const updatedRecommendations = await RecommendedExercise.find({ userId });
-
-    //  Emit WebSocket Event
+    //Emit WebSocket event
     const io = req.app.get("io");
     io.emit("recommendationUpdated", {
       userId,
-      recommendations: updatedRecommendations, //Send updated recommendations
+      recommendations: await RecommendedExercise.find({ userId }),
     });
 
     res.status(201).json({
       success: true,
       message: "Exercise recommended successfully",
-      data: recommendation,
+      data: recommendedExercise,
     });
   } catch (error) {
     console.error(" Error recommending exercise:", error.message);
@@ -180,7 +156,7 @@ const deleteRecommendation = async (req, res) => {
 
     //fetch updated recommendations
     const updatedRecommendations = await RecommendedExercise.find({
-      userId: deleteRecommendation.userId,
+      userId: deletedRecommendation.userId,
     });
 
     //  Emit WebSocket event to update the user in real-time
@@ -190,9 +166,11 @@ const deleteRecommendation = async (req, res) => {
       recommendations: updatedRecommendations,
     });
 
-    res
-      .status(200)
-      .json({ success: true, message: "Recommendation deleted successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Recommendation deleted successfully",
+      recommendations: updatedRecommendations,
+    });
   } catch (error) {
     console.error(" Error deleting recommendation:", error.message);
     res
@@ -223,11 +201,43 @@ const editRecommendation = async (req, res) => {
         .json({ success: false, error: "Invalid Exercise ID format." });
     }
 
+    // Find the existing recommendation
+    const existingRecommendation = await RecommendedExercise.findById(
+      recommendationId
+    );
+    if (!existingRecommendation) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Recommendation not found." });
+    }
+
     const updateData = {
       exerciseId,
       notes: notes.trim(),
       tags: Array.isArray(tags) ? tags : [],
     };
+
+    //  Fetch new exercise details **only if exerciseId has changed**
+    if (exerciseId !== existingRecommendation.exerciseId) {
+      try {
+        const exerciseResponse = await axios.get(
+          `https://exercisedb.p.rapidapi.com/exercises/exercise/${exerciseId}`,
+          {
+            headers: {
+              "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
+              "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
+            },
+          }
+        );
+
+        updateData.exerciseDetails = exerciseResponse.data; //  Store new details
+      } catch (error) {
+        console.error("Error fetching new exercise details:", error.message);
+        return res
+          .status(500)
+          .json({ error: "Failed to fetch exercise details." });
+      }
+    }
 
     console.log("Updating recommendation with:", updateData);
 
@@ -243,27 +253,27 @@ const editRecommendation = async (req, res) => {
         .json({ success: false, error: "Recommendation not found." });
     }
 
-    console.log(" Recommendation updated successfully:", updatedRecommendation);
+    console.log("Recommendation updated successfully:", updatedRecommendation);
 
-    //Fetch updated recommendations
-    const updatedRecommendations = await RecommendedExercise.find({
-      userId: updatedRecommendation.userId,
-    });
-
-    //  Emit WebSocket Event
+    // Emit WebSocket Event
     const io = req.app.get("io");
     io.emit("recommendationUpdated", {
       userId: updatedRecommendation.userId,
-      recommendations: updatedRecommendations,
+      recommendations: await RecommendedExercise.find({
+        userId: updatedRecommendation.userId,
+      }),
     });
 
     res.status(200).json({
       success: true,
       message: "Recommendation updated successfully",
       data: updatedRecommendation,
+      recommendations: await RecommendedExercise.find({
+        userId: updatedRecommendation.userId,
+      }),
     });
   } catch (error) {
-    console.error(" Error editing recommendation:", error.message);
+    console.error("Error editing recommendation:", error.message);
     res.status(500).json({ error: "Failed to update recommendation." });
   }
 };
@@ -281,6 +291,21 @@ const completeExercise = async (req, res) => {
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ error: "Invalid User ID." });
+    }
+
+    const existingCompletion = await WorkoutCompletion.findOne({
+      userId,
+      exerciseId,
+      completedAt: {
+        $gte: new Date().setHours(0, 0, 0, 0), // Start of the day
+        $lt: new Date().setHours(23, 59, 59, 999), // End of the day
+      },
+    });
+
+    if (existingCompletion) {
+      return res
+        .status(400)
+        .json({ error: "You have already completed this exercise today." });
     }
 
     // Save workout completion to the database
@@ -302,7 +327,9 @@ const completeExercise = async (req, res) => {
     if (io) {
       console.log("Emitting exerciseCompleted event...");
       io.to("admins").emit("exerciseCompleted", {
+        userId,
         username: user?.username || "Unkown User",
+        exerciseId,
         workoutType,
         target,
         level,
@@ -339,6 +366,7 @@ const getCompletedWorkouts = async (req, res) => {
     const completedWorkouts = await WorkoutCompletion.find(filter)
       .populate("userId", "username")
       .select("_id userId workoutType target level completedAt")
+      .sort({ completedAt: -1 })
       .exec();
 
     const formattedWorkouts = completedWorkouts.map((workout) => ({

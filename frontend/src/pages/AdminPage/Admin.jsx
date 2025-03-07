@@ -45,29 +45,27 @@ const Admin = () => {
     }
   }, [isAuthenticated, token, logout]);
 
-  // ✅ Fetch All Admin Data at Once (Users, Exercises, Recommendations)
+  //  Fetch All Admin Data at Once (Users, Exercises, Recommendations)
   useEffect(() => {
     if (!token) return;
 
     const loadAdminData = async () => {
       try {
-        const [usersData, exerciseData, recommendationData] = await Promise.all(
-          [fetchUsers(), fetchExercisesfromDB(), fetchAllRecommendations()]
-        );
+        const usersData = await fetchUsers();
+        const exerciseData = await fetchExercisesfromDB();
+        const recommendationData = await fetchAllRecommendations();
 
         setUsers(usersData);
         setExercises(exerciseData);
-
-        // Map recommendations to include exercise details
         setRecommendations(
           recommendationData.map((rec) => ({
             ...rec,
-            exerciseDetails:
-              exerciseData.find((ex) => ex._id === rec.exerciseId) || null, // ✅ Uses `_id` for accurate matching
+            exerciseDetails: exerciseData.find(
+              (ex) =>
+                ex._id === rec.exerciseId || ex.exerciseId === rec.exerciseId
+            ) || { name: "Unknown Exercise" },
           }))
         );
-
-        console.log("Admin Data Loaded Successfully");
       } catch (err) {
         console.error("Error loading admin data:", err);
         setError("Failed to load admin data. Please try again later.");
@@ -75,11 +73,11 @@ const Admin = () => {
     };
 
     loadAdminData();
-  }, [token]);
+  }, [token]); //  Now only runs once when `token` is available
 
-  // ✅ Fetch Completed Workouts
+  // Fetch Completed Workouts
   useEffect(() => {
-    if (!token || exerciseCompletions.length > 0) return;
+    if (!token) return;
 
     const fetchCompletedWorkouts = async () => {
       try {
@@ -93,24 +91,32 @@ const Admin = () => {
     };
 
     fetchCompletedWorkouts();
-  }, [token, exerciseCompletions]);
+  }, [token]);
 
   useEffect(() => {
     if (socketListenerAdded.current) return; // Prevent multiple listeners
 
     socket.on("exerciseCompleted", (data) => {
-      console.log("📡 Live update - Exercise Completed:", data);
-      setExerciseCompletions((prev) => [data, ...prev]);
+      console.log("Live update - Exercise Completed:", data);
+
+      setExerciseCompletions((prev) => {
+        if (!prev.some((comp) => comp._id === data._id)) {
+          return [data, ...prev];
+        }
+        return prev;
+      });
     });
 
     socket.on("recommendationUpdated", (data) => {
-      console.log(" Live update - Recommendations Updated:", data);
-      setRecommendations((prevRecommendations) => {
-        const updatedUserRecommendations = data.recommendations;
-        return prevRecommendations.map((rec) =>
-          rec.userId === data.userId ? updatedUserRecommendations : rec
-        );
-      });
+      console.log("Live update - Recommendations Updated:", data);
+
+      setRecommendations((prevRecommendations) =>
+        prevRecommendations.map((rec) =>
+          rec.userId === data.userId
+            ? { ...rec, ...data.recommendations.find((r) => r._id === rec._id) }
+            : rec
+        )
+      );
     });
 
     socketListenerAdded.current = true; //  Ensures it runs only once
@@ -302,7 +308,7 @@ const Admin = () => {
       addNotification("Recommendation deleted successfully!", "success");
 
       //Notify users via webSocket that a recommendation was deleted
-      socket.emit("recommendationsDeleted", recommendationId);
+      socket.emit("recommendationDeleted", recommendationId);
 
       // Remove deleted recommendation from state
       setRecommendations((prev) =>
@@ -332,6 +338,8 @@ const Admin = () => {
       await handleDeleteCompletedWorkout(workoutId);
       setExerciseCompletions((prev) => prev.filter((w) => w._id !== workoutId));
       addNotification("Workout deleted successfully!", "success");
+
+      socket.emit("workoutDeleted", workoutId);
     } catch (error) {
       console.error("Failed to delete workout:", error.message);
       addNotification("Failed to delete workout. Please try again.", "error");

@@ -9,18 +9,16 @@ import Typography from "@mui/material/Typography";
 import { io } from "socket.io-client";
 import { isTokenExpired } from "../services/authService";
 import {
-  getAuthHeaders,
   fetchRecommendations,
+  completeExercise,
+  fetchCompletedWorkouts,
 } from "../services/exerciseService";
 
 const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-
 const ExerciseDetail = () => {
   const { exerciseId } = useParams(); // Get exerciseId from the URL parameters
   const userId = localStorage.getItem("userId");
-  const token = localStorage.getItem("token");
 
   const [exercise, setExercise] = useState(null); // State for exercise details
   const [recommendedWorkouts, setRecommendedWorkouts] = useState([]); // Recommended workouts
@@ -31,55 +29,65 @@ const ExerciseDetail = () => {
     strengthProgress: 0,
   });
   const socketListenerAdded = useRef(false);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+
     if (!userId || !token || isTokenExpired(token)) {
       console.error("User not authenticated. Redirecting to login...");
       window.location.href = "/login";
       return;
     }
-  }, [userId, token]);
+  }, [userId]);
 
-  // Fetch Progress from Backend
+  // Fetch Completed workouts and Update progress
   useEffect(() => {
     const fetchProgress = async () => {
-      if (!userId || !token || isTokenExpired(token)) {
-        console.error("User not authenticated. Reirecting to login...");
-        window.location.href = "/login";
-        return;
-      }
-
       try {
-        const response = await axios.get(`${BASE_URL}/progress/${userId}`, {
-          headers: getAuthHeaders(),
-        });
+        const workouts = await fetchCompletedWorkouts(userId);
+        console.log("User progress:", workouts);
 
-        console.log("Progress fetched successfully:", response.data);
-        setProgress(response.data);
+        const updatedProgress = {
+          workoutsToday: Math.min(
+            workouts.filter((w) => w.completedToday).length,
+            1
+          ),
+          workoutsThisWeek: Math.min(
+            workouts.filter((w) => w.completedThisWeek).length,
+            3
+          ),
+          workoutsThisMonth: Math.min(
+            workouts.filter((w) => w.completedThisMonth).length,
+            12
+          ),
+          strengthProgress: Math.min((workouts.length / 12) * 100, 100),
+        };
+
+        setProgress(updatedProgress);
+
+        // Save to localStorage
+        localStorage.setItem("workoutsToday", updatedProgress.workoutsToday);
+        localStorage.setItem(
+          "workoutsThisWeek",
+          updatedProgress.workoutsThisWeek
+        );
+        localStorage.setItem(
+          "workoutsThisMonth",
+          updatedProgress.workoutsThisMonth
+        );
+        localStorage.setItem(
+          "strengthProgress",
+          updatedProgress.strengthProgress
+        );
       } catch (error) {
         console.error("Failed to fetch progress:", error.message);
-        if (error.response?.status === 403) {
-          console.warn("Redirecting to login due to invalid or expired token");
-          window.location.href = "/login";
-        }
         alert("Could not load progress. Please try again later");
       }
     };
     fetchProgress();
-  }, [userId, token]);
-
-  // Save progress to locally
-  useEffect(() => {
-    if (progress) {
-      localStorage.setItem("workoutsToday", progress.workoutsToday);
-      localStorage.setItem("workoutsThisWeek", progress.workoutsThisWeek);
-      localStorage.setItem("workoutsThisMonth", progress.workoutsThisMonth);
-      localStorage.setItem("strengthProgress", progress.strengthProgress);
-    }
-  }, [progress]);
+  }, [userId]);
 
   // Fetch exercise details
   useEffect(() => {
@@ -95,7 +103,6 @@ const ExerciseDetail = () => {
           }
         );
         setExercise(response.data);
-        setError(null);
       } catch (error) {
         console.error("Failed to fetch exercise details:", error);
         setError("Failed to load exercise details. Please try again.");
@@ -107,64 +114,24 @@ const ExerciseDetail = () => {
     fetchExerciseDetail();
   }, [exerciseId]);
 
-  //  Fetch initial recommendations and set up real-time updates
+  //  Fetch recommendations
   useEffect(() => {
-    if (!userId || !token || isTokenExpired(token)) {
-      console.error(
-        "User not authenticated or token expired. Redirecting to login..."
-      );
-      window.location.href = "/login";
-      return;
-    }
-
-    //  Fetch recommendations when the component mounts
     fetchRecommendations(userId, setRecommendedWorkouts);
 
-    //handle websockets event for real-time updates
     const handleRecommendationUpdate = (data) => {
       if (data.userId === userId) {
-        console.log(
-          " Live recommendation update received! Fetching fresh recommendations"
-        );
-
         fetchRecommendations(userId, setRecommendedWorkouts);
       }
     };
 
-    const handleRecommendationDeleted = (recommendationId) => {
-      console.log("Live update - Recommendation Deleted:", recommendationId);
+    socket.on("recommendationUpdated", handleRecommendationUpdate);
 
-      fetchRecommendations(userId, setRecommendedWorkouts);
-    };
-
-    //  Only add WebSocket listener once
-    if (!socketListenerAdded.current) {
-      socket.on("recommendationUpdated", handleRecommendationUpdate);
-      socket.on("recommendationDeleted", handleRecommendationDeleted);
-      socketListenerAdded.current = true;
-    }
-
-    //  Cleanup WebSocket listener properly
     return () => {
-      console.log(" Cleaning up WebSocket listener for recommendationUpdated");
       socket.off("recommendationUpdated", handleRecommendationUpdate);
-      socket.off("recommendationDeleted", handleRecommendationDeleted);
-      socketListenerAdded.current = false;
     };
   }, [userId]);
 
-  //  Debugging: Log when recommendations are updated
-  useEffect(() => {
-    console.log(" Updated recommended workouts:", recommendedWorkouts);
-  }, [recommendedWorkouts]);
-
   const handleDoneComplete = async () => {
-    if (!userId || !token || !exerciseId || isTokenExpired(token)) {
-      alert("Unable to complete workout. Please log in again.");
-      window.location.href = "/login";
-      return;
-    }
-
     try {
       const completionData = {
         userId,
@@ -172,30 +139,35 @@ const ExerciseDetail = () => {
         workoutType: exercise?.bodyPart || "N/A",
         target: exercise?.target || "N/A",
         level: "Beginner",
-        completedAt: new Date().toISOString(), // Ensure completion time is included
+        completedAt: new Date().toISOString(),
       };
 
-      // Save completion to the backend
-      await axios.post(`${BASE_URL}/exercises/complete`, completionData, {
-        headers: getAuthHeaders(),
+      await completeExercise(completionData);
+      alert("Workout marked as complete!");
+
+      const workouts = await fetchCompletedWorkouts(userId);
+      setProgress({
+        workoutsToday: Math.min(
+          workouts.filter((w) => w.completedToday).length,
+          1
+        ),
+        workoutsThisWeek: Math.min(
+          workouts.filter((w) => w.completedThisWeek).length,
+          3
+        ),
+        workoutsThisMonth: Math.min(
+          workouts.filter((w) => w.completedThisMonth).length,
+          12
+        ),
+        strengthProgress: Math.min((workouts.length / 12) * 100, 100),
       });
 
-      // Update progress **immediately in state**
-      setProgress((prevProgress) => ({
-        workoutsToday: Math.min(prevProgress.workoutsToday + 1, 1),
-        workoutsThisWeek: Math.min(prevProgress.workoutsThisWeek + 1, 3),
-        workoutsThisMonth: Math.min(prevProgress.workoutsThisMonth + 1, 12),
-        strengthProgress: Math.min(
-          prevProgress.strengthProgress + 100 / 12,
-          100
-        ),
-      }));
-
-      // Emit event to WebSocket so the admin sees the update in real-time
-      socket.emit("exerciseCompleted", completionData);
-      console.log("Workout completion sent to admin:", completionData);
-
-      alert("Workout marked as complete!");
+      // Send WebSocket event for **Admin.jsx** to update immediately
+      socket.emit("exerciseCompleted", {
+        userId,
+        exerciseId,
+        completedAt: new Date().toISOString(),
+      });
     } catch (error) {
       console.error("Error updating progress:", error.message);
       alert("Could not complete workout. Please try again.");

@@ -10,8 +10,6 @@ export const socket = io(import.meta.env.VITE_API_URL, {
   withCredentials: true,
 });
 
-let socketListenerAdded = false;
-
 // API Headers
 const HEADERS = {
   "x-rapidapi-host": "exercisedb.p.rapidapi.com",
@@ -61,7 +59,7 @@ export const fetchExercisesfromDB = async (limit = 10, offset = 0) => {
 };
 
 /**
- * Fetch All Recommendations (Admin Panel) -
+ * Fetch All Recommendations (Admin Panel)
  */
 export const fetchAllRecommendations = async () => {
   try {
@@ -106,7 +104,7 @@ export const fetchRecommendations = async (userId, setRecommendedWorkouts) => {
       return;
     }
 
-    // ✅ Use `exerciseDetails` directly from backend
+    //  Use `exerciseDetails` directly from backend
     const recommendationsWithDetails = recommendations.map(
       (recommendation, index) => ({
         ...recommendation,
@@ -140,6 +138,10 @@ export const recommendExercise = async (recommendationData) => {
     );
 
     console.log("Recommendation saved:", response.data.data);
+
+    //Emit Websocket event
+    socket.emit("recommendationUpdated", { userId: recommendationData.userId });
+
     return response.data.data;
   } catch (error) {
     console.error("Error recommending exercise:", error.message);
@@ -162,15 +164,17 @@ export const editRecommendation = async (recommendationId, updatedFields) => {
   try {
     console.log(`Editing recommendation ${recommendationId}...`);
 
-    const headers = getAuthHeaders();
-
     const response = await axios.put(
       `${BASE_URL}/recommendations/${recommendationId}`,
       updatedFields,
-      { headers }
+      { headers: getAuthHeaders() }
     );
 
     console.log("Recommendation updated successfully:", response.data);
+
+    //Emit websocket event
+    socket.emit("recommendationUpdated", { userId: response.data.data.userId });
+
     return response.data;
   } catch (error) {
     console.error(
@@ -182,6 +186,76 @@ export const editRecommendation = async (recommendationId, updatedFields) => {
       success: false,
       message: "Failed to edit recommendation. Try again.",
     };
+  }
+};
+
+/**
+ * Delete Recommendation
+ */
+export const deleteRecommendation = async (recommendationId) => {
+  if (!recommendationId) {
+    throw new Error("Missing recommendation ID for deletion.");
+  }
+
+  try {
+    console.log(`Deleting recommendation ${recommendationId}...`);
+    const response = await axios.delete(
+      `${BASE_URL}/recommendations/${recommendationId}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+    console.log("Recommendation deleted:", response.data);
+
+    //Emit WebSocket
+    socket.emit("recommendationUpdated", { userId: response.data.userId });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting recommendation:", error.message);
+    throw error;
+  }
+};
+
+/**
+ * Complete an Exercise
+ */
+export const completeExercise = async (completionData) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/exercises/complete`,
+      completionData,
+      { headers: getAuthHeaders() }
+    );
+
+    // Emit WebSocket event
+    socket.emit("exerciseCompleted", {
+      userId: completionData.userId,
+      exerciseId: completionData.exerciseId,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error completing exercise:", error.message);
+    throw error;
+  }
+};
+
+/**
+ * Fetch Completed Workouts
+ */
+export const fetchCompletedWorkouts = async (userId) => {
+  try {
+    let url = `${BASE_URL}/exercises/completed`;
+    if (userId) {
+      url += `?userId=${userId}`; // Users fetch their own workouts
+    }
+
+    const response = await axios.get(url, { headers: getAuthHeaders() });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching completed workouts:", error.message);
+    throw error;
   }
 };
 
@@ -209,32 +283,6 @@ export const handleDeleteCompletedWorkout = async (workoutId) => {
       "Error deleting workout:",
       error.response?.data || error.message
     );
-    throw error;
-  }
-};
-
-/**
- * Delete Recommendation
- */
-export const deleteRecommendation = async (recommendationId) => {
-  if (!recommendationId) {
-    console.error("Missing recommendation ID for deletion.");
-    return;
-  }
-
-  try {
-    console.log(`Deleting recommendation ${recommendationId}...`);
-    const response = await axios.delete(
-      `${BASE_URL}/recommendations/${recommendationId}`,
-      {
-        headers: getAuthHeaders(),
-      }
-    );
-
-    console.log("Recommendation deleted:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error deleting recommendation:", error.message);
     throw error;
   }
 };
