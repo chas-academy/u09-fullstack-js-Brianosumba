@@ -21,6 +21,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        console.warn(` CORS Blocked: ${origin}`);
         callback(new Error("CORS policy does not allow this origin."));
       }
     },
@@ -32,7 +33,14 @@ app.use(
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`WebSocket CORS Blocked: ${origin}`);
+        callback(new Error("CORS policy does not allow this origin."));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },
@@ -43,27 +51,43 @@ app.set("io", io);
 
 //  WebSocket Events
 io.on("connection", (socket) => {
-  console.log("🔥 A client connected:", socket.id);
+  console.log(`🔥 Client Connected: ${socket.id}`);
 
   socket.on("joinAdminRoom", () => {
     socket.join("admins");
     console.log("🔹 Client joined the admins room");
   });
 
-  //  WebSocket event for real-time recommendation updates
+  // ✅ Listen for "exerciseCompleted" event and notify admins
+  socket.on("exerciseCompleted", (data) => {
+    console.log("🔥 Exercise completed event received:", data);
+    io.to("admins").emit("exerciseCompleted", data); // Notify only admins
+  });
+
+  // ✅ Listen for "adminWorkoutUpdate" event and notify admins
+  socket.on("adminWorkoutUpdate", (data) => {
+    console.log("📢 Admin workout update event:", data);
+    io.to("admins").emit("adminWorkoutUpdate", data);
+  });
+
+  // ✅ WebSocket event for real-time recommendation updates
   socket.on("recommendationUpdated", (data) => {
     console.log("📡 Sending real-time recommendation update:", data);
     io.emit("recommendationUpdated", data);
   });
 
-  //  WebSocket event for workout deletions
+  // ✅ WebSocket event for workout deletions
   socket.on("workoutDeleted", (data) => {
     console.log("📡 Workout deleted, notifying users:", data);
     io.emit("workoutDeleted", data);
   });
 
-  socket.on("disconnect", () => {
-    console.log(" A client disconnected:", socket.id);
+  socket.on("disconnect", (reason) => {
+    console.log(`Client Disconnected: ${socket.id}, Reason: ${reason}`);
+  });
+
+  socket.on("connect_error", (err) => {
+    console.error(` WebSocket Connection Error: ${err.message}`);
   });
 });
 

@@ -4,7 +4,7 @@ import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import AdminCard from "../../components/AdminCard";
 import { FaBell } from "react-icons/fa";
-import { socket } from "../../services/exerciseService";
+import { fetchExerciseDetails, socket } from "../../services/exerciseService";
 import {
   handleRecommendExercise,
   handleUpdateRecommendation,
@@ -24,7 +24,6 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const Admin = () => {
   const { isAuthenticated, token, logout } = useAuthStore();
-  const socketListenerAdded = useRef(false);
 
   const [users, setUsers] = useState([]);
   const [exercises, setExercises] = useState([]);
@@ -41,9 +40,9 @@ const Admin = () => {
     if (!isAuthenticated || !token) {
       alert("Session expired. Please log in again.");
       logout();
-      window.location.href = "/login";
+      setTimeout(() => (window.location.href = "/login"), 500);
     }
-  }, [isAuthenticated, token, logout]);
+  }, []);
 
   //  Fetch All Admin Data at Once (Users, Exercises, Recommendations)
   useEffect(() => {
@@ -55,17 +54,32 @@ const Admin = () => {
         const exerciseData = await fetchExercisesfromDB();
         const recommendationData = await fetchAllRecommendations();
 
+        console.log("✅ Loaded exercises:", exerciseData);
+        exerciseData.forEach((ex, index) =>
+          console.log(`Exercise ${index}:`, ex)
+        );
+        if (!usersData || !exerciseData || !recommendationData) {
+          throw new Error("One or more API responses are empty.");
+        }
+
         setUsers(usersData);
         setExercises(exerciseData);
-        setRecommendations(
-          recommendationData.map((rec) => ({
+
+        console.log("Fetched recommendations:", recommendationData);
+
+        const formattedRecommendations = (recommendationData ?? []).map(
+          (rec) => ({
             ...rec,
             exerciseDetails: exerciseData.find(
-              (ex) =>
-                ex._id === rec.exerciseId || ex.exerciseId === rec.exerciseId
+              (ex) => ex.id === rec.exerciseId
             ) || { name: "Unknown Exercise" },
-          }))
+            userDetails: usersData.find((user) => user._id === rec.userId) || {
+              username: "Unkown User",
+            },
+          })
         );
+
+        setRecommendations(formattedRecommendations);
       } catch (err) {
         console.error("Error loading admin data:", err);
         setError("Failed to load admin data. Please try again later.");
@@ -73,7 +87,7 @@ const Admin = () => {
     };
 
     loadAdminData();
-  }, [token]); //  Now only runs once when `token` is available
+  }, [token]);
 
   // Fetch Completed Workouts
   useEffect(() => {
@@ -87,60 +101,69 @@ const Admin = () => {
         setExerciseCompletions(response.data);
       } catch (error) {
         console.error("Error fetching completed workouts:", error.message);
+        setError("Failed to load completed workouts. Please try again");
       }
     };
 
     fetchCompletedWorkouts();
   }, [token]);
 
+  //Websocket event listners
   useEffect(() => {
-    if (socketListenerAdded.current) return; // Prevent multiple listeners
-
-    socket.on("exerciseCompleted", (data) => {
-      console.log("Live update - Exercise Completed:", data);
-
-      setExerciseCompletions((prev) => {
-        if (!prev.some((comp) => comp._id === data._id)) {
-          return [data, ...prev];
-        }
-        return prev;
-      });
-    });
-
-    socket.on("recommendationUpdated", (data) => {
-      console.log("Live update - Recommendations Updated:", data);
-
-      setRecommendations((prevRecommendations) =>
-        prevRecommendations.map((rec) =>
-          rec.userId === data.userId
-            ? { ...rec, ...data.recommendations.find((r) => r._id === rec._id) }
-            : rec
-        )
+    const handleExerciseCompleted = (data) => {
+      setExerciseCompletions((prev) =>
+        prev.some((comp) => comp._id === data._id) ? prev : [data, ...prev]
       );
-    });
+    };
 
-    socketListenerAdded.current = true; //  Ensures it runs only once
+    const handleRecommendationUpdated = (data) => {
+      setRecommendations((prev) => {
+        const updatedRecommendations = (data?.recommendations ?? []).map(
+          (rec) => {
+            const existingRec = prev.find(
+              (existing) => existing._id === rec._id
+            );
+            return existingRec ? { ...existingRec, ...rec } : rec;
+          }
+        );
+
+        return [
+          ...updatedRecommendations,
+          ...prev.filter(
+            (rec) => !updatedRecommendations.some((upd) => upd._id === rec._id)
+          ),
+        ];
+      });
+    };
+
+    // Attach event listeners
+    socket.on("exerciseCompleted", handleExerciseCompleted);
+    socket.on("recommendationUpdated", handleRecommendationUpdated);
 
     return () => {
-      socket.off("exerciseCompleted");
-      socket.off("recommendationUpdated");
-      socketListenerAdded.current = false; //  Properly reset when component unmounts
+      //  Remove specific event handlers
+      socket.off("exerciseCompleted", handleExerciseCompleted);
+      socket.off("recommendationUpdated", handleRecommendationUpdated);
     };
   }, []);
 
   const toggleStatus = async (userId) => {
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
+        user._id === userId ? { ...user, isActive: !user.isActive } : user
+      )
+    );
+
     try {
       await updateUserStatus(userId, token);
-
+      addNotification("User status updated successfully", "success");
+    } catch (err) {
+      console.error("Error updating user status:", err);
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
           user._id === userId ? { ...user, isActive: !user.isActive } : user
         )
-      );
-
-      addNotification("User status updated successfully", "success");
-    } catch (err) {
-      console.error("Error updating user status:", err);
+      ); // Rollback if API fails
       setError("Failed to update user status. Please try again.");
     }
   };
@@ -162,132 +185,158 @@ const Admin = () => {
   };
 
   const onRecommendClick = async (userId, exerciseId) => {
-    if (!userId || !exerciseId) {
-      alert("Please provide valid user and exercise details.");
-      console.error("Invalid userId or exerciseId:", { userId, exerciseId });
+    console.log(" Debugging onRecommendClick");
+    console.log(" User ID:", userId);
+    console.log(" Exercise ID:", exerciseId);
+
+    if (!exerciseId.match(/^[a-zA-Z0-9-_]+$/)) {
+      console.error("🚨 Invalid exercise ID format:", exerciseId);
+      alert("Invalid exercise selection. Please select a valid exercise.");
+      return;
+    }
+
+    //  Retrieve token safely
+    const headers = getAuthHeaders();
+    if (!headers || !headers.Authorization) {
+      console.error(" Missing or invalid token. Cannot proceed.");
+      alert("Authentication issue. Please log in again.");
+      return;
+    }
+    const token = headers.Authorization.split("Bearer ")[1];
+
+    if (!userId || !exerciseId || !token) {
+      console.error(" Missing userId, exerciseId, or token:", {
+        userId,
+        exerciseId,
+        token,
+      });
+      alert("Invalid user, exercise selection, or authentication issue.");
+      return;
+    }
+
+    //  Ensure exerciseId is a valid string
+    const validExerciseId = String(exerciseId).trim();
+    if (
+      !validExerciseId ||
+      validExerciseId === "undefined" ||
+      validExerciseId === "null"
+    ) {
+      console.error(" Invalid exercise ID:", validExerciseId);
+      alert("Invalid exercise selection.");
       return;
     }
 
     try {
-      // Call API to recommend exercise
+      console.log(" Calling handleRecommendExercise with:", {
+        userId,
+        validExerciseId,
+        token,
+      });
+
+      //  Call handleRecommendExercise
       const newRecommendation = await handleRecommendExercise(
         userId,
-        exerciseId,
+        validExerciseId,
         token
       );
 
-      if (!newRecommendation || !newRecommendation._id) {
-        console.error("Error: No recommendation received from API.");
+      if (!newRecommendation || !newRecommendation.id) {
+        console.error(" Error: No recommendation received from API.");
         return;
       }
 
-      addNotification("Exercise recommended successfully!", "success");
+      console.log(" New Recommendation:", newRecommendation);
 
-      // Directly update the state
-      setRecommendations((prev) => [
-        ...prev,
-        {
-          ...newRecommendation,
-          exerciseDetails: exercises.find(
-            (ex) => ex.id === newRecommendation.exerciseId
-          ),
+      const formattedRecommendation = {
+        ...newRecommendation,
+        exerciseDetails: exercises.find((ex) => ex._id === validExerciseId) || {
+          name: "Unknown Exercise",
         },
-      ]);
+        userDetails: users.find((user) => user._id === userId) || {
+          username: "Unknown User",
+        },
+      };
 
-      console.log("Updated Recommendations:", newRecommendation);
+      //  Prevent adding duplicate recommendations
+      setRecommendations((prev) => {
+        if (prev.some((rec) => rec._id === newRecommendation._id)) return prev;
+        return [...prev, formattedRecommendation];
+      });
+
+      addNotification(" Exercise recommended successfully!", "success");
+
+      //  Emit WebSocket event to update recommendations in real-time
+      socket.emit("recommendationUpdated", {
+        userId: String(userId),
+        recommendations: [formattedRecommendation],
+      });
     } catch (error) {
       console.error(
-        "Failed to recommend exercise:",
+        " Failed to recommend exercise:",
         error.response?.data || error.message
       );
       addNotification(
-        "Failed to recommend exercise. Please try again.",
+        " Failed to recommend exercise. Please try again.",
         "error"
       );
     }
   };
 
-  const openEditModal = async (data) => {
-    console.log("User data passed to openEditModal:", data);
-
-    if (!data || !data.recommendationId || !data.exerciseId) {
-      console.error("Invalid recommendation data:", data);
-      alert("The selected user does not have a valid recommendation to edit.");
-      return;
-    }
-
-    setEditingRecommendation({
-      id: data.recommendationId,
-      currentExerciseId: data.exerciseId || "",
-      notes: data.notes || "",
-    });
-
-    console.log("Editing recommendation:", {
-      id: data.recommendationId,
-      currentExerciseId: data.exerciseId || "",
-      notes: data.notes || "",
-    });
-
-    setIsModalOpen(true);
-  };
-
   const handleSaveRecommendation = async (recommendationId, updatedFields) => {
     if (!recommendationId || !updatedFields.exerciseId) {
-      console.error("Invalid recommendation or updated data:", {
+      console.error("Invalid recommendation ID or exercise ID:", {
         recommendationId,
         updatedFields,
       });
+      addNotification(
+        "Invalid recommendation data. Please try again.",
+        "error"
+      );
       return;
     }
 
     try {
-      //  Use `getAuthHeaders()` to always send a valid token
-      const headers = getAuthHeaders();
-
-      //  Send API request to update the recommendation
       const response = await handleUpdateRecommendation(
         recommendationId,
         updatedFields,
-        headers
+        getAuthHeaders()
       );
 
-      //  Ensure API response contains updated data
-      if (!response || !response.data || !response.data.data) {
+      if (!response || !response.data) {
         console.error("Error: No updated recommendation received from API.");
+        addNotification(
+          "Failed to update recommendation. Please try again.",
+          "error"
+        );
         return;
       }
 
-      const updatedRecommendation = response.data.data;
-      console.log("Updated recommendation received:", updatedRecommendation);
+      const updatedRecommendation = response.data;
 
-      addNotification("Recommendation updated successfully", "success");
-
-      //  Update the recommendations state
       setRecommendations((prev) =>
         prev.map((rec) =>
           rec._id === recommendationId
             ? {
                 ...rec,
-                exerciseId: updatedRecommendation.exerciseId, //  Ensure we use the updated exerciseId
-                notes: updatedRecommendation.notes, //  Ensure we use the updated notes
+                exerciseId: updatedRecommendation.exerciseId,
+                notes: updatedRecommendation.notes,
                 exerciseDetails:
                   exercises.find(
-                    (ex) => ex.id === updatedRecommendation.exerciseId
-                  ) || rec.exerciseDetails, //  Fallback to existing details if not found
+                    (ex) => ex._id === updatedRecommendation.exerciseId
+                  ) || rec.exerciseDetails,
               }
             : rec
         )
       );
 
-      //  Close modal
-      setEditingRecommendation(null);
+      addNotification("Recommendation updated successfully!", "success");
+
       setIsModalOpen(false);
     } catch (error) {
       console.error(
         "Failed to update recommendation:",
         error.response?.data || error.message
       );
-
       addNotification(
         "Failed to update recommendation. Please try again.",
         "error"
@@ -295,27 +344,33 @@ const Admin = () => {
     }
   };
 
-  const onDeleteRecommendation = async (recommendationId) => {
-    if (!recommendationId) {
-      alert("Recommendation ID is required.");
+  const openEditModal = (data) => {
+    console.log(" Opening Edit Modal for:", data);
+
+    if (!data || !data.recommendationId) {
+      console.error(" Invalid recommendation data:", data);
+      alert("The selected recommendation is invalid and cannot be edited.");
       return;
     }
 
+    setEditingRecommendation({
+      id: data.recommendationId,
+      currentExerciseId: data.exerciseId || "", // Fallback to an empty string
+      notes: data.notes || "",
+    });
+
+    setIsModalOpen(true);
+  };
+
+  const onDeleteRecommendation = async (recommendationId, userId) => {
     try {
-      console.log("Deleting recommendation ID:", recommendationId);
-
       await handleDeleteRecommendation(recommendationId, token);
-      addNotification("Recommendation deleted successfully!", "success");
 
-      //Notify users via webSocket that a recommendation was deleted
-      socket.emit("recommendationDeleted", recommendationId);
-
-      // Remove deleted recommendation from state
       setRecommendations((prev) =>
         prev.filter((rec) => rec._id !== recommendationId)
       );
 
-      console.log("Updated recommendations after deletion");
+      addNotification("Recommendation deleted successfully!", "success");
     } catch (error) {
       console.error(
         "Failed to delete recommendation:",
@@ -328,6 +383,11 @@ const Admin = () => {
     }
   };
 
+  // Emit socket event when recommendations change
+  useEffect(() => {
+    socket.emit("recommendationUpdated", { recommendations });
+  }, [recommendations]);
+
   const onDeleteCompletedWorkout = async (workoutId) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this workout?"
@@ -336,10 +396,19 @@ const Admin = () => {
 
     try {
       await handleDeleteCompletedWorkout(workoutId);
-      setExerciseCompletions((prev) => prev.filter((w) => w._id !== workoutId));
-      addNotification("Workout deleted successfully!", "success");
 
-      socket.emit("workoutDeleted", workoutId);
+      setExerciseCompletions((prev) => {
+        const updatedWorkouts = prev.filter((w) => w._id !== workoutId);
+
+        // ✅ Emit event **after** UI update (Reduced delay for better UX)
+        setTimeout(() => {
+          socket.emit("workoutDeleted", workoutId);
+        }, 50);
+
+        return updatedWorkouts;
+      });
+
+      addNotification("Workout deleted successfully!", "success");
     } catch (error) {
       console.error("Failed to delete workout:", error.message);
       addNotification("Failed to delete workout. Please try again.", "error");
@@ -415,15 +484,15 @@ const Admin = () => {
               </tr>
             </thead>
             <tbody>
-              {users
+              {(users ?? [])
                 .filter((user) => user && user._id)
                 .map((user) => (
                   <tr
                     key={user._id}
                     className="border-b hover:bg-gray-100 transition"
                   >
-                    <td className="py-4 px-6">{user.username}</td>
-                    <td className="py-4 px-6">{user.email}</td>
+                    <td className="py-4 px-6">{user.username || "Unknown"}</td>
+                    <td className="py-4 px-6">{user.email || "No Email"}</td>
                     <td className="py-4 px-6">
                       <button
                         onClick={() => toggleStatus(user._id)}
@@ -436,16 +505,19 @@ const Admin = () => {
                         {user.isActive ? "Active" : "Inactive"}
                       </button>
                     </td>
-                    <td className="py-4 px-6">{user.level}</td>
+                    <td className="py-4 px-6">{user.level || "N/A"}</td>
                     <td className="py-4 px-6">
                       <select
                         defaultValue=""
                         onChange={(e) => {
-                          const exerciseId = e.target.value;
-                          if (!exerciseId) return;
-                          onRecommendClick(user._id, exerciseId);
+                          const selectedExerciseId = e.target.value;
+                          console.log(
+                            "🔍 Selected Exercise ID:",
+                            selectedExerciseId
+                          ); // Debugging
+                          if (!selectedExerciseId) return;
+                          onRecommendClick(user._id, selectedExerciseId);
                         }}
-                        className="p-2 rounded border border-gray-300 focus:outline-none focus:ring focus:ring-blue-200"
                       >
                         <option value="" disabled>
                           Select Exercise
@@ -486,51 +558,53 @@ const Admin = () => {
               </tr>
             </thead>
             <tbody>
-              {recommendations.map((rec) => {
-                const user = users.find(
-                  (user) => user && user._id === rec.userId
-                );
+              {Array.isArray(recommendations) && recommendations.length > 0 ? (
+                recommendations.map((rec, index) => {
+                  const user = users.find((user) => user?._id === rec.userId);
+                  const exercise = rec.exerciseDetails || {
+                    name: "Unknown Exercise",
+                  };
 
-                const exercise = rec.exerciseDetails;
-
-                return (
-                  <tr
-                    key={rec._id}
-                    className="border-b hover:bg-gray-100 transition"
-                  >
-                    <td className="py-4 px-6">
-                      {user?.username || `User not found (ID: ${rec.userId})`}
-                    </td>
-
-                    <td className="py-4 px-6">
-                      {exercise?.name || "Exercise details not available"}
-                    </td>
-                    <td className="py-4 px-6">
-                      {rec.notes || "No notes provided"}
-                    </td>
-                    <td className="py-4 px-6">
-                      <button
-                        onClick={() =>
-                          openEditModal({
-                            recommendationId: rec._id,
-                            exerciseId: rec.exerciseId,
-                            notes: rec.notes,
-                          })
-                        }
-                        className="text-blue-500 hover:underline"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => onDeleteRecommendation(rec._id)}
-                        className="text-red-500 hover:underline ml-2"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+                  return (
+                    <tr
+                      key={
+                        rec._id || `${rec.userId}-${rec.exerciseId}-${index}`
+                      }
+                      className="border-b hover:bg-gray-100 transition"
+                    >
+                      <td className="py-4 px-6">
+                        {user?.username || `User not found (ID: ${rec.userId})`}
+                      </td>
+                      <td className="py-4 px-6">{exercise.name}</td>
+                      <td className="py-4 px-6">
+                        {rec.notes || "No notes provided"}
+                      </td>
+                      <td className="py-4 px-6">
+                        <button
+                          onClick={() => openEditModal(rec)}
+                          className="text-blue-500 hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() =>
+                            onDeleteRecommendation(rec._id, rec.userId)
+                          }
+                          className="text-red-500 hover:underline ml-2"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="4" className="py-6 text-center text-gray-600">
+                    No recommendations found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

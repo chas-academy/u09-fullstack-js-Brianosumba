@@ -5,36 +5,82 @@ import { isTokenExpired } from "./authService";
 // Base URLs
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 const EXERCISE_DB_API = "https://exercisedb.p.rapidapi.com/exercises";
+const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-export const socket = io(import.meta.env.VITE_API_URL, {
+const RECONNECT_DELAY = 3000;
+let reconnectAttempts = 0;
+
+export const socket = io(SOCKET_URL, {
   withCredentials: true,
+  autoConnect: false, // Start disconnected, connect manually
+  reconnection: true, // ✅ Allow auto-reconnect with delay
+  reconnectionAttempts: 5, // ✅ Max attempts before stopping
+  transports: ["websocket"], // Use WebSocket transport
 });
 
+// Connect WebSocket with Error Handling
+export const connectWebsocket = () => {
+  if (!socket.connected) {
+    console.log("Connecting to WebSocket...");
+    socket.connect();
+  }
+};
+
+// Attach WebSocket event listeners
+socket.on("connect", () => {
+  console.log("✅ WebSocket Connected:", socket.id);
+  reconnectAttempts = 0; // Reset attempts
+});
+
+socket.on("disconnect", (reason) => {
+  console.warn("⚠️ WebSocket Disconnected:", reason);
+  attemptReconnect();
+});
+
+socket.on("connect_error", (error) => {
+  console.error("❌ WebSocket Connection Error:", error.message);
+});
+
+// WebSocket Reconnection with Delay
+export const attemptReconnect = () => {
+  if (reconnectAttempts < 5) {
+    const delay = RECONNECT_DELAY * (reconnectAttempts + 1);
+    console.log(`🔄 Retrying WebSocket Connection in ${delay / 1000}s...`);
+
+    setTimeout(() => {
+      reconnectAttempts++;
+      connectWebsocket();
+    }, delay);
+  } else {
+    console.error("❌ WebSocket Failed to Reconnect After Multiple Attempts.");
+  }
+};
 // API Headers
-const HEADERS = {
+export const HEADERS = {
   "x-rapidapi-host": "exercisedb.p.rapidapi.com",
   "x-rapidapi-key": import.meta.env.VITE_RAPIDAPI_KEY,
 };
-
-/**
- * Get Authorization Headers
- */
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
 
   if (!token || isTokenExpired(token)) {
-    console.warn("No token found or token expired! Redirecting to login...");
+    console.warn("⚠️ Token missing or expired! Logging out user...");
+
+    // Clear stored data
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    window.location.href = "/login"; // Redirect user to login
-    return {};
+
+    // Show alert instead of auto-redirect
+    alert("Your session has expired. Please log in again.");
+
+    return null; // ⛔ Prevents sending invalid headers
   }
 
-  console.log("Token being sent in headers:", token);
+  console.log("🔑 Token being sent in headers:", token);
 
   return {
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${token.trim()}`,
     "Content-Type": "application/json",
   };
 };
@@ -55,6 +101,36 @@ export const fetchExercisesfromDB = async (limit = 10, offset = 0) => {
   } catch (error) {
     console.error("Error fetching exercises:", error.message);
     throw new Error("Failed to fetch exercises. Try again later.");
+  }
+};
+
+/**
+ * Fetch  Details by ID
+ */
+export const fetchExerciseDetails = async (exerciseId) => {
+  if (!exerciseId) {
+    console.error("❌ fetchExerciseDetails: Missing exerciseId.");
+    return null;
+  }
+
+  try {
+    console.log(`🔍 Fetching details for Exercise ID: ${exerciseId}`);
+
+    const response = await axios.get(
+      `${EXERCISE_DB_API}/exercise/${exerciseId}`,
+      {
+        headers: HEADERS,
+      }
+    );
+
+    console.log("✅ Exercise details fetched:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      `❌ Error fetching exercise details for ID ${exerciseId}:`,
+      error.message
+    );
+    throw new Error("Failed to fetch exercise details.");
   }
 };
 
@@ -85,66 +161,89 @@ export const fetchAllRecommendations = async () => {
 
 export const fetchRecommendations = async (userId, setRecommendedWorkouts) => {
   if (!userId) {
-    throw new Error("User ID is required to fetch recommendations.");
+    console.error("User ID is required to fetch recommendations.");
+    return;
   }
 
   try {
-    console.log(`Fetching recommendations for user ${userId}...`);
+    console.log("fetching recommendations for user:", userId);
 
     const response = await axios.get(`${BASE_URL}/recommendations/${userId}`, {
       headers: getAuthHeaders(),
     });
 
-    console.log("Backend response:", response.data);
-    const recommendations = response.data;
-
-    if (!recommendations.length) {
-      console.warn("No recommendations found.");
-      setRecommendedWorkouts([]); // Ensure empty state update
-      return;
+    if (!response.data.success) {
+      console.warn("No recommendations found for user:", userId);
+      return [];
     }
 
-    //  Use `exerciseDetails` directly from backend
-    const recommendationsWithDetails = recommendations.map(
-      (recommendation, index) => ({
-        ...recommendation,
-        uniqueKey:
-          recommendation._id || `${recommendation.exerciseId}-${index}`,
+    let recommendations = response.data.data;
+
+    const recommendationsWithDetails = await Promise.all(
+      recommendations.map(async (rec) => {
+        if (
+          !rec.exerciseDetails ||
+          Object.keys(rec.exerciseDetails).length === 0
+        ) {
+          rec.exerciseDetails = await fetchExerciseDetails(rec.exerciseId);
+        }
+        return rec;
       })
     );
 
-    setRecommendedWorkouts(recommendationsWithDetails);
+    console.log("Final recommendations returned:", recommendationsWithDetails);
+    return recommendationsWithDetails;
   } catch (error) {
-    console.error(
-      "Error fetching user-specific recommendations:",
-      error.response?.data || error.message
-    );
-    throw error;
+    console.error("Error fetching recommendations:", error.message);
+    return [];
   }
 };
 
 /**
  * Recommend an Exercise
  */
+
 export const recommendExercise = async (recommendationData) => {
   try {
-    console.log("Sending recommendation to backend...");
+    console.log("Sending recommendation to backend:", recommendationData);
+
+    if (!recommendationData.exerciseId) {
+      console.error("Missing exerciseId in request payload");
+      throw new Error("Invalid exercise ID");
+    }
+
+    const headers = getAuthHeaders();
+    if (!headers) {
+      console.error(" No valid authorization token. Aborting request.");
+      return;
+    }
+
     const response = await axios.post(
       `${BASE_URL}/recommendations`,
       recommendationData,
-      {
-        headers: getAuthHeaders(),
-      }
+      { headers }
     );
 
-    console.log("Recommendation saved:", response.data.data);
+    console.log(" Recommendation saved:", response.data);
 
-    //Emit Websocket event
-    socket.emit("recommendationUpdated", { userId: recommendationData.userId });
+    //  Emit WebSocket event only after success
+    if (response.data?.success) {
+      socket.emit("recommendationUpdated", {
+        userId: String(recommendationData.userId),
+      });
+    }
 
-    return response.data.data;
+    return response.data;
   } catch (error) {
-    console.error("Error recommending exercise:", error.message);
+    console.error(
+      " Error recommending exercise:",
+      error.response?.data || error.message
+    );
+
+    if (error.response) {
+      console.error(" Server Response:", error.response.data);
+    }
+
     throw error;
   }
 };
@@ -194,25 +293,37 @@ export const editRecommendation = async (recommendationId, updatedFields) => {
  */
 export const deleteRecommendation = async (recommendationId) => {
   if (!recommendationId) {
-    throw new Error("Missing recommendation ID for deletion.");
+    throw new Error("❌ Missing recommendation ID for deletion.");
   }
 
   try {
-    console.log(`Deleting recommendation ${recommendationId}...`);
+    console.log(`🗑️ Deleting recommendation ${recommendationId}...`);
+
+    const headers = getAuthHeaders();
+    if (!headers) {
+      console.error("🚨 No valid authorization token. Aborting request.");
+      return;
+    }
+
     const response = await axios.delete(
       `${BASE_URL}/recommendations/${recommendationId}`,
-      {
-        headers: getAuthHeaders(),
-      }
+      { headers }
     );
-    console.log("Recommendation deleted:", response.data);
 
-    //Emit WebSocket
-    socket.emit("recommendationUpdated", { userId: response.data.userId });
+    console.log("✅ Recommendation deleted:", response.data);
+
+    // ✅ Emit WebSocket event only if userId exists
+    if (response.data?.userId) {
+      socket.emit("recommendationUpdated", { userId: response.data.userId });
+    } else {
+      console.warn(
+        "⚠️ User ID missing in API response, skipping WebSocket update."
+      );
+    }
 
     return response.data;
   } catch (error) {
-    console.error("Error deleting recommendation:", error.message);
+    console.error("❌ Error deleting recommendation:", error.message);
     throw error;
   }
 };
@@ -228,11 +339,14 @@ export const completeExercise = async (completionData) => {
       { headers: getAuthHeaders() }
     );
 
-    // Emit WebSocket event
-    socket.emit("exerciseCompleted", {
-      userId: completionData.userId,
-      exerciseId: completionData.exerciseId,
-    });
+    // ✅ Emit WebSocket event
+    if (socket && socket.connected) {
+      socket.emit("exerciseCompleted", completionData);
+      socket.emit("adminWorkoutUpdate", completionData);
+    } else {
+      console.warn("⚠️ WebSocket is NOT connected! Trying to reconnect...");
+      socket.connect(); // ✅ Reconnect WebSocket if disconnected
+    }
 
     return response.data;
   } catch (error) {
@@ -246,16 +360,17 @@ export const completeExercise = async (completionData) => {
  */
 export const fetchCompletedWorkouts = async (userId) => {
   try {
-    let url = `${BASE_URL}/exercises/completed`;
-    if (userId) {
-      url += `?userId=${userId}`; // Users fetch their own workouts
+    if (!userId) {
+      throw new Error("User ID is required to fetch completed workouts");
     }
+
+    const url = `${BASE_URL}/exercises/completed?userId=${userId}`;
 
     const response = await axios.get(url, { headers: getAuthHeaders() });
     return response.data;
   } catch (error) {
     console.error("Error fetching completed workouts:", error.message);
-    throw error;
+    return [];
   }
 };
 
@@ -269,14 +384,22 @@ export const handleDeleteCompletedWorkout = async (workoutId) => {
 
   try {
     console.log(`Deleting workout ${workoutId}...`);
+
+    const headers = getAuthHeaders();
+    console.log("Auth Headers Sent:", headers);
+
     const response = await axios.delete(
       `${BASE_URL}/exercises/completed/${workoutId}`,
       {
-        headers: getAuthHeaders(),
+        headers,
       }
     );
 
     console.log("Workout deleted successfully:", response.data);
+
+    if (socket && socket.connected) {
+      socket.emit("workoutDeleted", { workoutId });
+    }
     return response.data;
   } catch (error) {
     console.error(

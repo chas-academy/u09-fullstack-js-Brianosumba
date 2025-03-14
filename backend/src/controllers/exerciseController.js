@@ -26,7 +26,7 @@ const getAllRecommendations = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch recommendations." });
   }
 };
-// Get all recommendations for a user
+// Get  recommendations for a user
 const getRecommendations = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -41,7 +41,7 @@ const getRecommendations = async (req, res) => {
 
     if (!recommendations.length) {
       console.log("No recommendations found for userId:", userId);
-      return res.status(200).json([]);
+      return res.status(200).json({ success: true, data: [] });
     }
 
     console.log("Recommendations found:", recommendations);
@@ -49,12 +49,16 @@ const getRecommendations = async (req, res) => {
     //  Directly return the stored exercise details instead of re-fetching
     const recommendationsWithDetails = recommendations.map(
       (recommendation) => ({
-        ...recommendation.toObject(),
-        exerciseDetails: recommendation.exerciseDetails,
+        _id: recommendation._id,
+        userId: recommendation.userId,
+        exerciseId: recommendation.exerciseId,
+        notes: recommendation.notes || "",
+        tags: recommendation.tags || [],
+        exerciseDetails: recommendation.exerciseDetails || {},
       })
     );
 
-    res.status(200).json(recommendationsWithDetails);
+    res.status(200).json({ success: true, data: recommendationsWithDetails });
   } catch (error) {
     console.error("Error fetching recommendations:", error.message);
     res.status(500).json({ error: "Failed to fetch recommendations." });
@@ -65,66 +69,30 @@ const getRecommendations = async (req, res) => {
 const recommendExercise = async (req, res) => {
   try {
     console.log("Request body:", req.body);
-    const { userId, exerciseId, notes = "", tags = [] } = req.body;
+
+    const { userId, exerciseId, exerciseDetails, notes, tags, createdAt } =
+      req.body;
 
     if (!userId || !exerciseId) {
-      return res
-        .status(400)
-        .json({ success: false, error: "userId and exerciseId are required" });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
-        success: false,
-        error: "Invalid User Id or Exercise ID.",
+        error: "Missing required fields: userId, exerciseId or exerciseDetails",
       });
     }
 
-    let exerciseDetails;
-    try {
-      const exerciseResponse = await axios.get(
-        `https://exercisedb.p.rapidapi.com/exercises/exercise/${exerciseId}`,
-        {
-          headers: {
-            "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
-            "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
-          },
-        }
-      );
-      exerciseDetails = exerciseResponse.data;
-    } catch (error) {
-      console.error("Error fetching exercise details:", error.message);
-      return res
-        .status(400)
-        .json({ error: "Invalid exercise ID or API issue." });
-    }
-
-    const recommendedExercise = new RecommendedExercise({
+    const newRecommendation = new RecommendedExercise({
       userId,
       exerciseId,
-      notes: notes.trim(),
-      tags: Array.isArray(tags) ? tags : [],
       exerciseDetails,
+      notes,
+      tags,
+      createdAt,
     });
 
-    await recommendedExercise.save();
-    console.log(" Exercise recommended successfully:", recommendedExercise);
-
-    //Emit WebSocket event
-    const io = req.app.get("io");
-    io.emit("recommendationUpdated", {
-      userId,
-      recommendations: await RecommendedExercise.find({ userId }),
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Exercise recommended successfully",
-      data: recommendedExercise,
-    });
+    await newRecommendation.save();
+    return res.status(201).json({ success: true, data: newRecommendation });
   } catch (error) {
-    console.error(" Error recommending exercise:", error.message);
-    res.status(500).json({ error: "Failed to recommend exercise." });
+    console.error("Error saving recommendation:", error);
+    return res.status(400).json({ error: "Internal server error" });
   }
 };
 
@@ -293,21 +261,6 @@ const completeExercise = async (req, res) => {
       return res.status(400).json({ error: "Invalid User ID." });
     }
 
-    const existingCompletion = await WorkoutCompletion.findOne({
-      userId,
-      exerciseId,
-      completedAt: {
-        $gte: new Date().setHours(0, 0, 0, 0), // Start of the day
-        $lt: new Date().setHours(23, 59, 59, 999), // End of the day
-      },
-    });
-
-    if (existingCompletion) {
-      return res
-        .status(400)
-        .json({ error: "You have already completed this exercise today." });
-    }
-
     // Save workout completion to the database
     const completedWorkout = new WorkoutCompletion({
       userId,
@@ -315,6 +268,7 @@ const completeExercise = async (req, res) => {
       workoutType,
       target,
       level,
+      completedAt: new Date(), // ✅ Store exact time of completion
     });
 
     await completedWorkout.save();
@@ -328,7 +282,7 @@ const completeExercise = async (req, res) => {
       console.log("Emitting exerciseCompleted event...");
       io.to("admins").emit("exerciseCompleted", {
         userId,
-        username: user?.username || "Unkown User",
+        username: user?.username || "Unknown User",
         exerciseId,
         workoutType,
         target,

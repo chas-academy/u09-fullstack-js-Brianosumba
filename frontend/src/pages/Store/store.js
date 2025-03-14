@@ -15,7 +15,7 @@ const useAuthStore = create((set) => ({
 
   // ✅ Register Function
   register: async ({ username, email, password }) => {
-    console.log("🔹 Registering user...");
+    console.log(" Registering user...");
     try {
       const { token, user } = await registerUser({ username, email, password });
 
@@ -26,7 +26,15 @@ const useAuthStore = create((set) => ({
 
       //  Store Token & User Info in Local Storage
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          isAdmin: user.isAdmin || false,
+        })
+      );
 
       set({
         isAuthenticated: true,
@@ -60,7 +68,15 @@ const useAuthStore = create((set) => ({
 
       // Store Token & User Info in Local Storage
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          isAdmin: user.isAdmin || false,
+        })
+      );
 
       set({
         isAuthenticated: true,
@@ -128,6 +144,9 @@ const useAuthStore = create((set) => ({
         });
         return;
       }
+      //  Parse stored user info (Ensuring `isAdmin` is always retrieved)
+      const parsedUser = JSON.parse(storedUser);
+      console.log(" Retrieved user from localStorage:", parsedUser);
 
       const session = await checkAuth(storedToken);
 
@@ -137,12 +156,13 @@ const useAuthStore = create((set) => ({
           username: session.user.username || "",
           token: storedToken,
           userId: session.user.id || "",
-          isAdmin: session.user.isAdmin || false,
+          isAdmin: session.user.isAdmin ?? parsedUser.isAdmin,
         });
 
         console.log(" User session restored:", {
           isAuthenticated: true,
           username: session.user.username,
+          isAdmin: session.user.isAdmin,
         });
       } else {
         console.warn(" Session invalid or expired.");

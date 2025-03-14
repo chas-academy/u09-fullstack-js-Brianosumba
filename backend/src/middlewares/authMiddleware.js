@@ -25,7 +25,11 @@ const verifyToken = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log("Decoded token:", decoded);
 
-    req.user = decoded;
+    req.user = {
+      id: decoded.id,
+      isAdmin: decoded.isAdmin ?? false,
+    };
+    console.log(" Token verified, user data set:", req.user);
     next();
   } catch (error) {
     console.error("Token verification failed:", error.message);
@@ -36,14 +40,32 @@ const verifyToken = (req, res, next) => {
 // Middleware to check if the user is an admin
 const verifyAdmin = async (req, res, next) => {
   try {
-    console.log("checking admin access for user:", req.user);
+    console.log(" Checking admin access for:", req.user);
+
+    //Enaure req.user exists before checking admin role
+    if (!req.user || !req.user.id) {
+      console.error(" No user data found in req.user:", req.user);
+      return res
+        .status(403)
+        .json({ message: "Unauthorized: No user data found " });
+    }
 
     const user = await User.findById(req.user.id);
+    console.log(" Fetched user from database:", user);
 
     // Check if the authenticated user is an admin
-    if (!user || !user.isAdmin) {
+    if (!user) {
+      console.warn(" User not found for ID:", req.user.id);
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.isAdmin) {
+      console.warn(" Access denied. User is not an admin:", user.email);
       return res.status(403).json({ message: "Access denied, admin only" });
     }
+
+    console.log(" Admin access granted:", user.email);
+
     next(); // Proceed if the user is an admin
   } catch (error) {
     console.error("Error in verifyAdmin middleware:", error.message);

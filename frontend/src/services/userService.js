@@ -1,45 +1,75 @@
+import { isTokenExpired } from "./authService";
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 // Utility: Fetch token from localStorage
 const getToken = () => {
   const token = localStorage.getItem("token");
+
   if (!token) {
-    console.error("No token found in localStorage.");
-    throw new Error("No token found. Please log in again.");
+    console.error(" No token found in localStorage.");
+    return null;
   }
+
+  if (isTokenExpired(token)) {
+    console.warn(" Token expired! Redirecting to login...");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login"; // Redirect user to login
+    return null;
+  }
+
+  console.log(" Token retrieved successfully.");
   return token;
 };
 
 // Utility: Get headers
 const getHeaders = (isJson = true) => {
+  const token = getToken();
+  if (!token) throw new Error("Unauthorized: Token missing");
+
   const headers = {
-    Authorization: `Bearer ${getToken()}`,
+    Authorization: `Bearer ${token}`,
   };
-  console.log("Headers being sent:", headers);
+
   if (isJson) {
     headers["Content-Type"] = "application/json";
   }
+  console.log(" Headers being sent:", headers);
   return headers;
 };
 
 // Utility: Handle API responses
 const handleResponse = async (response) => {
-  if (!response.ok) {
-    const errorDetails = await response.json().catch(() => null);
-    console.error("Error details from backend:", errorDetails);
-    throw new Error(errorDetails?.message || response.statusText);
+  let errorDetails;
+
+  try {
+    errorDetails = await response.json();
+  } catch {
+    errorDetails = { message: response.statusText };
   }
-  return response.json();
+  if (!response.ok) {
+    console.error("API Error:", errorDetails);
+    throw new Error(errorDetails?.message || "Error occured");
+  }
+  return errorDetails;
 };
 
 // Fetch all users
 export const fetchUsers = async () => {
   try {
+    const headers = getHeaders();
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!user || !user.isAdmin) {
+      console.error(" User is not an admin:", user);
+      throw new Error("Access denied: Admin privileges required");
+    }
+
     const response = await fetch(`${BASE_URL}/users`, {
       method: "GET",
-      headers: getHeaders(),
+      headers: headers,
     });
-    console.log("Response from /api/users:", response);
+
     return await handleResponse(response);
   } catch (error) {
     console.error("Error in fetchUsers:", error.message);

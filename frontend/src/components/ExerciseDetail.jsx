@@ -6,15 +6,15 @@ import Footer from "../components/Footer";
 import CircularProgressBar from "../components/CircularProgressBar";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { io } from "socket.io-client";
 import { isTokenExpired } from "../services/authService";
 import {
   fetchRecommendations,
   completeExercise,
   fetchCompletedWorkouts,
+  HEADERS,
+  connectWebsocket,
+  socket,
 } from "../services/exerciseService";
-
-const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
 
 const ExerciseDetail = () => {
   const { exerciseId } = useParams(); // Get exerciseId from the URL parameters
@@ -28,9 +28,14 @@ const ExerciseDetail = () => {
     workoutsThisMonth: 0,
     strengthProgress: 0,
   });
-  const socketListenerAdded = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const userIdRef = useRef(userId);
+
+  useEffect(() => {
+    connectWebsocket();
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -42,52 +47,47 @@ const ExerciseDetail = () => {
     }
   }, [userId]);
 
-  // Fetch Completed workouts and Update progress
   useEffect(() => {
-    const fetchProgress = async () => {
-      try {
-        const workouts = await fetchCompletedWorkouts(userId);
-        console.log("User progress:", workouts);
+    userIdRef.current = userId;
+  }, [userId]);
 
-        const updatedProgress = {
-          workoutsToday: Math.min(
-            workouts.filter((w) => w.completedToday).length,
-            1
-          ),
-          workoutsThisWeek: Math.min(
-            workouts.filter((w) => w.completedThisWeek).length,
-            3
-          ),
-          workoutsThisMonth: Math.min(
-            workouts.filter((w) => w.completedThisMonth).length,
-            12
-          ),
-          strengthProgress: Math.min((workouts.length / 12) * 100, 100),
-        };
+  useEffect(() => {
+    if (userId) {
+      const loadRecommendations = async () => {
+        const newRecommendations = await fetchRecommendations(userId);
+        console.log("Updated recommended workouts:", newRecommendations);
+        setRecommendedWorkouts(newRecommendations);
+      };
+      loadRecommendations();
+    }
+  }, [userId]);
 
-        setProgress(updatedProgress);
+  useEffect(() => {
+    const handleRecommendationUpdate = async (data) => {
+      console.log("WebSocket event received for recommendation update:", data);
 
-        // Save to localStorage
-        localStorage.setItem("workoutsToday", updatedProgress.workoutsToday);
-        localStorage.setItem(
-          "workoutsThisWeek",
-          updatedProgress.workoutsThisWeek
+      if (String(data.userId) === String(userIdRef.current)) {
+        const newRecommendations = await fetchRecommendations(
+          userIdRef.current
         );
-        localStorage.setItem(
-          "workoutsThisMonth",
-          updatedProgress.workoutsThisMonth
-        );
-        localStorage.setItem(
-          "strengthProgress",
-          updatedProgress.strengthProgress
-        );
-      } catch (error) {
-        console.error("Failed to fetch progress:", error.message);
-        alert("Could not load progress. Please try again later");
+        setRecommendedWorkouts((prev) => {
+          const merged = [...prev, ...newRecommendations];
+
+          const uniqueRecommendations = merged.filter(
+            (item, index, self) =>
+              index === self.findIndex((t) => t.exerciseId === item.exerciseId)
+          );
+          return uniqueRecommendations;
+        });
       }
     };
-    fetchProgress();
-  }, [userId]);
+
+    socket.on("recommendationUpdated", handleRecommendationUpdate);
+
+    return () => {
+      socket.off("recommendationUpdated", handleRecommendationUpdate);
+    };
+  }, []);
 
   // Fetch exercise details
   useEffect(() => {
@@ -95,16 +95,19 @@ const ExerciseDetail = () => {
       try {
         const response = await axios.get(
           `https://exercisedb.p.rapidapi.com/exercises/exercise/${exerciseId}`,
-          {
-            headers: {
-              "X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY,
-              "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
-            },
-          }
+          { headers: HEADERS }
         );
-        setExercise(response.data);
+
+        const exerciseData = response.data || {};
+
+        setExercise({
+          name: exerciseData.name || "unkown Exercise",
+          bodyPart: exerciseData.bodyPart || "N/A",
+          target: exerciseData.target || "N/A",
+          equipment: exerciseData.equipment || "N/A",
+          gifUrl: exerciseData.gifUrl || "",
+        });
       } catch (error) {
-        console.error("Failed to fetch exercise details:", error);
         setError("Failed to load exercise details. Please try again.");
       } finally {
         setLoading(false);
@@ -114,63 +117,90 @@ const ExerciseDetail = () => {
     fetchExerciseDetail();
   }, [exerciseId]);
 
-  //  Fetch recommendations
-  useEffect(() => {
-    fetchRecommendations(userId, setRecommendedWorkouts);
-
-    const handleRecommendationUpdate = (data) => {
-      if (data.userId === userId) {
-        fetchRecommendations(userId, setRecommendedWorkouts);
-      }
-    };
-
-    socket.on("recommendationUpdated", handleRecommendationUpdate);
-
-    return () => {
-      socket.off("recommendationUpdated", handleRecommendationUpdate);
-    };
-  }, [userId]);
-
-  const handleDoneComplete = async () => {
+  // Fetch completed workouts progress
+  const fetchProgress = async () => {
     try {
-      const completionData = {
-        userId,
-        exerciseId,
-        workoutType: exercise?.bodyPart || "N/A",
-        target: exercise?.target || "N/A",
-        level: "Beginner",
-        completedAt: new Date().toISOString(),
-      };
-
-      await completeExercise(completionData);
-      alert("Workout marked as complete!");
+      if (!userId) return;
 
       const workouts = await fetchCompletedWorkouts(userId);
-      setProgress({
-        workoutsToday: Math.min(
-          workouts.filter((w) => w.completedToday).length,
-          1
-        ),
-        workoutsThisWeek: Math.min(
-          workouts.filter((w) => w.completedThisWeek).length,
-          3
-        ),
-        workoutsThisMonth: Math.min(
-          workouts.filter((w) => w.completedThisMonth).length,
-          12
-        ),
-        strengthProgress: Math.min((workouts.length / 12) * 100, 100),
-      });
+      const today = Date.now();
+      const oneWeekAgo = today - 7 * 24 * 60 * 60 * 1000;
+      const oneMonthAgo = today - 30 * 24 * 60 * 60 * 1000;
 
-      // Send WebSocket event for **Admin.jsx** to update immediately
-      socket.emit("exerciseCompleted", {
-        userId,
-        exerciseId,
-        completedAt: new Date().toISOString(),
-      });
+      // ✅ Ensure correct userId matching
+      const userWorkouts = workouts.filter(
+        (w) => String(w.userId) === String(userId)
+      );
+
+      // ✅ Correct timestamp comparison
+      const updatedProgress = userWorkouts.reduce(
+        (acc, workout) => {
+          const completedAt = new Date(workout.completedAt).getTime(); // ✅ Convert to timestamp
+
+          if (completedAt >= today) acc.workoutsToday++;
+          if (completedAt >= oneWeekAgo) acc.workoutsThisWeek++;
+          if (completedAt >= oneMonthAgo) acc.workoutsThisMonth++;
+
+          return acc;
+        },
+        { workoutsToday: 0, workoutsThisWeek: 0, workoutsThisMonth: 0 }
+      );
+
+      // ✅ More readable `strengthProgress` calculation
+      updatedProgress.strengthProgress = Math.min(
+        (userWorkouts.length / 12) * 100,
+        100
+      );
+
+      setProgress(updatedProgress);
     } catch (error) {
-      console.error("Error updating progress:", error.message);
+      console.error("Failed to fetch progress:", error.message);
+    }
+  };
+
+  // //  Fetch recommendations
+  // useEffect(() => {
+  //   if (userId) {
+  //     fetchRecommendations(userId, (newRecommendations) => {
+  //       console.log("Updated recommended workouts:", newRecommendations);
+  //       setRecommendedWorkouts([...newRecommendations]); // Force re-render
+  //     });
+  //   }
+  // }, [userId]);
+
+  //Mark Exercise as Completed
+  const handleDoneComplete = async () => {
+    if (!userId || !exerciseId || !exercise) {
+      alert("Invalid data! Ensure all required fields are available.");
+      return;
+    }
+
+    const completionData = {
+      userId,
+      exerciseId,
+      workoutType: exercise?.bodyPart || "N/A",
+      target: exercise?.target || "N/A",
+      level: "Beginner",
+      completedAt: new Date().toISOString(),
+    };
+
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      console.log("Sending completion request:", completionData);
+      await completeExercise(completionData);
+
+      console.log("Fetching updated progress...");
+      await fetchProgress(); // ✅ Now updates progress immediately!
+
+      alert("Workout marked as complete!");
+      socket.emit("exerciseCompleted", completionData);
+    } catch (error) {
+      console.error("Error completing exercise:", error.message);
       alert("Could not complete workout. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -220,10 +250,12 @@ const ExerciseDetail = () => {
         {/* Done Button */}
         <div className="text-center my-8">
           <button
+            id="done-button"
             onClick={handleDoneComplete}
             className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition"
+            disabled={isSubmitting}
           >
-            Done
+            {isSubmitting ? "Submitting..." : "Done"}
           </button>
         </div>
 
@@ -234,12 +266,13 @@ const ExerciseDetail = () => {
           </h2>
           {recommendedWorkouts.length > 0 ? (
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendedWorkouts.map((workout) => (
+              {recommendedWorkouts.map((workout, index) => (
                 <li
-                  key={workout.uniqueKey}
+                  key={workout._id || workout.exerciseId || index}
                   className="flex flex-col items-center bg-white rounded-lg shadow-md p-6"
                 >
                   {/* Image */}
+                  {console.log("workout data", workout)}
                   {workout.exerciseDetails?.gifUrl && (
                     <img
                       src={workout.exerciseDetails.gifUrl}
@@ -251,15 +284,18 @@ const ExerciseDetail = () => {
                   <div className="text-center">
                     <p className="text-lg font-medium text-gray-800">
                       <strong>Exercise Name:</strong>{" "}
-                      {workout.exerciseDetails?.name || "N/A"}
+                      {workout.exerciseDetails?.name ||
+                        "Exercise details unavailable"}
                     </p>
                     <p className="text-gray-600 mt-1">
                       <strong>Body Part:</strong>{" "}
-                      {workout.exerciseDetails?.bodyPart || "N/A"}
+                      {workout.exerciseDetails?.bodyPart ||
+                        "Exercise details unavailable"}
                     </p>
                     <p className="text-gray-600 mt-1">
                       <strong>Target:</strong>{" "}
-                      {workout.exerciseDetails?.target || "N/A"}
+                      {workout.exerciseDetails?.target ||
+                        "Exercise details unavailable"}
                     </p>
                     <p className="text-gray-600 mt-1">
                       <strong>Notes:</strong>{" "}
