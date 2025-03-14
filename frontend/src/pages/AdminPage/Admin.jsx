@@ -368,9 +368,6 @@ const Admin = () => {
                   Status
                 </th>
                 <th className="py-4 px-6 text-left font-semibold uppercase tracking-wide">
-                  Level
-                </th>
-                <th className="py-4 px-6 text-left font-semibold uppercase tracking-wide">
                   Actions
                 </th>
               </tr>
@@ -397,7 +394,6 @@ const Admin = () => {
                         {user.isActive ? "Active" : "Inactive"}
                       </button>
                     </td>
-                    <td className="py-4 px-6">{user.level}</td>
                     <td className="py-4 px-6">
                       <select
                         defaultValue=""
