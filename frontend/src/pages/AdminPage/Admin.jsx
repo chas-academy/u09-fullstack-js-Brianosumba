@@ -148,6 +148,7 @@ const Admin = () => {
     };
   }, []);
 
+  //Toggle user status
   const toggleStatus = async (userId) => {
     const updatedUsers = users.map((user) =>
       user._id === userId ? { ...user, isActive: !user.isActive } : user
@@ -441,7 +442,7 @@ const Admin = () => {
                           </option>
                         ))}
                       </select>
-                      {/* Delete Button */}
+                      {/* Delete User Button */}
                       <button
                         onClick={() => handleDeleteUser(user._id)}
                         className="text-red-500 hover:underline ml-2"
