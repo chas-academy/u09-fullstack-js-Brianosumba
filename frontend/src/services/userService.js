@@ -61,35 +61,35 @@ export const updateUserStatus = async (userId) => {
   }
 };
 
-// Recommend a workout
-export const recommendWorkout = async (userId, workoutId) => {
-  try {
-    const response = await fetch(`${BASE_URL}/users/${userId}/recommend`, {
-      method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify({ workoutId }),
-    });
-    return await handleResponse(response);
-  } catch (error) {
-    console.error("Error in recommendWorkout:", error);
-    throw error;
-  }
-};
+// // Recommend a workout
+// export const recommendWorkout = async (userId, workoutId) => {
+//   try {
+//     const response = await fetch(`${BASE_URL}/users/${userId}/recommend`, {
+//       method: "POST",
+//       headers: getHeaders(),
+//       body: JSON.stringify({ workoutId }),
+//     });
+//     return await handleResponse(response);
+//   } catch (error) {
+//     console.error("Error in recommendWorkout:", error);
+//     throw error;
+//   }
+// };
 
-// Edit user
-export const editUser = async (userId, updates) => {
-  try {
-    const response = await fetch(`${BASE_URL}/users/${userId}`, {
-      method: "PUT",
-      headers: getHeaders(),
-      body: JSON.stringify(updates),
-    });
-    return await handleResponse(response);
-  } catch (error) {
-    console.error("Error in editUser:", error);
-    throw error;
-  }
-};
+// // Edit user
+// export const editUser = async (userId, updates) => {
+//   try {
+//     const response = await fetch(`${BASE_URL}/users/${userId}`, {
+//       method: "PUT",
+//       headers: getHeaders(),
+//       body: JSON.stringify(updates),
+//     });
+//     return await handleResponse(response);
+//   } catch (error) {
+//     console.error("Error in editUser:", error);
+//     throw error;
+//   }
+// };
 
 // Delete user
 export const deleteUser = async (userId) => {

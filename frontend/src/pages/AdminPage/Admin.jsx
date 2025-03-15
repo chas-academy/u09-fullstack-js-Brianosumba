@@ -9,7 +9,11 @@ import {
   handleUpdateRecommendation,
   handleDeleteRecommendation,
 } from "./ExerciseCrud";
-import { fetchUsers, updateUserStatus } from "../../services/userService";
+import {
+  fetchUsers,
+  updateUserStatus,
+  deleteUser,
+} from "../../services/userService";
 import EditRecommendationModal from "../../components/EditRecommendationModal";
 import axios from "axios";
 import {
@@ -56,6 +60,30 @@ const Admin = () => {
 
     loadData();
   }, [token]);
+
+  //Delete User
+  const handleDeleteUser = async (userId) => {
+    if (!userId) {
+      alert("User Id is required.");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this user?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await deleteUser(userId, token);
+      addNotification("User deleted successfully!", "success");
+
+      //Remove the deleted user from the state
+      setUsers((prevUsers) => prevUsers.filter((user) => user._id !== userId));
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      addNotification("Failed to delete user. Please try again.", "error");
+    }
+  };
 
   // Fetch recommendations and exercises
   useEffect(() => {
@@ -413,6 +441,13 @@ const Admin = () => {
                           </option>
                         ))}
                       </select>
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => handleDeleteUser(user._id)}
+                        className="text-red-500 hover:underline ml-2"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
