@@ -56,6 +56,7 @@ const Login = () => {
 
   return (
     <div className="flex items-center justify-center h-screen  ">
+      <h1>LOGIN MY FRIEND</h1>
       <form
         onSubmit={handleSubmit(onSubmit)} // Use handleSubmit from react-hook-form
         className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4 text-black"
