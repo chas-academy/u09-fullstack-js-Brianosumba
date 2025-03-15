@@ -32,7 +32,11 @@ app.use(
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: ["http://localhost:5173", "https://fitnesstracker-app.netlify.app"],
+    origin: [
+      "http://localhost:5173",
+      "https://fitnesstracker-app.netlify.app",
+      "https://u09-fullstack-js-brianosumba.onrender.com",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },

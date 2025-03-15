@@ -23,6 +23,7 @@ import {
 } from "../../services/exerciseService";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
 
 const Admin = () => {
   const [users, setUsers] = useState([]);
@@ -130,7 +131,7 @@ const Admin = () => {
 
   // Setup Socket.IO
   useEffect(() => {
-    const socket = io(BASE_URL, { withCredentials: true });
+    const socket = io(SOCKET_URL, { withCredentials: true });
 
     socket.on("connect", () => {
       console.log("Connected to server");
