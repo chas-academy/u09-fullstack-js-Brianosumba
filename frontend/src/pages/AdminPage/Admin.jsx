@@ -130,9 +130,7 @@ const Admin = () => {
 
   // Setup Socket.IO
   useEffect(() => {
-    const socket = io(import.meta.env.VITE_SOCKET_URL, {
-      withCredentials: true,
-    });
+    const socket = io(BASE_URL, { withCredentials: true });
 
     socket.on("connect", () => {
       console.log("Connected to server");
